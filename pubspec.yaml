@@ -1,0 +1,42 @@
+name: paciente_app
+description: A Flutter application for patient management with MongoDB integration.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  mongo_dart: ^0.9.1
+  provider: ^6.0.5
+  shared_preferences: ^2.2.0
+  flutter_secure_storage: ^8.0.0
+  get: ^4.6.5
+  form_field_validator: ^1.1.0
+  flutter_masked_text2: ^0.9.1
+  intl: ^0.20.2
+  flutter_dotenv: ^5.1.0
+  jwt_decoder: ^2.0.1
+  crypto: ^3.0.3
+  http: ^1.1.0
+  mailer: ^6.0.1
+  flutter_localizations:
+    sdk: flutter
+  mask_text_input_formatter: ^2.9.0
+  animated_text_kit: ^4.2.3
+  lottie: ^3.3.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/lottie/
+    - .env 

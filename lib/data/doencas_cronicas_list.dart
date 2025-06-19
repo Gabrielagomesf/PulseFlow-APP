@@ -1,0 +1,22 @@
+const List<String> doencasCronicasList = [
+  'Diabetes',
+  'Hipertensão',
+  'Asma',
+  'Epilepsia',
+  'Doença cardíaca',
+  'Doença renal',
+  'Doença pulmonar',
+  'Câncer',
+  'Obesidade',
+  'Artrite',
+  'Lúpus',
+  'Fibromialgia',
+  'Hepatite',
+  'AIDS/HIV',
+  'Colesterol alto',
+  'Doença de Crohn',
+  'Esclerose múltipla',
+  'Parkinson',
+  'Alzheimer',
+  'Outros'
+]; 

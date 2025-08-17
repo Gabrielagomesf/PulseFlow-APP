@@ -11,23 +11,9 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   try {
-    print('🔧 Carregando arquivo .env...');
     await dotenv.load(fileName: ".env");
-    print('✅ Arquivo .env carregado com sucesso');
-    
-    // Verificar se as configurações foram carregadas
-    final mongodbUri = dotenv.env['MONGODB_URI'];
-    final emailUser = dotenv.env['EMAIL_USER'];
-    final emailPass = dotenv.env['EMAIL_PASS'];
-    
-    print('📋 Configurações carregadas:');
-    print('   MONGODB_URI: ${mongodbUri != null ? 'Configurado' : 'NÃO CONFIGURADO'}');
-    print('   EMAIL_USER: $emailUser');
-    print('   EMAIL_PASS: ${emailPass != null ? 'Configurado' : 'NÃO CONFIGURADO'}');
-    
   } catch (e) {
-    print('❌ Erro ao carregar arquivo .env: $e');
-    print('⚠️ Usando configurações padrão');
+    // Usar configurações padrão se .env não estiver disponível
   }
   
   Get.put(DatabaseService());
@@ -67,25 +53,25 @@ class MyApp extends StatelessWidget {
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppTheme.secondaryBlue),
+          border: const OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(12)),
+            borderSide: BorderSide(color: AppTheme.secondaryBlue),
           ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppTheme.secondaryBlue),
+          enabledBorder: const OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(12)),
+            borderSide: BorderSide(color: AppTheme.secondaryBlue),
           ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppTheme.primaryBlue, width: 2),
+          focusedBorder: const OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(12)),
+            borderSide: BorderSide(color: AppTheme.primaryBlue, width: 2),
           ),
-          errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppTheme.error),
+          errorBorder: const OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(12)),
+            borderSide: BorderSide(color: AppTheme.error),
           ),
-          focusedErrorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppTheme.error, width: 2),
+          focusedErrorBorder: const OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(12)),
+            borderSide: BorderSide(color: AppTheme.error, width: 2),
           ),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,

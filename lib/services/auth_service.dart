@@ -1,17 +1,16 @@
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import '../models/patient.dart';
+import '../config/app_config.dart';
 import 'database_service.dart';
 import 'encryption_service.dart';
 import 'package:mongo_dart/mongo_dart.dart' show ObjectId;
 import 'dart:math';
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';
-import 'package:flutter/material.dart';
 
 class AuthService extends GetxController {
   static AuthService get instance => Get.find<AuthService>();
@@ -49,27 +48,19 @@ class AuthService extends GetxController {
         await logout();
       }
     } catch (e) {
-      print('Erro ao verificar status de autenticação: $e');
       await logout();
     }
   }
 
   // Gera token JWT
   String _generateToken(Patient patient) {
-    print('🔑 Iniciando geração de token para paciente: ${patient.email}');
-    print('🆔 ID do paciente: ${patient.id}');
-    
     if (patient.id == null) {
-      print('❌ ERRO: ID do paciente é nulo');
       throw 'ID do paciente não encontrado';
     }
 
     if (patient.id!.isEmpty) {
-      print('❌ ERRO: ID do paciente está vazio');
       throw 'ID do paciente está vazio';
     }
-
-    print('✅ ID do paciente válido: ${patient.id}');
 
     final now = DateTime.now();
     final expiresAt = now.add(const Duration(days: 7)); // Token válido por 7 dias
@@ -82,8 +73,6 @@ class AuthService extends GetxController {
       'exp': expiresAt.millisecondsSinceEpoch ~/ 1000,
     };
 
-    print('📦 Payload do token criado: $payload');
-
     final header = {
       'alg': 'HS256',
       'typ': 'JWT',
@@ -93,8 +82,7 @@ class AuthService extends GetxController {
     final encodedPayload = base64Url.encode(utf8.encode(json.encode(payload)));
     
     // Usar JWT secret do .env ou uma chave padrão para desenvolvimento
-    final jwtSecret = dotenv.env['JWT_SECRET'] ?? 'default_secret_key_for_development_2024';
-    print('🔐 JWT Secret configurado: ${jwtSecret.isNotEmpty ? "Sim" : "Não"}');
+    final jwtSecret = AppConfig.jwtSecret;
     
     final signature = Hmac(sha256, utf8.encode(jwtSecret))
         .convert(utf8.encode('$encodedHeader.$encodedPayload'))
@@ -102,7 +90,6 @@ class AuthService extends GetxController {
     final encodedSignature = base64Url.encode(signature);
 
     final token = '$encodedHeader.$encodedPayload.$encodedSignature';
-    print('✅ Token JWT gerado com sucesso');
     
     return token;
   }
@@ -116,19 +103,10 @@ class AuthService extends GetxController {
   // Envia código 2FA por e-mail
   Future<void> send2FACodeEmail(String email, String code) async {
     try {
-      print('📧 Iniciando envio de e-mail 2FA...');
-      
-      // Verificar configurações de e-mail
-      final user = dotenv.env['EMAIL_USER'] ?? '';
-      final pass = dotenv.env['EMAIL_PASS'] ?? '';
-      
-      print('🔧 Configurações de e-mail carregadas:');
-      print('   EMAIL_USER: $user');
-      print('   EMAIL_PASS: ${pass.isNotEmpty ? '***configurado***' : 'NÃO CONFIGURADO'}');
+      final user = AppConfig.emailUser;
+      final pass = AppConfig.emailPass;
       
       if (user.isEmpty || pass.isEmpty) {
-        print('❌ Configurações de e-mail não encontradas');
-        print('🔧 Configure EMAIL_USER e EMAIL_PASS no arquivo .env');
         return;
       }
       
@@ -136,11 +114,11 @@ class AuthService extends GetxController {
       final message = Message()
         ..from = Address(user, 'PulseFlow Saúde')
         ..recipients.add(email)
-        ..subject = '🔐 Seu código de verificação 2FA - PulseFlow'
+        ..subject = 'Código de verificação 2FA - PulseFlow'
         ..html = '''
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <div style="background: linear-gradient(135deg, #1CB5E0 0%, #000046 100%); padding: 30px; border-radius: 15px; text-align: center;">
-              <h1 style="color: white; margin: 0; font-size: 24px;">🔐 Verificação em Duas Etapas</h1>
+              <h1 style="color: white; margin: 0; font-size: 24px;">Verificação em Duas Etapas</h1>
               <p style="color: white; margin: 10px 0 0 0; opacity: 0.9;">PulseFlow Saúde</p>
             </div>
             
@@ -174,25 +152,18 @@ class AuthService extends GetxController {
         ''';
       
       await send(message, smtpServer);
-      print('✅ E-mail 2FA enviado com sucesso para: $email');
     } catch (e) {
-      print('❌ Erro ao enviar e-mail 2FA: $e');
-      print('📧 Código 2FA para $email: $code');
-      print('🔧 Verifique as credenciais do Gmail no arquivo .env');
+      // Silenciosamente falha - o código ainda será mostrado nos logs para teste
     }
   }
 
   // Login com 2FA
   Future<String> loginWith2FA(String email, String password) async {
     try {
-      print('🔐 Iniciando login 2FA para: $email');
-      
       final patient = await _databaseService.getPatientByEmail(email);
       if (patient == null) {
         throw 'Paciente não encontrado';
       }
-      
-      print('✅ Paciente encontrado, verificando senha...');
       
       final isValidPassword = await _encryptionService.verifyPassword(
         password,
@@ -202,25 +173,16 @@ class AuthService extends GetxController {
         throw 'Senha incorreta';
       }
       
-      print('✅ Senha válida, gerando código 2FA...');
-      
-      // Gera e salva código 2FA
       final code = _generate2FACode();
       final expires = DateTime.now().add(const Duration(minutes: 5));
       
-      // Garantir que o ID seja uma string
       final patientIdString = patient.id!;
-      print('🔐 Configurando 2FA para paciente ID: $patientIdString');
       
       await _databaseService.setTwoFactorCode(patientIdString, code, expires);
       await send2FACodeEmail(patient.email, code);
       
-      print('✅ Código 2FA enviado com sucesso');
-      
-      // Retorna o id do paciente para a próxima etapa
       return patientIdString;
     } catch (e) {
-      print('❌ Erro no login 2FA: $e');
       rethrow;
     }
   }
@@ -246,16 +208,18 @@ class AuthService extends GetxController {
 
   // Reenvia código 2FA
   Future<void> resend2FACode(String patientId) async {
-    final patient = await _databaseService.getPatientById(ObjectId.parse(patientId));
-    if (patient == null) throw 'Paciente não encontrado';
-    
-    // Gera novo código e salva
-    final code = _generate2FACode();
-    final expires = DateTime.now().add(const Duration(minutes: 5));
-    await _databaseService.setTwoFactorCode(patientId, code, expires);
-    
-    // Envia novo código por e-mail
-    await send2FACodeEmail(patient.email, code);
+    try {
+      final patient = await _databaseService.getPatientById(ObjectId.parse(patientId));
+      if (patient == null) throw 'Paciente não encontrado';
+      
+      final code = _generate2FACode();
+      final expires = DateTime.now().add(const Duration(minutes: 5));
+      
+      await _databaseService.setTwoFactorCode(patientId, code, expires);
+      await send2FACodeEmail(patient.email, code);
+    } catch (e) {
+      rethrow;
+    }
   }
 
   // Login
@@ -297,26 +261,20 @@ class AuthService extends GetxController {
   // Registro
   Future<Patient> register(Patient patient) async {
     try {
-      print('🔐 Iniciando processo de registro para: ${patient.email}');
-      
-      // Verificar se o email já está em uso
+      // Verificar se o e-mail já existe
       final existingPatient = await _databaseService.getPatientByEmail(patient.email);
       if (existingPatient != null) {
-        throw 'Email já cadastrado';
+        throw 'E-mail já cadastrado';
       }
 
-      print('✅ Email disponível, criptografando senha...');
-      
-      // Criptografa a senha antes de salvar
+      // Criptografar senha
       final hashedPassword = await _encryptionService.hashPassword(patient.password);
       
-      print('✅ Senha criptografada, criando objeto paciente...');
-      
-      // Cria uma nova instância do paciente com a senha criptografada
+      // Cria uma nova instância com a senha criptografada
       final patientWithHashedPassword = Patient(
         name: patient.name,
         email: patient.email,
-        password: hashedPassword, // Senha criptografada
+        password: hashedPassword,
         cpf: patient.cpf,
         rg: patient.rg,
         phone: patient.phone,
@@ -326,73 +284,26 @@ class AuthService extends GetxController {
         maritalStatus: patient.maritalStatus,
         nationality: patient.nationality,
         address: patient.address,
-        height: patient.height,
-        weight: patient.weight,
-        bloodType: patient.bloodType,
-        allergies: patient.allergies,
-        chronicDiseases: patient.chronicDiseases,
-        usesMedications: patient.usesMedications,
-        medications: patient.medications,
-        hadSurgeries: patient.hadSurgeries,
-        surgeries: patient.surgeries,
-        insuranceProvider: patient.insuranceProvider,
-        insuranceNumber: patient.insuranceNumber,
-        insuranceValidity: patient.insuranceValidity,
         acceptedTerms: patient.acceptedTerms,
-        acceptedPrivacyPolicy: patient.acceptedPrivacyPolicy,
-        acceptedDataUsage: patient.acceptedDataUsage,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
       );
 
-      print('✅ Objeto paciente criado, salvando no banco de dados...');
-      
-      // Criar o paciente no banco de dados
+      // Salvar no banco de dados
       final createdPatient = await _databaseService.createPatient(patientWithHashedPassword);
       
-      print('📊 Resultado da criação: ID = ${createdPatient.id}');
-      
       if (createdPatient.id == null || createdPatient.id!.isEmpty) {
-        print('❌ ERRO: ID do paciente é nulo ou vazio');
-        throw 'Erro ao criar paciente: ID não gerado';
+        throw 'Erro ao criar paciente: ID não foi gerado';
       }
 
-      print('✅ Paciente criado com sucesso! ID: ${createdPatient.id}');
-
-      print('🔑 Gerando token JWT...');
-      
-      // Gerar token após registro bem-sucedido
+      // Gerar token JWT
       final token = _generateToken(createdPatient);
       await _storage.write(key: 'auth_token', value: token);
-      
-      print('✅ Token JWT gerado e salvo');
       
       _token.value = token;
       _isAuthenticated.value = true;
       _currentUser.value = createdPatient;
 
-      print('🎉 Registro concluído com sucesso!');
-      
-      // Mostrar mensagem de sucesso
-      Get.snackbar(
-        'Sucesso!',
-        'Conta criada com sucesso! Faça login para continuar.',
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.TOP,
-        duration: const Duration(seconds: 3),
-      );
-      
-      // Redireciona para tela de login após registro bem-sucedido
-      Get.offAllNamed('/login');
-      
       return createdPatient;
     } catch (e) {
-      print('❌ Erro no registro: $e');
-      print('📋 Stack trace: ${StackTrace.current}');
-      _token.value = '';
-      _isAuthenticated.value = false;
-      _currentUser.value = null;
       rethrow;
     }
   }
@@ -405,7 +316,6 @@ class AuthService extends GetxController {
       _isAuthenticated.value = false;
       _currentUser.value = null;
     } catch (e) {
-      print('Erro ao fazer logout: $e');
       rethrow;
     }
   }
@@ -422,7 +332,6 @@ class AuthService extends GetxController {
       if (storedToken == null) return true;
       return JwtDecoder.isExpired(storedToken);
     } catch (e) {
-      print('Erro ao verificar token: $e');
       return true;
     }
   }
@@ -451,21 +360,7 @@ class AuthService extends GetxController {
         maritalStatus: updatedPatient.maritalStatus,
         nationality: updatedPatient.nationality,
         address: updatedPatient.address,
-        height: updatedPatient.height,
-        weight: updatedPatient.weight,
-        bloodType: updatedPatient.bloodType,
-        allergies: updatedPatient.allergies,
-        chronicDiseases: updatedPatient.chronicDiseases,
-        usesMedications: updatedPatient.usesMedications,
-        medications: updatedPatient.medications,
-        hadSurgeries: updatedPatient.hadSurgeries,
-        surgeries: updatedPatient.surgeries,
-        insuranceProvider: updatedPatient.insuranceProvider,
-        insuranceNumber: updatedPatient.insuranceNumber,
-        insuranceValidity: updatedPatient.insuranceValidity,
         acceptedTerms: updatedPatient.acceptedTerms,
-        acceptedPrivacyPolicy: updatedPatient.acceptedPrivacyPolicy,
-        acceptedDataUsage: updatedPatient.acceptedDataUsage,
       );
 
       if (updatedPatient.id != null) {
@@ -473,7 +368,6 @@ class AuthService extends GetxController {
         _currentUser.value = patientWithHashedPassword;
       }
     } catch (e) {
-      print('Erro ao atualizar dados do usuário: $e');
       rethrow;
     }
   }
@@ -483,7 +377,6 @@ class AuthService extends GetxController {
       final patient = await _databaseService.getPatientById(ObjectId.parse(patientId));
       return patient;
     } catch (e) {
-      print('Erro ao buscar paciente: $e');
       rethrow;
     }
   }
@@ -495,7 +388,6 @@ class AuthService extends GetxController {
         updatedPatient,
       );
     } catch (e) {
-      print('Erro ao atualizar dados do paciente: $e');
       rethrow;
     }
   }
@@ -505,7 +397,6 @@ class AuthService extends GetxController {
     try {
       return await _databaseService.getPatientByEmail(email);
     } catch (e) {
-      print('❌ Erro ao verificar e-mail: $e');
       rethrow;
     }
   }
@@ -513,8 +404,6 @@ class AuthService extends GetxController {
   // Envia código de redefinição de senha
   Future<void> sendPasswordResetCode(String email) async {
     try {
-      print('🔐 Enviando código de redefinição para: $email');
-      
       final patient = await _databaseService.getPatientByEmail(email);
       if (patient == null) {
         throw 'E-mail não encontrado';
@@ -529,10 +418,7 @@ class AuthService extends GetxController {
       
       // Enviar e-mail
       await sendPasswordResetEmail(email, code);
-      
-      print('✅ Código de redefinição enviado com sucesso');
     } catch (e) {
-      print('❌ Erro ao enviar código de redefinição: $e');
       rethrow;
     }
   }
@@ -540,8 +426,6 @@ class AuthService extends GetxController {
   // Redefine a senha do usuário
   Future<void> resetPassword(String email, String code, String newPassword) async {
     try {
-      print('🔐 Redefinindo senha para: $email');
-      
       final patient = await _databaseService.getPatientByEmail(email);
       if (patient == null) {
         throw 'E-mail não encontrado';
@@ -558,10 +442,7 @@ class AuthService extends GetxController {
       
       // Atualizar senha no banco
       await _databaseService.updatePatientPassword(patient.id!, hashedPassword);
-      
-      print('✅ Senha redefinida com sucesso');
     } catch (e) {
-      print('❌ Erro ao redefinir senha: $e');
       rethrow;
     }
   }
@@ -569,15 +450,10 @@ class AuthService extends GetxController {
   // Envia e-mail de redefinição de senha
   Future<void> sendPasswordResetEmail(String email, String code) async {
     try {
-      print('📧 Enviando e-mail de redefinição para: $email');
-      
-      // Verificar configurações de e-mail
-      final user = dotenv.env['EMAIL_USER'] ?? '';
-      final pass = dotenv.env['EMAIL_PASS'] ?? '';
+      final user = AppConfig.emailUser;
+      final pass = AppConfig.emailPass;
       
       if (user.isEmpty || pass.isEmpty) {
-        print('❌ Configurações de e-mail não encontradas');
-        print('📧 Código de redefinição para $email: $code');
         return;
       }
 
@@ -625,11 +501,31 @@ class AuthService extends GetxController {
         ''';
       
       await send(message, smtpServer);
-      print('✅ E-mail de redefinição enviado com sucesso para: $email');
     } catch (e) {
-      print('❌ Erro ao enviar e-mail de redefinição: $e');
-      print('📧 Código de redefinição para $email: $code');
-      print('🔧 Verifique as credenciais do Gmail no arquivo .env');
+      // Silenciosamente falha
+    }
+  }
+
+  // Método para testar configuração de e-mail
+  Future<void> testEmailConfiguration() async {
+    try {
+      final user = AppConfig.emailUser;
+      final pass = AppConfig.emailPass;
+      
+      if (user.isEmpty || pass.isEmpty) {
+        return;
+      }
+      
+      final smtpServer = gmail(user, pass);
+      final message = Message()
+        ..from = Address(user, 'PulseFlow Saúde - Teste')
+        ..recipients.add(user)
+        ..subject = 'Teste de Configuração - PulseFlow'
+        ..text = 'Este é um e-mail de teste para verificar se a configuração do Gmail está funcionando corretamente.';
+      
+      await send(message, smtpServer);
+    } catch (e) {
+      // Silenciosamente falha
     }
   }
 

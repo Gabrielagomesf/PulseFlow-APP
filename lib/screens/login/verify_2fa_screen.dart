@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:lottie/lottie.dart';
 import '../../services/auth_service.dart';
 
 class Verify2FAScreen extends StatefulWidget {
@@ -17,6 +16,7 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
   bool _isLoading = false;
   bool _isResending = false;
   String? _error;
+  String? _patientId;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -43,33 +43,48 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
       curve: Curves.easeOutBack,
     ));
     _animationController.forward();
+    
+    // Extrair patientId dos argumentos
+    _extractPatientId();
   }
 
-  @override
-  void dispose() {
-    _animationController.dispose();
-    _codeController.dispose();
-    super.dispose();
+  void _extractPatientId() {
+    final arguments = Get.arguments;
+    
+    // Tentar obter patientId de diferentes formas
+    if (arguments != null && arguments is Map) {
+      _patientId = arguments['patientId'] as String?;
+    }
+    
+    // Se ainda não tiver, tentar obter de outras formas
+    if (_patientId == null || _patientId!.isEmpty) {
+      final parameters = Get.parameters;
+      _patientId = parameters['patientId'];
+    }
   }
 
   Future<void> _resendCode() async {
+    if (_patientId == null || _patientId!.isEmpty) {
+      setState(() {
+        _error = 'Dados de sessão inválidos';
+      });
+      return;
+    }
+
     setState(() {
       _isResending = true;
       _error = null;
     });
     
     try {
-      final patientId = Get.arguments['patientId'] as String?;
-      if (patientId != null) {
-        await AuthService.instance.resend2FACode(patientId);
-        Get.snackbar(
-          'Código reenviado!',
-          'Verifique seu e-mail para o novo código.',
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM,
-        );
-      }
+      await AuthService.instance.resend2FACode(_patientId!);
+      Get.snackbar(
+        'Código reenviado!',
+        'Verifique seu e-mail para o novo código.',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } catch (e) {
       setState(() {
         _error = 'Erro ao reenviar código: ${e.toString()}';
@@ -82,9 +97,34 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
   }
 
   @override
+  void dispose() {
+    _animationController.dispose();
+    _codeController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final patientId = Get.arguments['patientId'] as String?;
+    
     final size = MediaQuery.of(context).size;
+    
+    // Se não tiver patientId válido, redireciona para login
+    if (_patientId == null || _patientId!.isEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Get.offAllNamed('/login');
+        Get.snackbar(
+          'Erro',
+          'Dados de sessão inválidos. Faça login novamente.',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      });
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
     
     return Scaffold(
       body: Container(
@@ -154,11 +194,11 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
                             const SizedBox(height: 24),
                             
                             // Título
-                            Text(
+                            const Text(
                               'Verificação em duas etapas',
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                color: const Color(0xFF1CB5E0),
+                                color: Color(0xFF1CB5E0),
                                 fontWeight: FontWeight.bold,
                                 fontSize: 24,
                                 height: 1.2,
@@ -167,28 +207,23 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
                             const SizedBox(height: 12),
                             
                             // Subtítulo
-                            Text(
+                            const Text(
                               'Enviamos um código de 6 dígitos para seu e-mail. Insira abaixo para continuar.',
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                color: Colors.grey[700],
+                                color: Colors.grey,
                                 fontSize: 16,
                                 height: 1.4,
                               ),
                             ),
                             const SizedBox(height: 32),
                             
-                            // Campo de código
+                            // Container do campo de código
                             Container(
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
+                                color: Colors.grey[100],
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: const Color(0xFF1CB5E0), width: 2),
                               ),
                               child: TextFormField(
                                 controller: _codeController,
@@ -196,56 +231,33 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
                                 maxLength: 6,
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(
-                                  fontSize: 20,
+                                  fontSize: 24,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 8,
                                 ),
-                                decoration: InputDecoration(
-                                  labelText: 'Código de verificação',
-                                  labelStyle: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 16,
-                                  ),
-                                  prefixIcon: Icon(
-                                    Icons.lock_clock_rounded,
-                                    color: const Color(0xFF1CB5E0),
-                                    size: 24,
-                                  ),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(20),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(20),
-                                    borderSide: const BorderSide(
-                                      color: Color(0xFF1CB5E0),
-                                      width: 2,
-                                    ),
-                                  ),
-                                  filled: true,
-                                  fillColor: Colors.grey[50],
+                                decoration: const InputDecoration(
+                                  hintText: '000000',
                                   counterText: '',
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 16,
-                                  ),
+                                  border: InputBorder.none,
+                                  contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                                 ),
                                 validator: (value) {
-                                  if (value == null || value.length != 6) {
-                                    return 'Digite o código de 6 dígitos';
+                                  if (value == null || value.isEmpty) {
+                                    return 'Digite o código de verificação';
+                                  }
+                                  if (value.length != 6) {
+                                    return 'O código deve ter 6 dígitos';
                                   }
                                   return null;
                                 },
                               ),
                             ),
                             
+                            // Exibir erro se houver
                             if (_error != null) ...[
                               const SizedBox(height: 16),
                               Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
-                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                 decoration: BoxDecoration(
                                   color: Colors.red[50],
                                   borderRadius: BorderRadius.circular(12),
@@ -253,13 +265,13 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
                                 ),
                                 child: Row(
                                   children: [
-                                    Icon(Icons.error_outline, color: Colors.red[600], size: 20),
+                                    const Icon(Icons.error_outline, color: Colors.red, size: 20),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
                                         _error!,
-                                        style: TextStyle(
-                                          color: Colors.red[700],
+                                        style: const TextStyle(
+                                          color: Colors.red,
                                           fontSize: 14,
                                         ),
                                       ),
@@ -298,7 +310,7 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
                                         });
                                         try {
                                           final patient = await AuthService.instance.verify2FACode(
-                                            patientId!,
+                                            _patientId!,
                                             _codeController.text.trim(),
                                           );
                                           // O redirecionamento é feito automaticamente pelo AuthService
@@ -314,7 +326,7 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
                                         }
                                       },
                                 icon: _isLoading
-                                    ? SizedBox(
+                                    ? const SizedBox(
                                         width: 24,
                                         height: 24,
                                         child: CircularProgressIndicator(
@@ -351,17 +363,17 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
                             TextButton.icon(
                               onPressed: _isResending ? null : _resendCode,
                               icon: _isResending
-                                  ? SizedBox(
+                                  ? const SizedBox(
                                       width: 16,
                                       height: 16,
                                       child: CircularProgressIndicator(
-                                        color: const Color(0xFF1CB5E0),
+                                        color: Color(0xFF1CB5E0),
                                         strokeWidth: 2,
                                       ),
                                     )
-                                  : Icon(
+                                  : const Icon(
                                       Icons.refresh_rounded,
-                                      color: const Color(0xFF1CB5E0),
+                                      color: Color(0xFF1CB5E0),
                                       size: 20,
                                     ),
                               label: Text(

@@ -13,6 +13,7 @@ class Patient {
   final String nationality;
   final String address;
   final bool acceptedTerms; // aceitou os termos de uso, política de privacidade e uso de dados
+  final bool isAdmin; // indica se o usuário é administrador
   final String? twoFactorCode; // Código 2FA
   final DateTime? twoFactorExpires; // Expiração do código 2FA
   final String? passwordResetCode; // Código de redefinição de senha
@@ -35,6 +36,7 @@ class Patient {
     required this.nationality,
     required this.address,
     required this.acceptedTerms,
+    this.isAdmin = false, // por padrão, usuários não são admin
     this.twoFactorCode,
     this.twoFactorExpires,
     this.passwordResetCode,
@@ -60,6 +62,7 @@ class Patient {
       'nationality': nationality,
       'address': address,
       'acceptedTerms': acceptedTerms,
+      'isAdmin': isAdmin,
       'twoFactorCode': twoFactorCode,
       'twoFactorExpires': twoFactorExpires?.toIso8601String(),
       'passwordResetCode': passwordResetCode,
@@ -85,6 +88,7 @@ class Patient {
       nationality: json['nationality'],
       address: json['address'],
       acceptedTerms: json['acceptedTerms'] ?? false,
+      isAdmin: json['isAdmin'] ?? false,
       twoFactorCode: json['twoFactorCode'],
       twoFactorExpires: json['twoFactorExpires'] != null ? DateTime.parse(json['twoFactorExpires']) : null,
       passwordResetCode: json['passwordResetCode'],

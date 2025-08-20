@@ -24,6 +24,7 @@ class AuthService extends GetxController {
   String get token => _token.value;
   bool get isAuthenticated => _isAuthenticated.value;
   Patient? get currentUser => _currentUser.value;
+  bool get isAdmin => currentUser?.isAdmin ?? false;
 
   // Inicialização do serviço
   Future<AuthService> init() async {
@@ -100,6 +101,55 @@ class AuthService extends GetxController {
     return List.generate(6, (_) => rand.nextInt(10)).join();
   }
 
+  // Configura servidor SMTP baseado no domínio do email
+  SmtpServer _getSmtpServer(String user, String pass) {
+    final domain = user.split('@').last.toLowerCase();
+    
+    switch (domain) {
+      case 'gmail.com':
+        return gmail(user, pass);
+      case 'outlook.com':
+      case 'hotmail.com':
+      case 'live.com':
+        return SmtpServer('smtp-mail.outlook.com',
+            port: 587,
+            username: user,
+            password: pass,
+            ssl: false,
+            allowInsecure: false);
+      case 'yahoo.com':
+        return SmtpServer('smtp.mail.yahoo.com',
+            port: 587,
+            username: user,
+            password: pass,
+            ssl: false,
+            allowInsecure: false);
+      case 'icloud.com':
+        return SmtpServer('smtp.mail.me.com',
+            port: 587,
+            username: user,
+            password: pass,
+            ssl: false,
+            allowInsecure: false);
+      case 'aol.com':
+        return SmtpServer('smtp.aol.com',
+            port: 587,
+            username: user,
+            password: pass,
+            ssl: false,
+            allowInsecure: false);
+      default:
+        // Para outros domínios, tenta configuração genérica
+        // Muitos provedores usam smtp.[dominio] na porta 587
+        return SmtpServer('smtp.$domain',
+            port: 587,
+            username: user,
+            password: pass,
+            ssl: false,
+            allowInsecure: false);
+    }
+  }
+
   // Envia código 2FA por e-mail
   Future<void> send2FACodeEmail(String email, String code) async {
     try {
@@ -110,7 +160,7 @@ class AuthService extends GetxController {
         return;
       }
       
-      final smtpServer = gmail(user, pass);
+      final smtpServer = _getSmtpServer(user, pass);
       final message = Message()
         ..from = Address(user, 'PulseFlow Saúde')
         ..recipients.add(email)
@@ -157,7 +207,10 @@ class AuthService extends GetxController {
     }
   }
 
-  // Login com 2FA
+  // Login com 2FA (bypass para usuários admin)
+  // Retorna o ID do paciente:
+  // - Para usuários admin: retorna o ID diretamente (bypass 2FA)
+  // - Para usuários normais: retorna o ID após gerar e enviar código 2FA
   Future<String> loginWith2FA(String email, String password) async {
     try {
       final patient = await _databaseService.getPatientByEmail(email);
@@ -173,6 +226,12 @@ class AuthService extends GetxController {
         throw 'Senha incorreta';
       }
       
+      // Se o usuário for admin, retorna o ID diretamente sem 2FA
+      if (patient.isAdmin) {
+        return patient.id!;
+      }
+      
+      // Para usuários não-admin, continua com o fluxo 2FA
       final code = _generate2FACode();
       final expires = DateTime.now().add(const Duration(minutes: 5));
       
@@ -187,12 +246,32 @@ class AuthService extends GetxController {
     }
   }
 
-  // Valida o código 2FA e finaliza o login
+  // Valida o código 2FA e finaliza o login (ou finaliza login direto para admin)
+  // Para usuários admin: ignora o código e finaliza login diretamente
+  // Para usuários normais: valida o código 2FA antes de finalizar
   Future<Patient> verify2FACode(String patientId, String code) async {
-    final isValid = await _databaseService.validateTwoFactorCode(patientId, code);
-    if (!isValid) throw 'Código de verificação inválido ou expirado';
     final patient = await _databaseService.getPatientById(ObjectId.parse(patientId));
     if (patient == null) throw 'Paciente não encontrado';
+    
+    // Se o usuário for admin, valida diretamente sem verificar código 2FA
+    if (patient.isAdmin) {
+      // Gera o token JWT e autentica
+      final token = _generateToken(patient);
+      await _storage.write(key: 'auth_token', value: token);
+      _token.value = token;
+      _isAuthenticated.value = true;
+      _currentUser.value = patient;
+      
+      // Redireciona para tela de sucesso
+      Get.offAllNamed('/success');
+      
+      return patient;
+    }
+    
+    // Para usuários não-admin, valida o código 2FA
+    final isValid = await _databaseService.validateTwoFactorCode(patientId, code);
+    if (!isValid) throw 'Código de verificação inválido ou expirado';
+    
     // Gera o token JWT e autentica
     final token = _generateToken(patient);
     await _storage.write(key: 'auth_token', value: token);
@@ -204,6 +283,15 @@ class AuthService extends GetxController {
     Get.offAllNamed('/success');
     
     return patient;
+  }
+
+  // Busca paciente por ID
+  Future<Patient?> getPatientById(String patientId) async {
+    try {
+      return await _databaseService.getPatientById(ObjectId.parse(patientId));
+    } catch (e) {
+      return null;
+    }
   }
 
   // Reenvia código 2FA
@@ -285,6 +373,7 @@ class AuthService extends GetxController {
         nationality: patient.nationality,
         address: patient.address,
         acceptedTerms: patient.acceptedTerms,
+        isAdmin: false, // por padrão, usuários não são admin
       );
 
       // Salvar no banco de dados
@@ -308,6 +397,57 @@ class AuthService extends GetxController {
     }
   }
 
+  // Registro de usuário admin
+  Future<Patient> registerAdmin(Patient patient) async {
+    try {
+      // Verificar se o e-mail já existe
+      final existingPatient = await _databaseService.getPatientByEmail(patient.email);
+      if (existingPatient != null) {
+        throw 'E-mail já cadastrado';
+      }
+
+      // Criptografar senha
+      final hashedPassword = await _encryptionService.hashPassword(patient.password);
+      
+      // Cria uma nova instância com a senha criptografada e isAdmin = true
+      final adminPatient = Patient(
+        name: patient.name,
+        email: patient.email,
+        password: hashedPassword,
+        cpf: patient.cpf,
+        rg: patient.rg,
+        phone: patient.phone,
+        secondaryPhone: patient.secondaryPhone,
+        birthDate: patient.birthDate,
+        gender: patient.gender,
+        maritalStatus: patient.maritalStatus,
+        nationality: patient.nationality,
+        address: patient.address,
+        acceptedTerms: patient.acceptedTerms,
+        isAdmin: true, // usuário admin
+      );
+
+      // Salvar no banco de dados
+      final createdAdmin = await _databaseService.createPatient(adminPatient);
+      
+      if (createdAdmin.id == null || createdAdmin.id!.isEmpty) {
+        throw 'Erro ao criar usuário admin: ID não foi gerado';
+      }
+
+      // Gerar token JWT
+      final token = _generateToken(createdAdmin);
+      await _storage.write(key: 'auth_token', value: token);
+      
+      _token.value = token;
+      _isAuthenticated.value = true;
+      _currentUser.value = createdAdmin;
+
+      return createdAdmin;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   // Logout
   Future<void> logout() async {
     try {
@@ -315,6 +455,11 @@ class AuthService extends GetxController {
       _token.value = '';
       _isAuthenticated.value = false;
       _currentUser.value = null;
+      
+      // Limpar credenciais salvas do "Lembrar-me"
+      await _storage.delete(key: 'remember_me');
+      await _storage.delete(key: 'saved_email');
+      await _storage.delete(key: 'saved_password');
     } catch (e) {
       rethrow;
     }
@@ -361,6 +506,7 @@ class AuthService extends GetxController {
         nationality: updatedPatient.nationality,
         address: updatedPatient.address,
         acceptedTerms: updatedPatient.acceptedTerms,
+        isAdmin: updatedPatient.isAdmin, // mantém o status de admin
       );
 
       if (updatedPatient.id != null) {
@@ -372,14 +518,7 @@ class AuthService extends GetxController {
     }
   }
 
-  Future<Patient?> getPatientById(String patientId) async {
-    try {
-      final patient = await _databaseService.getPatientById(ObjectId.parse(patientId));
-      return patient;
-    } catch (e) {
-      rethrow;
-    }
-  }
+
 
   Future<void> updatePatientData(ObjectId patientId, Patient updatedPatient) async {
     try {
@@ -457,7 +596,7 @@ class AuthService extends GetxController {
         return;
       }
 
-      final smtpServer = gmail(user, pass);
+      final smtpServer = _getSmtpServer(user, pass);
       final message = Message()
         ..from = Address(user, 'PulseFlow Saúde')
         ..recipients.add(email)
@@ -506,6 +645,48 @@ class AuthService extends GetxController {
     }
   }
 
+  // Método para tornar um usuário admin (apenas para desenvolvimento/administração)
+  Future<void> makeUserAdmin(String email) async {
+    try {
+      final patient = await _databaseService.getPatientByEmail(email);
+      if (patient == null) {
+        throw 'Paciente não encontrado';
+      }
+      
+      // Cria uma nova instância com isAdmin = true
+      final adminPatient = Patient(
+        id: patient.id,
+        name: patient.name,
+        email: patient.email,
+        password: patient.password,
+        cpf: patient.cpf,
+        rg: patient.rg,
+        phone: patient.phone,
+        secondaryPhone: patient.secondaryPhone,
+        birthDate: patient.birthDate,
+        gender: patient.gender,
+        maritalStatus: patient.maritalStatus,
+        nationality: patient.nationality,
+        address: patient.address,
+        acceptedTerms: patient.acceptedTerms,
+        isAdmin: true, // torna o usuário admin
+        twoFactorCode: patient.twoFactorCode,
+        twoFactorExpires: patient.twoFactorExpires,
+        passwordResetCode: patient.passwordResetCode,
+        passwordResetExpires: patient.passwordResetExpires,
+        createdAt: patient.createdAt,
+        updatedAt: DateTime.now(),
+      );
+      
+      if (patient.id != null) {
+        await updatePatientData(ObjectId.parse(patient.id!), adminPatient);
+        _currentUser.value = adminPatient;
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   // Método para testar configuração de e-mail
   Future<void> testEmailConfiguration() async {
     try {
@@ -516,7 +697,7 @@ class AuthService extends GetxController {
         return;
       }
       
-      final smtpServer = gmail(user, pass);
+      final smtpServer = _getSmtpServer(user, pass);
       final message = Message()
         ..from = Address(user, 'PulseFlow Saúde - Teste')
         ..recipients.add(user)

@@ -95,14 +95,7 @@ class SuccessScreen extends StatelessWidget {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      // Aqui você pode navegar para a tela home real quando implementar
-                      Get.snackbar(
-                        'Sucesso',
-                        'Sistema de autenticação funcionando perfeitamente!',
-                        backgroundColor: Colors.green,
-                        colorText: Colors.white,
-                        snackPosition: SnackPosition.BOTTOM,
-                      );
+                      Get.toNamed('/medical-records');
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryBlue,

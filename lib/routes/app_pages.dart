@@ -6,6 +6,7 @@ import '../screens/login/verify_2fa_screen.dart';
 import '../screens/success/success_screen.dart';
 import '../screens/forgot_password/forgot_password_screen.dart';
 import '../screens/reset_password/reset_password_screen.dart';
+import '../screens/medical_records/medical_records_screen.dart';
 
 part 'app_routes.dart';
 
@@ -38,6 +39,11 @@ class AppPages {
     GetPage(
       name: Routes.RESET_PASSWORD,
       page: () => const ResetPasswordScreen(),
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: Routes.MEDICAL_RECORDS,
+      page: () => const MedicalRecordsScreen(),
       transition: Transition.fadeIn,
     ),
     GetPage(

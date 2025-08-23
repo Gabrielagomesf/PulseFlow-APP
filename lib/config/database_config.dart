@@ -16,6 +16,7 @@ class DatabaseConfig {
   
   static const String databaseName = 'paciente_app';
   static const String patientsCollection = 'patients';
+  static const String medicalNotesCollection = 'anotacaomedicas';
 
   static const Map<String, dynamic> connectionOptions = {
     'retryWrites': true,

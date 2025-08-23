@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../theme/app_theme.dart';
+import 'medical_records_controller.dart';
 
 class MedicalRecordsScreen extends StatelessWidget {
   const MedicalRecordsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.put(MedicalRecordsController());
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -34,6 +36,19 @@ class MedicalRecordsScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Obx(() {
+                if (controller.isLoading.value) {
+                  return const LinearProgressIndicator(minHeight: 2);
+                }
+                final p = controller.patient.value;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    p != null ? 'Paciente: ${p.name}  •  ID: ${p.id}' : 'Paciente não autenticado',
+                    style: AppTheme.bodyMedium.copyWith(color: AppTheme.textSecondary),
+                  ),
+                );
+              }),
               Row(
                 children: [
                   Expanded(
@@ -54,39 +69,38 @@ class MedicalRecordsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Expanded(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    return SingleChildScrollView(
-                      child: Wrap(
-                        spacing: 16,
-                        runSpacing: 16,
-                        children: [
-                          _recordCard(
-                            motivo:
-                                'Cefaleia intensa e persistente há mais de 7 dias, associada a náuseas e sensibilidade à luz.',
-                            data: '08/06/2025',
-                            especialidade: 'Neurologia',
-                            medico: 'Draª Vinicius Mita Xavier',
-                          ),
-                          _recordCard(
-                            motivo:
-                                'Dormência progressiva na perna esquerda',
-                            data: '05/06/2025',
-                            especialidade: 'Neurologia',
-                            medico: 'Draª Vinicius Mita Xavier',
-                          ),
-                          _recordCard(
-                            motivo:
-                                'Episódio de convulsão generalizada tônico-clônica',
-                            data: '23/05/2025',
-                            especialidade: 'Neurologia',
-                            medico: 'Draª Vinicius Mita Xavier',
-                          ),
-                        ],
+                child: Obx(() {
+                  if (controller.isLoading.value) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  final list = controller.notes;
+                  if (list.isEmpty) {
+                    return Center(
+                      child: Text(
+                        'Nenhum registro clínico encontrado para este paciente.',
+                        style: AppTheme.bodyMedium,
                       ),
                     );
-                  },
-                ),
+                  }
+                  return SingleChildScrollView(
+                    child: Wrap(
+                      spacing: 16,
+                      runSpacing: 16,
+                      children: list.map((n) {
+                        final d = n.data;
+                        final dd = d.day.toString().padLeft(2, '0');
+                        final mm = d.month.toString().padLeft(2, '0');
+                        final yy = d.year.toString();
+                        return _recordCard(
+                          titulo: n.titulo,
+                          data: '$dd/$mm/$yy',
+                          categoria: n.categoria,
+                          medico: n.medico,
+                        );
+                      }).toList(),
+                    ),
+                  );
+                }),
               ),
             ],
           ),
@@ -124,9 +138,9 @@ class MedicalRecordsScreen extends StatelessWidget {
   }
 
   Widget _recordCard({
-    required String motivo,
+    required String titulo,
     required String data,
-    required String especialidade,
+    required String categoria,
     required String medico,
   }) {
     return SizedBox(
@@ -143,13 +157,13 @@ class MedicalRecordsScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _labelValue('Motivo da Consulta:', motivo),
+              _labelValue('Título:', titulo),
               const SizedBox(height: 8),
               _labelValue('Data:', data),
               const SizedBox(height: 8),
-              _labelValue('Especialidade:', especialidade),
+              _labelValue('Categoria:', categoria),
               const SizedBox(height: 8),
-              _labelValue('Médico Responsável:', medico),
+              _labelValue('Médico:', medico),
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,

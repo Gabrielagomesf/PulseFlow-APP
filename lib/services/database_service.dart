@@ -1,5 +1,6 @@
 import 'package:mongo_dart/mongo_dart.dart';
 import '../models/patient.dart';
+import '../models/medical_note.dart';
 import '../config/database_config.dart';
 
 class DatabaseService {
@@ -88,6 +89,77 @@ class DatabaseService {
       } finally {
         _db = null;
       }
+    }
+  }
+
+  Future<List<MedicalNote>> getMedicalNotesByPatientId(String patientId) async {
+    try {
+      await _ensureConnection();
+
+      final collection = _db!.collection(DatabaseConfig.medicalNotesCollection);
+
+      // Alguns bancos gravam como 'pacienteId' (ObjectId) ou String.
+      // Usamos aggregate + $lookup (populate) para trazer dados do paciente.
+      List<Map<String, Object>> pipeline(Object match) => <Map<String, Object>>[
+        <String, Object>{
+          r'$match': <String, Object>{'pacienteId': match},
+        },
+        <String, Object>{
+          r'$lookup': <String, Object>{
+            'from': DatabaseConfig.patientsCollection,
+            'localField': 'pacienteId',
+            'foreignField': '_id',
+            'as': 'paciente',
+          },
+        },
+        <String, Object>{
+          r'$sort': <String, Object>{'data': -1},
+        },
+      ];
+
+      final results = <Map<String, dynamic>>[];
+
+      // Tentativa 1: pacienteId como ObjectId
+      try {
+        final objId = ObjectId.parse(patientId);
+        final stream = collection.aggregateToStream(pipeline(objId));
+        results.addAll(await stream.toList());
+      } catch (_) {
+      }
+
+      // Tentativa 2: pacienteId como String
+      final stream2 = collection.aggregateToStream(pipeline(patientId));
+      results.addAll(await stream2.toList());
+
+      // Normalizar e mapear
+      final normalized = results.map((doc) {
+        final data = Map<String, dynamic>.from(doc);
+        data['_id'] = data['_id'].toString();
+        if (data['pacienteId'] != null) {
+          data['patientId'] = data['pacienteId'].toString();
+        }
+        // Extrai nome do paciente do $lookup
+        if (data['paciente'] is List && (data['paciente'] as List).isNotEmpty) {
+          final p = Map<String, dynamic>.from((data['paciente'] as List).first);
+          data['patientName'] = p['name'];
+        }
+        return data;
+      }).toList();
+
+      // Remover duplicados por _id
+      final seen = <String>{};
+      final unique = <Map<String, dynamic>>[];
+      for (final m in normalized) {
+        final idStr = m['_id'].toString();
+        if (!seen.contains(idStr)) {
+          seen.add(idStr);
+          unique.add(m);
+        }
+      }
+
+      return unique.map((m) => MedicalNote.fromJson(m)).toList();
+    } catch (e) {
+      rethrow;
     }
   }
 

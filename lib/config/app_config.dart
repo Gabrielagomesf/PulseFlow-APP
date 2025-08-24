@@ -51,4 +51,41 @@ class AppConfig {
       return '';
     }
   }
+
+  // Configurações do Twilio (15.000 SMS gratuitos/mês)
+  static String get twilioAccountSid {
+    try {
+      final sid = dotenv.env['TWILIO_ACCOUNT_SID'];
+      if (sid == null || sid.isEmpty) {
+        return '';
+      }
+      return sid;
+    } catch (e) {
+      return '';
+    }
+  }
+
+  static String get twilioAuthToken {
+    try {
+      final token = dotenv.env['TWILIO_AUTH_TOKEN'];
+      if (token == null || token.isEmpty) {
+        return '';
+      }
+      return token;
+    } catch (e) {
+      return '';
+    }
+  }
+
+  static String get twilioPhoneNumber {
+    try {
+      final phone = dotenv.env['TWILIO_PHONE_NUMBER'];
+      if (phone == null || phone.isEmpty) {
+        return '';
+      }
+      return phone;
+    } catch (e) {
+      return '';
+    }
+  }
 } 

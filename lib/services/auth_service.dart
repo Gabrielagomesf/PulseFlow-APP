@@ -11,6 +11,7 @@ import 'package:mongo_dart/mongo_dart.dart' show ObjectId;
 import 'dart:math';
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';
+import 'sms_service.dart';
 
 class AuthService extends GetxController {
   static AuthService get instance => Get.find<AuthService>();
@@ -243,8 +244,8 @@ class AuthService extends GetxController {
       final patientIdString = patient.id!;
       
       await _databaseService.setTwoFactorCode(patientIdString, code, expires);
-      await send2FACodeEmail(patient.email, code);
       
+      // Retorna o ID para o controller fazer o redirecionamento
       return patientIdString;
     } catch (e) {
       rethrow;
@@ -267,9 +268,7 @@ class AuthService extends GetxController {
       _isAuthenticated.value = true;
       _currentUser.value = patient;
       
-      // Redireciona para tela de sucesso
-      Get.offAllNamed('/success');
-      
+      // Retorna o paciente autenticado (redirecionamento será feito no controller)
       return patient;
     }
     
@@ -284,9 +283,7 @@ class AuthService extends GetxController {
     _isAuthenticated.value = true;
     _currentUser.value = patient;
     
-    // Redireciona para tela de sucesso em vez da home
-    Get.offAllNamed('/success');
-    
+    // Retorna o paciente autenticado (redirecionamento será feito na tela)
     return patient;
   }
 
@@ -300,7 +297,7 @@ class AuthService extends GetxController {
   }
 
   // Reenvia código 2FA
-  Future<void> resend2FACode(String patientId) async {
+  Future<void> resend2FACode(String patientId, {String? method}) async {
     try {
       final patient = await _databaseService.getPatientById(ObjectId.parse(patientId));
       if (patient == null) throw 'Paciente não encontrado';
@@ -309,7 +306,50 @@ class AuthService extends GetxController {
       final expires = DateTime.now().add(const Duration(minutes: 5));
       
       await _databaseService.setTwoFactorCode(patientId, code, expires);
-      await send2FACodeEmail(patient.email, code);
+      
+      // Se método foi especificado, usar apenas ele
+      if (method != null) {
+        if (method == 'sms') {
+          if (patient.phone != null && patient.phone!.isNotEmpty) {
+            try {
+              final smsService = Get.find<SMSService>();
+              final success = await smsService.send2FACode(
+                patient.phone!, 
+                code, 
+                userName: patient.name,
+              );
+              if (success) return; // SMS enviado com sucesso
+            } catch (e) {
+              print('Erro ao enviar SMS: $e');
+            }
+          }
+          // Se SMS falhar, lançar erro
+          throw 'Não foi possível enviar SMS. Verifique se o número de telefone está correto.';
+        } else if (method == 'email') {
+          await send2FACodeEmail(patient.email, code);
+          return;
+        }
+      }
+      
+      // Fallback automático se método não especificado
+      bool smsSent = false;
+      if (patient.phone != null && patient.phone!.isNotEmpty) {
+        try {
+          final smsService = Get.find<SMSService>();
+          smsSent = await smsService.send2FACode(
+            patient.phone!, 
+            code, 
+            userName: patient.name,
+          );
+        } catch (e) {
+          print('Erro ao enviar SMS: $e');
+        }
+      }
+      
+      // Se SMS falhar, enviar por email como fallback
+      if (!smsSent) {
+        await send2FACodeEmail(patient.email, code);
+      }
     } catch (e) {
       rethrow;
     }

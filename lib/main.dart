@@ -7,6 +7,7 @@ import 'routes/app_pages.dart';
 import 'services/auth_service.dart';
 import 'services/database_service.dart';
 import 'services/migration_service.dart';
+import 'services/sms_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,6 +20,7 @@ void main() async {
   
   Get.put(DatabaseService());
   Get.put(MigrationService());
+  Get.put(SMSService());
   Get.put(AuthService());
 
   // Verifica se precisa migrar senhas antigas

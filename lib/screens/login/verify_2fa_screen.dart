@@ -3,7 +3,14 @@ import 'package:get/get.dart';
 import '../../services/auth_service.dart';
 
 class Verify2FAScreen extends StatefulWidget {
-  const Verify2FAScreen({super.key});
+  final String patientId;
+  final String method;
+  
+  const Verify2FAScreen({
+    super.key,
+    required this.patientId,
+    required this.method,
+  });
 
   @override
   State<Verify2FAScreen> createState() => _Verify2FAScreenState();
@@ -16,7 +23,7 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
   bool _isLoading = false;
   bool _isResending = false;
   String? _error;
-  String? _patientId;
+  late String _patientId;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -44,24 +51,11 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
     ));
     _animationController.forward();
     
-    // Extrair patientId dos argumentos
-    _extractPatientId();
+    // Usar patientId passado como parâmetro
+    _patientId = widget.patientId;
   }
 
-  void _extractPatientId() {
-    final arguments = Get.arguments;
-    
-    // Tentar obter patientId de diferentes formas
-    if (arguments != null && arguments is Map) {
-      _patientId = arguments['patientId'] as String?;
-    }
-    
-    // Se ainda não tiver, tentar obter de outras formas
-    if (_patientId == null || _patientId!.isEmpty) {
-      final parameters = Get.parameters;
-      _patientId = parameters['patientId'];
-    }
-  }
+
 
   Future<void> _resendCode() async {
     if (_patientId == null || _patientId!.isEmpty) {
@@ -77,10 +71,10 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
     });
     
     try {
-      await AuthService.instance.resend2FACode(_patientId!);
+      await AuthService.instance.resend2FACode(_patientId!, method: widget.method);
       Get.snackbar(
         'Código reenviado!',
-        'Verifique seu e-mail para o novo código.',
+        _getMethodMessage(),
         backgroundColor: Colors.green,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
@@ -96,6 +90,14 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
     }
   }
 
+  String _getMethodMessage() {
+    if (widget.method == 'sms') {
+      return 'Enviamos um código de 6 dígitos para seu telefone via SMS. Insira abaixo para continuar.';
+    } else {
+      return 'Enviamos um código de 6 dígitos para seu e-mail. Insira abaixo para continuar.';
+    }
+  }
+
   @override
   void dispose() {
     _animationController.dispose();
@@ -108,23 +110,7 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
     
     final size = MediaQuery.of(context).size;
     
-    // Se não tiver patientId válido, redireciona para login
-    if (_patientId == null || _patientId!.isEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        Get.offAllNamed('/login');
-        Get.snackbar(
-          'Erro',
-          'Dados de sessão inválidos. Faça login novamente.',
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
-      });
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
+
     
     return Scaffold(
       body: Container(
@@ -207,10 +193,10 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
                             const SizedBox(height: 12),
                             
                             // Subtítulo
-                            const Text(
-                              'Enviamos um código de 6 dígitos para seu e-mail. Insira abaixo para continuar.',
+                            Text(
+                              _getMethodMessage(),
                               textAlign: TextAlign.center,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: Colors.grey,
                                 fontSize: 16,
                                 height: 1.4,
@@ -313,8 +299,8 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
                                             _patientId!,
                                             _codeController.text.trim(),
                                           );
-                                          // O redirecionamento é feito automaticamente pelo AuthService
-                                          // Não precisa fazer Get.offAllNamed('/home') aqui
+                                          // Redirecionar para tela de sucesso após verificação bem-sucedida
+                                          Get.offAllNamed('/success');
                                         } catch (e) {
                                           setState(() {
                                             _error = e.toString();

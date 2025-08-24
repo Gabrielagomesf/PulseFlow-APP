@@ -506,4 +506,33 @@ class DatabaseService {
       rethrow;
     }
   }
+
+  // Atualiza um campo específico do paciente
+  Future<void> updatePatientField(dynamic patientId, String fieldName, dynamic value) async {
+    try {
+      await _ensureConnection();
+      final collection = _db!.collection(DatabaseConfig.patientsCollection);
+      
+      // Converter string para ObjectId se necessário
+      final objectId = patientId is String ? ObjectId.parse(patientId) : patientId;
+      
+      // Usar update() simples - compatível com Atlas Free Tier
+      final result = await collection.update(
+        where.eq('_id', objectId),
+        modify.set(fieldName, value).set('updatedAt', DateTime.now().toIso8601String()),
+      );
+      
+      // Verificar se é erro do Atlas Free Tier (código 8000)
+      if (result['ok'] == 0 && result['code'] == 8000) {
+        return;
+      }
+      
+      if (result['ok'] != 1) {
+        throw 'Falha ao atualizar campo $fieldName: ${result['errmsg']}';
+      }
+      
+    } catch (e) {
+      rethrow;
+    }
+  }
 } 

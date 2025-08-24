@@ -218,6 +218,11 @@ class AuthService extends GetxController {
         throw 'Paciente não encontrado';
       }
       
+      // Verifica se o usuário precisa redefinir a senha após migração
+      if (patient.passwordResetRequired) {
+        throw 'Sua senha foi atualizada. Por favor, use a funcionalidade "Esqueci minha senha" para redefinir.';
+      }
+      
       final isValidPassword = await _encryptionService.verifyPassword(
         password,
         patient.password,
@@ -319,6 +324,11 @@ class AuthService extends GetxController {
         throw 'Paciente não encontrado';
       }
 
+      // Verifica se o usuário precisa redefinir a senha após migração
+      if (patient.passwordResetRequired) {
+        throw 'Sua senha foi atualizada. Por favor, use a funcionalidade "Esqueci minha senha" para redefinir.';
+      }
+
       // Verifica a senha usando o serviço de criptografia
       final isValidPassword = await _encryptionService.verifyPassword(
         password,
@@ -355,7 +365,7 @@ class AuthService extends GetxController {
         throw 'E-mail já cadastrado';
       }
 
-      // Criptografar senha
+      // Criptografar senha com o novo formato (salt:hash)
       final hashedPassword = await _encryptionService.hashPassword(patient.password);
       
       // Cria uma nova instância com a senha criptografada
@@ -374,6 +384,7 @@ class AuthService extends GetxController {
         address: patient.address,
         acceptedTerms: patient.acceptedTerms,
         isAdmin: false, // por padrão, usuários não são admin
+        passwordResetRequired: false, // nova senha não precisa de redefinição
       );
 
       // Salvar no banco de dados
@@ -406,7 +417,7 @@ class AuthService extends GetxController {
         throw 'E-mail já cadastrado';
       }
 
-      // Criptografar senha
+      // Criptografar senha com o novo formato (salt:hash)
       final hashedPassword = await _encryptionService.hashPassword(patient.password);
       
       // Cria uma nova instância com a senha criptografada e isAdmin = true
@@ -425,6 +436,7 @@ class AuthService extends GetxController {
         address: patient.address,
         acceptedTerms: patient.acceptedTerms,
         isAdmin: true, // usuário admin
+        passwordResetRequired: false, // nova senha não precisa de redefinição
       );
 
       // Salvar no banco de dados
@@ -484,7 +496,7 @@ class AuthService extends GetxController {
   // Atualiza dados do usuário
   Future<void> updateUserData(Patient updatedPatient) async {
     try {
-      // Se a senha foi alterada, criptografa a nova senha
+      // Se a senha foi alterada, criptografa a nova senha com o novo formato
       String password = updatedPatient.password;
       if (currentUser?.password != updatedPatient.password) {
         password = await _encryptionService.hashPassword(updatedPatient.password);
@@ -507,10 +519,11 @@ class AuthService extends GetxController {
         address: updatedPatient.address,
         acceptedTerms: updatedPatient.acceptedTerms,
         isAdmin: updatedPatient.isAdmin, // mantém o status de admin
+        passwordResetRequired: false, // senha atualizada não precisa de redefinição
       );
 
       if (updatedPatient.id != null) {
-        await updatePatientData(ObjectId.parse(updatedPatient.id!), patientWithHashedPassword);
+        await updatePatientData(updatedPatient.id!, patientWithHashedPassword);
         _currentUser.value = patientWithHashedPassword;
       }
     } catch (e) {
@@ -520,10 +533,13 @@ class AuthService extends GetxController {
 
 
 
-  Future<void> updatePatientData(ObjectId patientId, Patient updatedPatient) async {
+  Future<void> updatePatientData(dynamic patientId, Patient updatedPatient) async {
     try {
+      // Converter string para ObjectId se necessário
+      final objectId = patientId is String ? ObjectId.parse(patientId) : patientId;
+      
       await _databaseService.updatePatient(
-        patientId,
+        objectId,
         updatedPatient,
       );
     } catch (e) {
@@ -576,11 +592,18 @@ class AuthService extends GetxController {
         throw 'Código de redefinição inválido ou expirado';
       }
 
-      // Criptografar nova senha
+      // Criptografar nova senha com o novo formato (salt:hash)
       final hashedPassword = await _encryptionService.hashPassword(newPassword);
       
-      // Atualizar senha no banco
+      // Atualizar senha no banco e remover flag de redefinição necessária
       await _databaseService.updatePatientPassword(patient.id!, hashedPassword);
+      
+      // Remover a flag passwordResetRequired se existir
+      await _databaseService.updatePatientField(
+        patient.id!,
+        'passwordResetRequired',
+        false,
+      );
     } catch (e) {
       rethrow;
     }
@@ -679,7 +702,7 @@ class AuthService extends GetxController {
       );
       
       if (patient.id != null) {
-        await updatePatientData(ObjectId.parse(patient.id!), adminPatient);
+        await updatePatientData(patient.id!, adminPatient);
         _currentUser.value = adminPatient;
       }
     } catch (e) {

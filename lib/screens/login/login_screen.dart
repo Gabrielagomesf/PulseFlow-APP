@@ -566,11 +566,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     final size = MediaQuery.of(context).size;
     final isSmallScreen = size.width < 600;
     
-    return Form(
-      key: Get.find<LoginController>().formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
           // Welcome text
           Text(
             'Bem-vindo de volta!',
@@ -798,7 +796,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
             ),
           ),
         ],
-      ),
     );
   }
 

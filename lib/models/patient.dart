@@ -18,6 +18,7 @@ class Patient {
   final DateTime? twoFactorExpires; // Expiração do código 2FA
   final String? passwordResetCode; // Código de redefinição de senha
   final DateTime? passwordResetExpires; // Expiração do código de redefinição
+  final bool passwordResetRequired; // Indica se a senha precisa ser redefinida (após migração)
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -41,6 +42,7 @@ class Patient {
     this.twoFactorExpires,
     this.passwordResetCode,
     this.passwordResetExpires,
+    this.passwordResetRequired = false,
     DateTime? createdAt,
     DateTime? updatedAt,
   })  : createdAt = createdAt ?? DateTime.now(),
@@ -67,6 +69,7 @@ class Patient {
       'twoFactorExpires': twoFactorExpires?.toIso8601String(),
       'passwordResetCode': passwordResetCode,
       'passwordResetExpires': passwordResetExpires?.toIso8601String(),
+      'passwordResetRequired': passwordResetRequired,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
@@ -93,6 +96,7 @@ class Patient {
       twoFactorExpires: json['twoFactorExpires'] != null ? DateTime.parse(json['twoFactorExpires']) : null,
       passwordResetCode: json['passwordResetCode'],
       passwordResetExpires: json['passwordResetExpires'] != null ? DateTime.parse(json['passwordResetExpires']) : null,
+      passwordResetRequired: json['passwordResetRequired'] ?? false,
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
     );

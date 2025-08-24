@@ -6,6 +6,7 @@ import 'theme/app_theme.dart';
 import 'routes/app_pages.dart';
 import 'services/auth_service.dart';
 import 'services/database_service.dart';
+import 'services/migration_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,7 +18,30 @@ void main() async {
   }
   
   Get.put(DatabaseService());
+  Get.put(MigrationService());
   Get.put(AuthService());
+
+  // Verifica se precisa migrar senhas antigas
+  try {
+    final migrationService = Get.find<MigrationService>();
+    final status = await migrationService.checkMigrationStatus();
+    
+    if (status['needsMigration']) {
+      print('⚠️  Migração de senhas necessária detectada');
+      print('   - Senhas antigas: ${status['oldPasswordCount']}');
+      print('   - Senhas novas: ${status['newPasswordCount']}');
+      print('   - Total de pacientes: ${status['totalPatients']}');
+      
+      // Executa migração automaticamente
+      await migrationService.migrateAllPasswords();
+      print('✅ Migração de senhas concluída automaticamente');
+    } else {
+      print('✅ Todas as senhas estão no formato correto');
+    }
+  } catch (e) {
+    print('⚠️  Erro ao verificar migração: $e');
+    print('   O sistema continuará funcionando, mas pode haver problemas de login');
+  }
 
   runApp(const MyApp());
 }

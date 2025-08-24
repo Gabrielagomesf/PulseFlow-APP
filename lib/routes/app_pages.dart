@@ -3,7 +3,7 @@ import '../screens/login/login_screen.dart';
 import '../screens/registration/registration_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/login/verify_2fa_screen.dart';
-import '../screens/login/choose_2fa_method_screen.dart';
+
 import '../screens/success/success_screen.dart';
 import '../screens/forgot_password/forgot_password_screen.dart';
 import '../screens/reset_password/reset_password_screen.dart';
@@ -47,16 +47,12 @@ class AppPages {
       page: () => const MedicalRecordsScreen(),
       transition: Transition.fadeIn,
     ),
-    GetPage(
-      name: Routes.CHOOSE_2FA_METHOD,
-      page: () => const Choose2FAMethodScreen(),
-      transition: Transition.fadeIn,
-    ),
+
     GetPage(
       name: Routes.VERIFY_2FA,
       page: () => const Verify2FAScreen(
         patientId: '',
-        method: '',
+        method: 'email',
       ),
       transition: Transition.fadeIn,
     ),

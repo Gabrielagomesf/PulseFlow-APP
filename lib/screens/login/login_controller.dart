@@ -92,8 +92,8 @@ class LoginController extends GetxController with SafeControllerMixin {
         // Redirecionar para tela de sucesso
         Get.offAllNamed('/success');
       } else {
-        // Usuário normal: redireciona para escolha do método 2FA
-        Get.toNamed('/choose-2fa-method', arguments: {'patientId': patientId});
+        // Usuário normal: redireciona direto para verificação 2FA
+        Get.toNamed('/verify-2fa', arguments: {'patientId': patientId, 'method': 'email'});
       }
     } catch (e) {
       Get.snackbar(

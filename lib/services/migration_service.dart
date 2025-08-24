@@ -62,21 +62,15 @@ class MigrationService extends GetxController {
             );
             
             migratedCount++;
-            print('✅ Senha migrada para paciente: ${patient['email']}');
           } catch (e) {
-            print('❌ Erro ao migrar senha para ${patient['email']}: $e');
+            // Silenciosamente falha se não conseguir migrar senha
           }
         } else {
           skippedCount++;
         }
       }
       
-      print('📊 Migração concluída:');
-      print('   - Senhas migradas: $migratedCount');
-      print('   - Senhas já no formato correto: $skippedCount');
-      
     } catch (e) {
-      print('❌ Erro durante migração: $e');
       rethrow;
     } finally {
       if (_db != null && _db!.isConnected) {
@@ -123,7 +117,6 @@ class MigrationService extends GetxController {
         'needsMigration': oldPasswordCount > 0,
       };
     } catch (e) {
-      print('❌ Erro ao verificar status da migração: $e');
       rethrow;
     } finally {
       if (_db != null && _db!.isConnected) {
@@ -156,10 +149,9 @@ class MigrationService extends GetxController {
           .set('passwordResetRequired', true)
       );
       
-      print('✅ Senha redefinida para: $email');
+      // Senha redefinida com sucesso
       
     } catch (e) {
-      print('❌ Erro ao redefinir senha: $e');
       rethrow;
     } finally {
       if (_db != null && _db!.isConnected) {

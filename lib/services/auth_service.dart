@@ -11,7 +11,7 @@ import 'package:mongo_dart/mongo_dart.dart' show ObjectId;
 import 'dart:math';
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';
-import 'sms_service.dart';
+
 
 class AuthService extends GetxController {
   static AuthService get instance => Get.find<AuthService>();
@@ -158,7 +158,7 @@ class AuthService extends GetxController {
       final pass = AppConfig.emailPass;
       
       if (user.isEmpty || pass.isEmpty) {
-        return;
+        throw 'Configurações de email não encontradas. Verifique o arquivo .env';
       }
       
       final smtpServer = _getSmtpServer(user, pass);
@@ -204,7 +204,7 @@ class AuthService extends GetxController {
       
       await send(message, smtpServer);
     } catch (e) {
-      // Silenciosamente falha - o código ainda será mostrado nos logs para teste
+      throw 'Erro ao enviar email: $e';
     }
   }
 
@@ -244,6 +244,9 @@ class AuthService extends GetxController {
       final patientIdString = patient.id!;
       
       await _databaseService.setTwoFactorCode(patientIdString, code, expires);
+      
+      // Enviar código por email automaticamente
+      await send2FACodeEmail(patient.email, code);
       
       // Retorna o ID para o controller fazer o redirecionamento
       return patientIdString;
@@ -307,49 +310,8 @@ class AuthService extends GetxController {
       
       await _databaseService.setTwoFactorCode(patientId, code, expires);
       
-      // Se método foi especificado, usar apenas ele
-      if (method != null) {
-        if (method == 'sms') {
-          if (patient.phone != null && patient.phone!.isNotEmpty) {
-            try {
-              final smsService = Get.find<SMSService>();
-              final success = await smsService.send2FACode(
-                patient.phone!, 
-                code, 
-                userName: patient.name,
-              );
-              if (success) return; // SMS enviado com sucesso
-            } catch (e) {
-              print('Erro ao enviar SMS: $e');
-            }
-          }
-          // Se SMS falhar, lançar erro
-          throw 'Não foi possível enviar SMS. Verifique se o número de telefone está correto.';
-        } else if (method == 'email') {
-          await send2FACodeEmail(patient.email, code);
-          return;
-        }
-      }
-      
-      // Fallback automático se método não especificado
-      bool smsSent = false;
-      if (patient.phone != null && patient.phone!.isNotEmpty) {
-        try {
-          final smsService = Get.find<SMSService>();
-          smsSent = await smsService.send2FACode(
-            patient.phone!, 
-            code, 
-            userName: patient.name,
-          );
-        } catch (e) {
-          print('Erro ao enviar SMS: $e');
-        }
-      }
-      
-      // Se SMS falhar, enviar por email como fallback
-      if (!smsSent) {
-        await send2FACodeEmail(patient.email, code);
-      }
+      // Sempre enviar por email
+      await send2FACodeEmail(patient.email, code);
     } catch (e) {
       rethrow;
     }

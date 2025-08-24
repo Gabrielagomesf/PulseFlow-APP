@@ -27,6 +27,7 @@ dependencies:
     sdk: flutter
   mask_text_input_formatter: ^2.9.0
   animated_text_kit: ^4.2.3
+  image_picker: ^1.0.4
 
 dev_dependencies:
   flutter_test:

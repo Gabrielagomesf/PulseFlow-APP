@@ -230,7 +230,7 @@ class _Choose2FAMethodScreenState extends State<Choose2FAMethodScreen>
                           // Opção SMS
                           _buildMethodOption(
                             icon: Icons.sms_rounded,
-                            title: 'SMS (Gratuito)',
+                            title: 'SMS',
                             subtitle: 'Receba no seu telefone via SMS',
                             method: 'sms',
                             color: Colors.green,

@@ -208,7 +208,7 @@ class AuthService extends GetxController {
     }
   }
 
-  // Login com 2FA (bypass para usuários admin)
+  // Login com 2FA 
   // Retorna o ID do paciente:
   // - Para usuários admin: retorna o ID diretamente (bypass 2FA)
   // - Para usuários normais: retorna o ID após gerar e enviar código 2FA
@@ -216,7 +216,7 @@ class AuthService extends GetxController {
     try {
       final patient = await _databaseService.getPatientByEmail(email);
       if (patient == null) {
-        throw 'Paciente não encontrado';
+        throw 'Paciente não encontrado. Verifique se digitou corretamente o e-mail, incluindo maiúsculas e minúsculas.';
       }
       
       // Verifica se o usuário precisa redefinir a senha após migração
@@ -229,7 +229,7 @@ class AuthService extends GetxController {
         patient.password,
       );
       if (!isValidPassword) {
-        throw 'Senha incorreta';
+        throw 'Senha incorreta. Verifique se digitou corretamente, incluindo maiúsculas e minúsculas.';
       }
       
       // Se o usuário for admin, retorna o ID diretamente sem 2FA
@@ -361,12 +361,12 @@ class AuthService extends GetxController {
       final patient = await _databaseService.getPatientByEmail(email);
       
       if (patient == null) {
-        throw 'Paciente não encontrado';
+        throw 'Paciente não encontrado. Verifique se digitou corretamente o e-mail, incluindo maiúsculas e minúsculas.';
       }
 
       // Verifica se o usuário precisa redefinir a senha após migração
       if (patient.passwordResetRequired) {
-        throw 'Sua senha foi atualizada. Por favor, use a funcionalidade "Esqueci minha senha" para redefinir.';
+        throw 'Sua senha foi atualizada pela equipe de suporte. Por favor, use a funcionalidade "Esqueci minha senha" para redefinir.';
       }
 
       // Verifica a senha usando o serviço de criptografia
@@ -376,7 +376,7 @@ class AuthService extends GetxController {
       );
 
       if (!isValidPassword) {
-        throw 'Senha incorreta';
+        throw 'Senha incorreta. Verifique se digitou corretamente, incluindo maiúsculas e minúsculas.';
       }
 
       // Gera o token JWT
@@ -423,6 +423,7 @@ class AuthService extends GetxController {
         nationality: patient.nationality,
         address: patient.address,
         acceptedTerms: patient.acceptedTerms,
+        profilePhoto: patient.profilePhoto, // Incluir foto de perfil
         isAdmin: false, // por padrão, usuários não são admin
         passwordResetRequired: false, // nova senha não precisa de redefinição
       );
@@ -475,6 +476,7 @@ class AuthService extends GetxController {
         nationality: patient.nationality,
         address: patient.address,
         acceptedTerms: patient.acceptedTerms,
+        profilePhoto: patient.profilePhoto, // Incluir foto de perfil
         isAdmin: true, // usuário admin
         passwordResetRequired: false, // nova senha não precisa de redefinição
       );
@@ -558,6 +560,7 @@ class AuthService extends GetxController {
         nationality: updatedPatient.nationality,
         address: updatedPatient.address,
         acceptedTerms: updatedPatient.acceptedTerms,
+        profilePhoto: updatedPatient.profilePhoto, // Incluir foto de perfil
         isAdmin: updatedPatient.isAdmin, // mantém o status de admin
         passwordResetRequired: false, // senha atualizada não precisa de redefinição
       );
@@ -601,7 +604,7 @@ class AuthService extends GetxController {
     try {
       final patient = await _databaseService.getPatientByEmail(email);
       if (patient == null) {
-        throw 'E-mail não encontrado';
+        throw 'E-mail não encontrado. Verifique se digitou corretamente, incluindo maiúsculas e minúsculas.';
       }
 
       // Gerar código de redefinição
@@ -623,7 +626,7 @@ class AuthService extends GetxController {
     try {
       final patient = await _databaseService.getPatientByEmail(email);
       if (patient == null) {
-        throw 'E-mail não encontrado';
+        throw 'E-mail não encontrado. Verifique se digitou corretamente, incluindo maiúsculas e minúsculas.';
       }
 
       // Validar código de redefinição
@@ -732,6 +735,7 @@ class AuthService extends GetxController {
         nationality: patient.nationality,
         address: patient.address,
         acceptedTerms: patient.acceptedTerms,
+        profilePhoto: patient.profilePhoto, // Incluir foto de perfil
         isAdmin: true, // torna o usuário admin
         twoFactorCode: patient.twoFactorCode,
         twoFactorExpires: patient.twoFactorExpires,

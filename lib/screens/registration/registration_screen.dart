@@ -217,6 +217,10 @@ class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistratio
                                   label: 'Confirmar Senha',
                                   validator: controller.validateConfirmPassword,
                                 ),
+                                const SizedBox(height: 16),
+                                
+                                // Campo de foto de perfil
+                                _buildProfilePhotoField(context, controller),
                                 const SizedBox(height: 32),
 
                                 // Personal section
@@ -777,6 +781,168 @@ class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistratio
                   ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildProfilePhotoField(BuildContext context, RegistrationController controller) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[300]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey[200]!,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.photo_camera, color: const Color(0xFF1CB5E0), size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Foto de Perfil',
+                style: TextStyle(
+                  color: Colors.grey[700],
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '(Opcional)',
+                style: TextStyle(
+                  color: Colors.grey[500],
+                  fontSize: 12,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          Obx(() => controller.profilePhoto.value != null
+            ? _buildPhotoPreview(context, controller)
+            : _buildPhotoPlaceholder(context, controller)
+          ),
+          
+          const SizedBox(height: 8),
+          Text(
+            'Adicione uma foto para personalizar seu perfil',
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPhotoPreview(BuildContext context, RegistrationController controller) {
+    return Column(
+      children: [
+        Container(
+          width: 120,
+          height: 120,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(60),
+            border: Border.all(color: const Color(0xFF1CB5E0), width: 3),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF1CB5E0).withOpacity(0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(60),
+            child: Image.file(
+              controller.profilePhoto.value!,
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton.icon(
+              onPressed: () => controller.showImageSourceDialog(context),
+              icon: const Icon(Icons.edit, size: 18),
+              label: const Text('Alterar'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1CB5E0),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              ),
+            ),
+            const SizedBox(width: 12),
+            ElevatedButton.icon(
+              onPressed: controller.removeProfilePhoto,
+              icon: const Icon(Icons.delete, size: 18),
+              label: const Text('Remover'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red[400],
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPhotoPlaceholder(BuildContext context, RegistrationController controller) {
+    return GestureDetector(
+      onTap: () => controller.showImageSourceDialog(context),
+      child: Container(
+        width: 120,
+        height: 120,
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(60),
+          border: Border.all(
+            color: Colors.grey[300]!,
+            style: BorderStyle.solid,
+            width: 2,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.add_a_photo,
+              size: 40,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Adicionar\nFoto',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

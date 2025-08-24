@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
+import 'dart:io';
+import 'dart:convert';
 import '../../models/patient.dart';
 import '../../services/auth_service.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/controller_mixin.dart';
 import 'package:form_field_validator/form_field_validator.dart';
+import 'package:image_picker/image_picker.dart';
 
 class RegistrationController extends GetxController with SafeControllerMixin {
   // Máscaras de formatação
@@ -35,6 +38,10 @@ class RegistrationController extends GetxController with SafeControllerMixin {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
+
+  // Foto de perfil
+  final profilePhoto = Rxn<File>();
+  final profilePhotoBase64 = RxnString();
 
   // 2. Pessoais
   final cpfController = TextEditingController();
@@ -342,6 +349,133 @@ class RegistrationController extends GetxController with SafeControllerMixin {
     }
   }
 
+  // Selecionar foto da galeria
+  Future<void> pickImageFromGallery() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 80,
+      );
+      
+      if (image != null) {
+        final file = File(image.path);
+        profilePhoto.value = file;
+        await _convertImageToBase64(file);
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Erro',
+        'Erro ao selecionar imagem: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
+  }
+
+  // Tirar foto com a câmera
+  Future<void> takePhotoWithCamera() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 80,
+      );
+      
+      if (image != null) {
+        final file = File(image.path);
+        profilePhoto.value = file;
+        await _convertImageToBase64(file);
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Erro',
+        'Erro ao tirar foto: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
+  }
+
+  // Converter imagem para base64
+  Future<void> _convertImageToBase64(File file) async {
+    try {
+      final bytes = await file.readAsBytes();
+      final base64String = base64Encode(bytes);
+      profilePhotoBase64.value = base64String;
+    } catch (e) {
+      Get.snackbar(
+        'Erro',
+        'Erro ao processar imagem: $e',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
+  }
+
+  // Remover foto de perfil
+  void removeProfilePhoto() {
+    profilePhoto.value = null;
+    profilePhotoBase64.value = null;
+  }
+
+  // Mostrar opções para selecionar foto
+  void showImageSourceDialog(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Selecionar Foto de Perfil',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: const Icon(Icons.photo_library, color: Color(0xFF1CB5E0)),
+                title: const Text('Galeria'),
+                onTap: () {
+                  Navigator.pop(context);
+                  pickImageFromGallery();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt, color: Color(0xFF1CB5E0)),
+                title: const Text('Câmera'),
+                onTap: () {
+                  Navigator.pop(context);
+                  takePhotoWithCamera();
+                },
+              ),
+              if (profilePhoto.value != null)
+                ListTile(
+                  leading: const Icon(Icons.delete, color: Colors.red),
+                  title: const Text('Remover Foto'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    removeProfilePhoto();
+                  },
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> register() async {
     if (!formKey.currentState!.validate()) {
       Get.snackbar(
@@ -389,6 +523,7 @@ class RegistrationController extends GetxController with SafeControllerMixin {
         nationality: nationalityController.text.trim(),
         address: '${streetController.text.trim()}, ${numberController.text.trim()} - ${neighborhoodController.text.trim()}, ${cityController.text.trim()} - ${state.value}',
         acceptedTerms: acceptTerms.value,
+        profilePhoto: profilePhotoBase64.value, // Incluir foto de perfil se existir
       );
 
       final createdPatient = await authService.register(patient);
@@ -453,5 +588,13 @@ class RegistrationController extends GetxController with SafeControllerMixin {
     ]);
     // Limpar controllers de forma segura
     clearControllers();
+  }
+
+  @override
+  void onClose() {
+    // Limpar recursos de imagem
+    profilePhoto.value = null;
+    profilePhotoBase64.value = null;
+    super.onClose();
   }
 }

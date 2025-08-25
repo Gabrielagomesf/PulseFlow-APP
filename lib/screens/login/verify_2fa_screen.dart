@@ -24,6 +24,7 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
   bool _isResending = false;
   String? _error;
   late String _patientId;
+  String? _patientEmail;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -51,14 +52,42 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
     ));
     _animationController.forward();
     
-    // Usar patientId passado como parâmetro
-    _patientId = widget.patientId;
+    // Extrair parâmetros dos argumentos
+    _extractParameters();
+    
+    // Carregar email do paciente
+    _loadPatientEmail();
   }
 
+  void _extractParameters() {
+    final arguments = Get.arguments;
+    
+    if (arguments != null && arguments is Map) {
+      _patientId = arguments['patientId'] as String? ?? '';
+    }
+    
+    if (_patientId.isEmpty) {
+      final parameters = Get.parameters;
+      _patientId = parameters['patientId'] ?? '';
+    }
+  }
 
+  Future<void> _loadPatientEmail() async {
+    if (_patientId.isNotEmpty) {
+      try {
+        final patient = await AuthService.instance.getPatientById(_patientId);
+        if (patient != null) {
+          setState(() {
+            _patientEmail = patient.email;
+          });
+        }
+      } catch (e) {
+      }
+    }
+  }
 
   Future<void> _resendCode() async {
-    if (_patientId == null || _patientId!.isEmpty) {
+    if (_patientId.isEmpty) {
       setState(() {
         _error = 'Dados de sessão inválidos';
       });
@@ -71,10 +100,10 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
     });
     
     try {
-      await AuthService.instance.resend2FACode(_patientId!, method: widget.method);
+      await AuthService.instance.resend2FACode(_patientId, method: 'email');
       Get.snackbar(
         'Código reenviado!',
-        _getMethodMessage(),
+        'Código reenviado com sucesso!',
         backgroundColor: Colors.green,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
@@ -90,14 +119,6 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
     }
   }
 
-  String _getMethodMessage() {
-    if (widget.method == 'sms') {
-      return 'Enviamos um código de 6 dígitos para seu telefone via SMS. Insira abaixo para continuar.';
-    } else {
-      return 'Enviamos um código de 6 dígitos para seu e-mail. Insira abaixo para continuar.';
-    }
-  }
-
   @override
   void dispose() {
     _animationController.dispose();
@@ -107,10 +128,7 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
 
   @override
   Widget build(BuildContext context) {
-    
     final size = MediaQuery.of(context).size;
-    
-
     
     return Scaffold(
       body: Container(
@@ -193,15 +211,64 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
                             const SizedBox(height: 12),
                             
                             // Subtítulo
-                            Text(
-                              _getMethodMessage(),
+                            const Text(
+                              'Enviamos um código de 6 dígitos para:',
                               textAlign: TextAlign.center,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: Colors.grey,
                                 fontSize: 16,
                                 height: 1.4,
                               ),
                             ),
+                            const SizedBox(height: 16),
+                            
+                            // Email do paciente
+                            if (_patientEmail != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: Colors.blue.withOpacity(0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(
+                                      Icons.email_rounded,
+                                      color: Colors.blue,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Flexible(
+                                      child: Text(
+                                        _patientEmail!,
+                                        style: const TextStyle(
+                                          color: Colors.blue,
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 16,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            
+                            const SizedBox(height: 16),
+                            
+                            const Text(
+                              'Insira o código abaixo para continuar',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 14,
+                              ),
+                            ),
+                            
                             const SizedBox(height: 32),
                             
                             // Container do campo de código
@@ -296,7 +363,7 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
                                         });
                                         try {
                                           final patient = await AuthService.instance.verify2FACode(
-                                            _patientId!,
+                                            _patientId,
                                             _codeController.text.trim(),
                                           );
                                           // Redirecionar para tela de sucesso após verificação bem-sucedida

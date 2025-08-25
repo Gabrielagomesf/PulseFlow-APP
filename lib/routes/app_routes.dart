@@ -12,7 +12,7 @@ abstract class Routes {
   static const MEDICAL_RECORDS = '/medical-records';
   static const PRESCRIPTIONS = '/prescriptions';
   static const SETTINGS = '/settings';
-  static const CHOOSE_2FA_METHOD = '/choose-2fa-method';
+
   static const VERIFY_2FA = '/verify-2fa';
   static const MENU = '/menu';
   static const ENXAQUECA = '/enxaqueca';

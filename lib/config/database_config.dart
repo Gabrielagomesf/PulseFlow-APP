@@ -8,7 +8,7 @@ class DatabaseConfig {
         return envUri;
       }
     } catch (e) {
-      print('⚠️ dotenv não inicializado ainda, usando configuração padrão: $e');
+      // dotenv não inicializado ainda, usando configuração padrão
     }
     // Configuração padrão para desenvolvimento local
     return 'mongodb://localhost:27017/paciente_app';

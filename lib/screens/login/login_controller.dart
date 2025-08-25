@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../services/auth_service.dart';
 import '../../utils/controller_mixin.dart';
+import 'paciente_controller.dart'; // Ajuste conforme o caminho
+
 
 class LoginController extends GetxController with SafeControllerMixin {
   final AuthService _authService = Get.find<AuthService>();
@@ -86,6 +88,9 @@ class LoginController extends GetxController with SafeControllerMixin {
       
       // Verifica se o usuário é admin (não precisa de 2FA)
       final patient = await _authService.getPatientById(patientId);
+      // Salva no controller global
+      final pacienteController = Get.find<PacienteController>();
+       pacienteController.setPatientId(patientId);
       if (patient != null && patient.isAdmin) {
         // Usuário admin: finaliza login diretamente
         await _authService.verify2FACode(patientId, ''); // código vazio para admin
@@ -120,3 +125,4 @@ class LoginController extends GetxController with SafeControllerMixin {
     }
   }
 } 
+

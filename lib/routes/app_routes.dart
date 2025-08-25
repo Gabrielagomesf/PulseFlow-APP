@@ -1,4 +1,4 @@
-part of 'app_pages.dart';
+//part of 'app_pages.dart';
 
 abstract class Routes {
   static const LOGIN = '/login';
@@ -14,4 +14,8 @@ abstract class Routes {
   static const SETTINGS = '/settings';
   static const CHOOSE_2FA_METHOD = '/choose-2fa-method';
   static const VERIFY_2FA = '/verify-2fa';
+  static const MENU = '/menu';
+  static const ENXAQUECA = '/enxaqueca';
+  static const DIABETES = '/diabetes';
+
 } 

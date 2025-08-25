@@ -8,6 +8,9 @@ import 'services/auth_service.dart';
 import 'services/database_service.dart';
 import 'services/migration_service.dart';
 import 'services/sms_service.dart';
+import 'screens/login/paciente_controller.dart';
+import 'services/enxaqueca_service.dart';
+import 'services/diabetes_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,9 +22,17 @@ void main() async {
   }
   
   Get.put(DatabaseService());
+  //await dbService.connect();
+  //final dbService = Get.put(DatabaseService());
+//await dbService.connect();
+
+
   Get.put(MigrationService());
   Get.put(SMSService());
   Get.put(AuthService());
+  Get.put(PacienteController());
+  Get.put(EnxaquecaService());
+  Get.put(DiabetesService());
 
   // Verifica se precisa migrar senhas antigas
   try {

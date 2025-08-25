@@ -1,6 +1,8 @@
 import 'package:mongo_dart/mongo_dart.dart';
 import '../models/patient.dart';
 import '../models/medical_note.dart';
+import '../models/enxaqueca.dart';
+import '../models/diabetes.dart';
 import '../config/database_config.dart';
 
 class DatabaseService {
@@ -73,6 +75,204 @@ class DatabaseService {
   Future<void> connect() async {
     try {
       await _ensureConnection();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // =================== ENXAQUECAS ===================
+  Future<Enxaqueca> createEnxaqueca(Enxaqueca enxaqueca) async {
+    try {
+      await _ensureConnection();
+
+      final collection = _db!.collection(DatabaseConfig.enxaquecasCollection);
+
+      final data = enxaqueca.toMap();
+
+      // Tentar salvar pacienteId como ObjectId quando possível
+      try {
+        data['pacienteId'] = ObjectId.parse(enxaqueca.pacienteId);
+      } catch (_) {
+        data['pacienteId'] = enxaqueca.pacienteId;
+      }
+
+      // Remover _id antes de inserir
+      data.remove('_id');
+
+      final result = await collection.insert(data);
+
+      // Buscar o documento criado para retornar normalizado
+      Map<String, dynamic>? created;
+      if (result['_id'] != null) {
+        created = await collection.findOne(where.id(result['_id']));
+      } else {
+        // Fallback: buscar pelo match de campos
+        created = await collection.findOne(
+          where
+              .eq('pacienteId', data['pacienteId'])
+              .eq('data', data['data'])
+              .eq('intensidade', data['intensidade'])
+              .eq('duracao', data['duracao']),
+        );
+      }
+
+      if (created == null) {
+        throw 'Erro ao criar registro de enxaqueca';
+      }
+
+      final normalized = Map<String, dynamic>.from(created);
+      normalized['_id'] = normalized['_id'].toString();
+      if (normalized['pacienteId'] != null) {
+        normalized['pacienteId'] = normalized['pacienteId'].toString();
+      }
+      return Enxaqueca.fromMap(normalized);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<List<Enxaqueca>> getEnxaquecasByPacienteId(String pacienteId) async {
+    try {
+      await _ensureConnection();
+
+      final collection = _db!.collection(DatabaseConfig.enxaquecasCollection);
+
+      final results = <Map<String, dynamic>>[];
+
+      // Tentativa 1: pacienteId como ObjectId
+      try {
+        final objId = ObjectId.parse(pacienteId);
+        final list = await collection.find(where.eq('pacienteId', objId)).toList();
+        results.addAll(list.map((e) => Map<String, dynamic>.from(e)));
+      } catch (_) {
+      }
+
+      // Tentativa 2: pacienteId como String
+      final list2 = await collection.find(where.eq('pacienteId', pacienteId)).toList();
+      results.addAll(list2.map((e) => Map<String, dynamic>.from(e)));
+
+      // Normalizar e remover duplicados
+      final normalized = results.map((doc) {
+        final data = Map<String, dynamic>.from(doc);
+        data['_id'] = data['_id'].toString();
+        if (data['pacienteId'] != null) {
+          data['pacienteId'] = data['pacienteId'].toString();
+        }
+        return data;
+      }).toList();
+
+      final seen = <String>{};
+      final unique = <Map<String, dynamic>>[];
+      for (final m in normalized) {
+        final idStr = m['_id'].toString();
+        if (!seen.contains(idStr)) {
+          seen.add(idStr);
+          unique.add(m);
+        }
+      }
+
+      // Ordenar por data desc, se disponível
+      unique.sort((a, b) {
+        try {
+          final da = DateTime.parse(a['data'].toString());
+          final db = DateTime.parse(b['data'].toString());
+          return db.compareTo(da);
+        } catch (_) {
+          return 0;
+        }
+      });
+
+      return unique.map((m) => Enxaqueca.fromMap(m)).toList();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // =================== DIABETES ===================
+  Future<Diabetes> createDiabetes(Diabetes registro) async {
+    try {
+      await _ensureConnection();
+      final collection = _db!.collection(DatabaseConfig.diabetesCollection);
+
+      final data = registro.toMap();
+      data.remove('_id');
+      try {
+        data['pacienteId'] = ObjectId.parse(registro.pacienteId);
+      } catch (_) {
+        data['pacienteId'] = registro.pacienteId;
+      }
+
+      final result = await collection.insert(data);
+      Map<String, dynamic>? created;
+      if (result['_id'] != null) {
+        created = await collection.findOne(where.id(result['_id']));
+      } else {
+        created = await collection.findOne(
+          where
+              .eq('pacienteId', data['pacienteId'])
+              .eq('data', data['data'])
+              .eq('glicemia', data['glicemia'])
+              .eq('unidade', data['unidade']),
+        );
+      }
+      if (created == null) throw 'Erro ao criar registro de diabetes';
+
+      final normalized = Map<String, dynamic>.from(created);
+      normalized['_id'] = normalized['_id'].toString();
+      if (normalized['pacienteId'] != null) {
+        normalized['pacienteId'] = normalized['pacienteId'].toString();
+      }
+      return Diabetes.fromMap(normalized);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<List<Diabetes>> getDiabetesByPacienteId(String pacienteId) async {
+    try {
+      await _ensureConnection();
+      final collection = _db!.collection(DatabaseConfig.diabetesCollection);
+
+      final results = <Map<String, dynamic>>[];
+      try {
+        final objId = ObjectId.parse(pacienteId);
+        final list = await collection.find(where.eq('pacienteId', objId)).toList();
+        results.addAll(list.map((e) => Map<String, dynamic>.from(e)));
+      } catch (_) {}
+
+      final list2 = await collection.find(where.eq('pacienteId', pacienteId)).toList();
+      results.addAll(list2.map((e) => Map<String, dynamic>.from(e)));
+
+      final normalized = results.map((doc) {
+        final data = Map<String, dynamic>.from(doc);
+        data['_id'] = data['_id'].toString();
+        if (data['pacienteId'] != null) {
+          data['pacienteId'] = data['pacienteId'].toString();
+        }
+        return data;
+      }).toList();
+
+      final seen = <String>{};
+      final unique = <Map<String, dynamic>>[];
+      for (final m in normalized) {
+        final idStr = m['_id'].toString();
+        if (!seen.contains(idStr)) {
+          seen.add(idStr);
+          unique.add(m);
+        }
+      }
+
+      unique.sort((a, b) {
+        try {
+          final da = DateTime.parse(a['data'].toString());
+          final db = DateTime.parse(b['data'].toString());
+          return db.compareTo(da);
+        } catch (_) {
+          return 0;
+        }
+      });
+
+      return unique.map((m) => Diabetes.fromMap(m)).toList();
     } catch (e) {
       rethrow;
     }

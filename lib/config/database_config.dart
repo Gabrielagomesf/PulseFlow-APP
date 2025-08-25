@@ -17,6 +17,9 @@ class DatabaseConfig {
   static const String databaseName = 'paciente_app';
   static const String patientsCollection = 'patients';
   static const String medicalNotesCollection = 'anotacaomedicas';
+ static const String enxaquecasCollection = 'enxaquecas';
+  static const String diabetesCollection = 'diabetes';
+  
 
   static const Map<String, dynamic> connectionOptions = {
     'retryWrites': true,
@@ -28,3 +31,5 @@ class DatabaseConfig {
     'minPoolSize': 1,
   };
 }
+
+

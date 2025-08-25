@@ -8,8 +8,13 @@ import '../screens/success/success_screen.dart';
 import '../screens/forgot_password/forgot_password_screen.dart';
 import '../screens/reset_password/reset_password_screen.dart';
 import '../screens/medical_records/medical_records_screen.dart';
+import '../screens/menu/menu_screen.dart';
+import '../screens/enxaqueca/enxaqueca_screen.dart';
+import '../screens/diabetes/diabetes_screen.dart';
+import '../screens/login/paciente_controller.dart'; // Ajuste o caminho
 
-part 'app_routes.dart';
+
+import  'app_routes.dart';
 
 class AppPages {
   static const INITIAL = Routes.LOGIN;
@@ -52,13 +57,32 @@ class AppPages {
       page: () => const Choose2FAMethodScreen(),
       transition: Transition.fadeIn,
     ),
-    GetPage(
-      name: Routes.VERIFY_2FA,
-      page: () => const Verify2FAScreen(
-        patientId: '',
-        method: '',
-      ),
-      transition: Transition.fadeIn,
-    ),
+  GetPage(
+  name: Routes.VERIFY_2FA,
+  page: () => const Verify2FAScreen(
+    patientId: '',
+    method: '',
+  ),
+  transition: Transition.fadeIn,
+),
+GetPage(
+  name: Routes.MENU,
+  page: () => MenuScreen(),
+),
+GetPage(
+  name: Routes.ENXAQUECA,
+ page: () {
+    final pacienteController = Get.find<PacienteController>();
+    return EnxaquecaScreen(pacienteId: pacienteController.pacienteId.value);
+    }
+),
+GetPage(
+  name: Routes.DIABETES,
+  page: () {
+    final pacienteController = Get.find<PacienteController>();
+    return DiabetesScreen(pacienteId: pacienteController.pacienteId.value);
+  },
+),
+
   ];
 } 

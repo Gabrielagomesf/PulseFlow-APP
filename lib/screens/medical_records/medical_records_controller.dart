@@ -11,6 +11,7 @@ class MedicalRecordsController extends GetxController {
   final Rxn<Patient> patient = Rxn<Patient>();
   final RxBool isLoading = true.obs;
   final RxList<MedicalNote> notes = <MedicalNote>[].obs;
+  final RxBool isSidebarOpen = true.obs;
 
   @override
   void onInit() {
@@ -40,6 +41,10 @@ class MedicalRecordsController extends GetxController {
   Future<void> _loadNotes(String patientId) async {
     final fetched = await _db.getMedicalNotesByPatientId(patientId);
     notes.assignAll(fetched);
+  }
+
+  void toggleSidebar() {
+    isSidebarOpen.toggle();
   }
 }
 

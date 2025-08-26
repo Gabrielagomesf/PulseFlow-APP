@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // Cores principais
@@ -18,44 +19,44 @@ class AppTheme {
   static const Color warning = Color(0xFFFFA726);
 
   // Estilos de texto
-  static const TextStyle titleLarge = TextStyle(
-    fontSize: 28,
-    fontWeight: FontWeight.bold,
-    color: textPrimary,
-    letterSpacing: 0.5,
-  );
+  static TextStyle get titleLarge => GoogleFonts.montserrat(
+        fontSize: 28,
+        fontWeight: FontWeight.bold,
+        color: textPrimary,
+        letterSpacing: 0.5,
+      );
 
-  static const TextStyle titleMedium = TextStyle(
-    fontSize: 20,
-    fontWeight: FontWeight.w600,
-    color: textPrimary,
-    letterSpacing: 0.25,
-  );
+  static TextStyle get titleMedium => GoogleFonts.montserrat(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: textPrimary,
+        letterSpacing: 0.25,
+      );
 
-  static const TextStyle titleSmall = TextStyle(
-    fontSize: 16,
-    fontWeight: FontWeight.w600,
-    color: textPrimary,
-    letterSpacing: 0.15,
-  );
+  static TextStyle get titleSmall => GoogleFonts.montserrat(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: textPrimary,
+        letterSpacing: 0.15,
+      );
 
-  static const TextStyle bodyLarge = TextStyle(
-    fontSize: 16,
-    color: textPrimary,
-    letterSpacing: 0.15,
-  );
+  static TextStyle get bodyLarge => GoogleFonts.montserrat(
+        fontSize: 16,
+        color: textPrimary,
+        letterSpacing: 0.15,
+      );
 
-  static const TextStyle bodyMedium = TextStyle(
-    fontSize: 14,
-    color: textSecondary,
-    letterSpacing: 0.25,
-  );
+  static TextStyle get bodyMedium => GoogleFonts.montserrat(
+        fontSize: 14,
+        color: textSecondary,
+        letterSpacing: 0.25,
+      );
 
-  static const TextStyle bodySmall = TextStyle(
-    fontSize: 12,
-    color: textSecondary,
-    letterSpacing: 0.4,
-  );
+  static TextStyle get bodySmall => GoogleFonts.montserrat(
+        fontSize: 12,
+        color: textSecondary,
+        letterSpacing: 0.4,
+      );
 
   // Estilos de botões
   static final ButtonStyle primaryButtonStyle = ElevatedButton.styleFrom(

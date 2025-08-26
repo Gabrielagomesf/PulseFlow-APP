@@ -17,5 +17,6 @@ abstract class Routes {
   static const MENU = '/menu';
   static const ENXAQUECA = '/enxaqueca';
   static const DIABETES = '/diabetes';
+  static const MEDICAL_RECORD_DETAILS = '/medical-record-details';
 
 } 

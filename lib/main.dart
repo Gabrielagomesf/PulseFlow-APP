@@ -7,14 +7,9 @@ import 'routes/app_pages.dart';
 import 'services/auth_service.dart';
 import 'services/database_service.dart';
 import 'services/migration_service.dart';
-<<<<<<< HEAD
-import 'services/sms_service.dart';
 import 'screens/login/paciente_controller.dart';
 import 'services/enxaqueca_service.dart';
 import 'services/diabetes_service.dart';
-=======
-
->>>>>>> fbae25221789930354fbdd44ac2711a0a09f8bc6
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -68,7 +63,7 @@ class MyApp extends StatelessWidget {
           primary: AppTheme.primaryBlue,
           secondary: AppTheme.secondaryBlue,
         ),
-        textTheme: const TextTheme(
+        textTheme: TextTheme(
           displayLarge: AppTheme.titleLarge,
           displayMedium: AppTheme.titleMedium,
           displaySmall: AppTheme.titleSmall,

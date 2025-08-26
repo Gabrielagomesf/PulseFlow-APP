@@ -12,6 +12,7 @@ import '../screens/menu/menu_screen.dart';
 import '../screens/enxaqueca/enxaqueca_screen.dart';
 import '../screens/diabetes/diabetes_screen.dart';
 import '../screens/login/paciente_controller.dart'; // Ajuste o caminho
+import '../screens/medical_records/medical_record_details_screen.dart';
 
 
 import  'app_routes.dart';
@@ -52,41 +53,6 @@ class AppPages {
       page: () => const MedicalRecordsScreen(),
       transition: Transition.fadeIn,
     ),
-<<<<<<< HEAD
-    GetPage(
-      name: Routes.CHOOSE_2FA_METHOD,
-      page: () => const Choose2FAMethodScreen(),
-      transition: Transition.fadeIn,
-    ),
-  GetPage(
-  name: Routes.VERIFY_2FA,
-  page: () => const Verify2FAScreen(
-    patientId: '',
-    method: '',
-  ),
-  transition: Transition.fadeIn,
-),
-GetPage(
-  name: Routes.MENU,
-  page: () => MenuScreen(),
-),
-GetPage(
-  name: Routes.ENXAQUECA,
- page: () {
-    final pacienteController = Get.find<PacienteController>();
-    return EnxaquecaScreen(pacienteId: pacienteController.pacienteId.value);
-    }
-),
-GetPage(
-  name: Routes.DIABETES,
-  page: () {
-    final pacienteController = Get.find<PacienteController>();
-    return DiabetesScreen(pacienteId: pacienteController.pacienteId.value);
-  },
-),
-
-=======
-
     GetPage(
       name: Routes.VERIFY_2FA,
       page: () => const Verify2FAScreen(
@@ -95,6 +61,28 @@ GetPage(
       ),
       transition: Transition.fadeIn,
     ),
->>>>>>> fbae25221789930354fbdd44ac2711a0a09f8bc6
+    GetPage(
+      name: Routes.MENU,
+      page: () => const MenuScreen(),
+    ),
+    GetPage(
+      name: Routes.ENXAQUECA,
+      page: () {
+        final pacienteController = Get.find<PacienteController>();
+        return EnxaquecaScreen(pacienteId: pacienteController.pacienteId.value);
+      },
+    ),
+    GetPage(
+      name: Routes.DIABETES,
+      page: () {
+        final pacienteController = Get.find<PacienteController>();
+        return DiabetesScreen(pacienteId: pacienteController.pacienteId.value);
+      },
+    ),
+    GetPage(
+      name: Routes.MEDICAL_RECORD_DETAILS,
+      page: () => const MedicalRecordDetailsScreen(),
+      transition: Transition.fadeIn,
+    ),
   ];
 } 

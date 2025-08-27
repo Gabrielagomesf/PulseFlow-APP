@@ -3,6 +3,7 @@ import '../models/patient.dart';
 import '../models/medical_note.dart';
 import '../models/enxaqueca.dart';
 import '../models/diabetes.dart';
+import '../models/evento_clinico.dart';
 import '../config/database_config.dart';
 
 class DatabaseService {
@@ -223,6 +224,44 @@ class DatabaseService {
         normalized['pacienteId'] = normalized['pacienteId'].toString();
       }
       return Diabetes.fromMap(normalized);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // =================== EVENTOS CLÍNICOS ===================
+  Future<EventoClinico> createEventoClinico(EventoClinico evento) async {
+    try {
+      await _ensureConnection();
+      final collection = _db!.collection(DatabaseConfig.eventosClinicosCollection);
+
+      final data = evento.toMap();
+      data.remove('_id');
+      try {
+        data['paciente'] = ObjectId.parse(evento.paciente);
+      } catch (_) {
+        data['paciente'] = evento.paciente;
+      }
+      data['createdAt'] = DateTime.now().toIso8601String();
+      data['updatedAt'] = DateTime.now().toIso8601String();
+
+      final result = await collection.insert(data);
+      Map<String, dynamic>? created;
+      if (result['_id'] != null) {
+        created = await collection.findOne(where.id(result['_id']));
+      }
+      created ??= await collection.findOne(where
+          .eq('paciente', data['paciente'])
+          .eq('titulo', data['titulo'])
+          .eq('dataHora', data['dataHora']));
+
+      if (created == null) throw 'Erro ao criar evento clínico';
+      final normalized = Map<String, dynamic>.from(created);
+      normalized['_id'] = normalized['_id'].toString();
+      if (normalized['paciente'] != null) {
+        normalized['paciente'] = normalized['paciente'].toString();
+      }
+      return EventoClinico.fromMap(normalized);
     } catch (e) {
       rethrow;
     }

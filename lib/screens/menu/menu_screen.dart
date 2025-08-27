@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../enxaqueca/enxaqueca_screen.dart';
 import '../diabetes/diabetes_screen.dart';
 import '../login/paciente_controller.dart';
+import '../../routes/app_routes.dart';
 
 class MenuScreen extends StatelessWidget {
   const MenuScreen({Key? key}) : super(key: key);
@@ -61,6 +62,16 @@ class MenuScreen extends StatelessWidget {
               onPressed: () {
                 Get.toNamed('/medical-records');
                 Get.snackbar('Em breve', 'Tela de histórico ainda não implementada');
+              },
+            ),
+
+            // Botão Evento Clínico
+            _buildMenuButton(
+              icon: Icons.event_note,
+              title: 'Evento Clínico',
+              color: const Color(0xFF1F4068),
+              onPressed: () {
+                Get.toNamed(Routes.EVENTO_CLINICO_FORM);
               },
             ),
 

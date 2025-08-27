@@ -13,6 +13,7 @@ import '../screens/enxaqueca/enxaqueca_screen.dart';
 import '../screens/diabetes/diabetes_screen.dart';
 import '../screens/login/paciente_controller.dart'; // Ajuste o caminho
 import '../screens/medical_records/medical_record_details_screen.dart';
+import '../screens/evento_clinico/evento_clinico_form_screen.dart';
 
 
 import  'app_routes.dart';
@@ -83,6 +84,11 @@ class AppPages {
       name: Routes.MEDICAL_RECORD_DETAILS,
       page: () => const MedicalRecordDetailsScreen(),
       transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: Routes.EVENTO_CLINICO_FORM,
+      page: () => const EventoClinicoFormScreen(),
+      transition: Transition.rightToLeft,
     ),
   ];
 } 

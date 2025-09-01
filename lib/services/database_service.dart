@@ -267,6 +267,57 @@ class DatabaseService {
     }
   }
 
+  Future<List<EventoClinico>> getEventosClinicosByPacienteId(String pacienteId) async {
+    try {
+      await _ensureConnection();
+      final collection = _db!.collection(DatabaseConfig.eventosClinicosCollection);
+
+      final results = <Map<String, dynamic>>[];
+      try {
+        final objId = ObjectId.parse(pacienteId);
+        final list = await collection.find(where.eq('paciente', objId)).toList();
+        results.addAll(list.map((e) => Map<String, dynamic>.from(e)));
+      } catch (_) {}
+
+      final list2 = await collection.find(where.eq('paciente', pacienteId)).toList();
+      results.addAll(list2.map((e) => Map<String, dynamic>.from(e)));
+
+      final normalized = results.map((doc) {
+        final data = Map<String, dynamic>.from(doc);
+        data['_id'] = data['_id'].toString();
+        if (data['paciente'] != null) {
+          data['paciente'] = data['paciente'].toString();
+        }
+        return data;
+      }).toList();
+
+      final seen = <String>{};
+      final unique = <Map<String, dynamic>>[];
+      for (final m in normalized) {
+        final idStr = m['_id'].toString();
+        if (!seen.contains(idStr)) {
+          seen.add(idStr);
+          unique.add(m);
+        }
+      }
+
+      // Ordenar por data/hora (mais recente primeiro)
+      unique.sort((a, b) {
+        try {
+          final da = DateTime.parse(a['dataHora'].toString());
+          final db = DateTime.parse(b['dataHora'].toString());
+          return db.compareTo(da);
+        } catch (_) {
+          return 0;
+        }
+      });
+
+      return unique.map((m) => EventoClinico.fromMap(m)).toList();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<List<Diabetes>> getDiabetesByPacienteId(String pacienteId) async {
     try {
       await _ensureConnection();

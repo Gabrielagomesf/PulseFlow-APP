@@ -75,6 +75,16 @@ class MenuScreen extends StatelessWidget {
               },
             ),
 
+            // Botão Histórico de Eventos Clínicos
+            _buildMenuButton(
+              icon: Icons.history_rounded,
+              title: 'Histórico de\nEventos',
+              color: const Color(0xFF1F4068),
+              onPressed: () {
+                Get.toNamed(Routes.EVENTO_CLINICO_HISTORY);
+              },
+            ),
+
             // Botão Configurações
             _buildMenuButton(
               icon: Icons.settings,

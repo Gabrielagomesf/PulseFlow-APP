@@ -1,5 +1,3 @@
-//part of 'app_pages.dart';
-
 abstract class Routes {
   static const LOGIN = '/login';
   static const REGISTRATION = '/registration';
@@ -19,5 +17,6 @@ abstract class Routes {
   static const DIABETES = '/diabetes';
   static const MEDICAL_RECORD_DETAILS = '/medical-record-details';
   static const EVENTO_CLINICO_FORM = '/evento-clinico-form';
+  static const EVENTO_CLINICO_HISTORY = '/evento-clinico-history';
 
 } 

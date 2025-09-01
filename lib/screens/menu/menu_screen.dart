@@ -85,6 +85,26 @@ class MenuScreen extends StatelessWidget {
               },
             ),
 
+            // Botão Crise de Gastrite
+            _buildMenuButton(
+              icon: Icons.restaurant_menu_rounded,
+              title: 'Crise de\nGastrite',
+              color: const Color(0xFF1F4068),
+              onPressed: () {
+                Get.toNamed(Routes.CRISE_GASTRITE_FORM);
+              },
+            ),
+
+            // Botão Histórico de Crises de Gastrite
+            _buildMenuButton(
+              icon: Icons.history_rounded,
+              title: 'Histórico\nGastrite',
+              color: const Color(0xFF1F4068),
+              onPressed: () {
+                Get.toNamed(Routes.CRISE_GASTRITE_HISTORY);
+              },
+            ),
+
             // Botão Configurações
             _buildMenuButton(
               icon: Icons.settings,

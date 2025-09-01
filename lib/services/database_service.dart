@@ -4,6 +4,7 @@ import '../models/medical_note.dart';
 import '../models/enxaqueca.dart';
 import '../models/diabetes.dart';
 import '../models/evento_clinico.dart';
+import '../models/crise_gastrite.dart';
 import '../config/database_config.dart';
 
 class DatabaseService {
@@ -820,6 +821,143 @@ class DatabaseService {
       if (result['ok'] != 1) {
         throw 'Falha ao atualizar campo $fieldName: ${result['errmsg']}';
       }
+      
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // ========== CRISE GASTRITE METHODS ==========
+
+  // Criar nova crise de gastrite
+  Future<CriseGastrite> createCriseGastrite(CriseGastrite crise) async {
+    try {
+      await _ensureConnection();
+      final collection = _db!.collection('crisegastrites');
+      
+      final data = crise.toJson();
+      data.remove('_id'); // Remove o ID para permitir que o MongoDB gere um novo
+      data['createdAt'] = DateTime.now().toIso8601String();
+      data['updatedAt'] = DateTime.now().toIso8601String();
+      
+      final result = await collection.insert(data);
+      
+      // Buscar o documento criado para retornar normalizado
+      Map<String, dynamic>? created;
+      if (result['_id'] != null) {
+        created = await collection.findOne(where.id(result['_id']));
+      } else {
+        // Fallback: buscar pelo match de campos
+        created = await collection.findOne(
+          where
+              .eq('paciente', data['paciente'])
+              .eq('data', data['data'])
+              .eq('intensidadeDor', data['intensidadeDor']),
+        );
+      }
+      
+      if (created == null) throw 'Erro ao criar crise de gastrite';
+      
+      return CriseGastrite.fromJson(created);
+      
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Buscar crises de gastrite por paciente
+  Future<List<CriseGastrite>> getCrisesGastriteByPacienteId(String pacienteId) async {
+    try {
+      await _ensureConnection();
+      final collection = _db!.collection('crisegastrites');
+      
+      final list = await collection.find(
+        where.eq('paciente', ObjectId.parse(pacienteId))
+      ).toList();
+      
+      final crises = <CriseGastrite>[];
+      for (final doc in list) {
+        crises.add(CriseGastrite.fromJson(doc));
+      }
+      
+      // Ordenar por data decrescente
+      crises.sort((a, b) => b.data.compareTo(a.data));
+      
+      return crises;
+      
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Atualizar crise de gastrite
+  Future<void> updateCriseGastrite(CriseGastrite crise) async {
+    try {
+      await _ensureConnection();
+      final collection = _db!.collection('crisegastrites');
+      
+      final data = crise.toJson();
+      data['updatedAt'] = DateTime.now().toIso8601String();
+      
+      final result = await collection.update(
+        where.eq('_id', ObjectId.parse(crise.id!)),
+        modify.set('data', data['data'])
+            .set('intensidadeDor', data['intensidadeDor'])
+            .set('sintomas', data['sintomas'])
+            .set('alimentosIngeridos', data['alimentosIngeridos'])
+            .set('medicacao', data['medicacao'])
+            .set('alivioMedicacao', data['alivioMedicacao'])
+            .set('observacoes', data['observacoes'])
+            .set('updatedAt', data['updatedAt']),
+      );
+      
+      if (result['ok'] != 1) {
+        throw 'Falha ao atualizar crise de gastrite: ${result['errmsg']}';
+      }
+      
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Deletar crise de gastrite
+  Future<void> deleteCriseGastrite(String criseId) async {
+    try {
+      await _ensureConnection();
+      final collection = _db!.collection('crisegastrites');
+      
+      final result = await collection.remove(
+        where.eq('_id', ObjectId.parse(criseId))
+      );
+      
+      if (result['ok'] != 1) {
+        throw 'Falha ao deletar crise de gastrite: ${result['errmsg']}';
+      }
+      
+      if (result['n'] == 0) {
+        throw 'Crise de gastrite não encontrada';
+      }
+      
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Buscar crise de gastrite por ID
+  Future<CriseGastrite?> getCriseGastriteById(String criseId) async {
+    try {
+      await _ensureConnection();
+      final collection = _db!.collection('crisegastrites');
+      
+      final doc = await collection.findOne(
+        where.eq('_id', ObjectId.parse(criseId))
+      );
+      
+      if (doc == null) {
+        return null;
+      }
+      
+      return CriseGastrite.fromJson(doc);
       
     } catch (e) {
       rethrow;

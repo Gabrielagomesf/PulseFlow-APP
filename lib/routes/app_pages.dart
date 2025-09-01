@@ -15,6 +15,8 @@ import '../screens/login/paciente_controller.dart'; // Ajuste o caminho
 import '../screens/medical_records/medical_record_details_screen.dart';
 import '../screens/evento_clinico/evento_clinico_form_screen.dart';
 import '../screens/evento_clinico/evento_clinico_history_screen.dart';
+import '../screens/crise_gastrite/crise_gastrite_form_screen.dart';
+import '../screens/crise_gastrite/crise_gastrite_history_screen.dart';
 
 
 import  'app_routes.dart';
@@ -94,6 +96,16 @@ class AppPages {
     GetPage(
       name: Routes.EVENTO_CLINICO_HISTORY,
       page: () => const EventoClinicoHistoryScreen(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.CRISE_GASTRITE_FORM,
+      page: () => const CriseGastriteFormScreen(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.CRISE_GASTRITE_HISTORY,
+      page: () => const CriseGastriteHistoryScreen(),
       transition: Transition.rightToLeft,
     ),
   ];

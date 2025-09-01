@@ -17,6 +17,8 @@ import '../screens/evento_clinico/evento_clinico_form_screen.dart';
 import '../screens/evento_clinico/evento_clinico_history_screen.dart';
 import '../screens/crise_gastrite/crise_gastrite_form_screen.dart';
 import '../screens/crise_gastrite/crise_gastrite_history_screen.dart';
+import '../screens/menstruacao/menstruacao_form_screen.dart';
+import '../screens/menstruacao/menstruacao_history_screen.dart';
 
 
 import  'app_routes.dart';
@@ -106,6 +108,16 @@ class AppPages {
     GetPage(
       name: Routes.CRISE_GASTRITE_HISTORY,
       page: () => const CriseGastriteHistoryScreen(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.MENSTRUACAO_FORM,
+      page: () => const MenstruacaoFormScreen(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.MENSTRUACAO_HISTORY,
+      page: () => const MenstruacaoHistoryScreen(),
       transition: Transition.rightToLeft,
     ),
   ];

@@ -20,5 +20,7 @@ abstract class Routes {
   static const EVENTO_CLINICO_HISTORY = '/evento-clinico-history';
   static const CRISE_GASTRITE_FORM = '/crise-gastrite-form';
   static const CRISE_GASTRITE_HISTORY = '/crise-gastrite-history';
+  static const MENSTRUACAO_FORM = '/menstruacao-form';
+  static const MENSTRUACAO_HISTORY = '/menstruacao-history';
 
 } 

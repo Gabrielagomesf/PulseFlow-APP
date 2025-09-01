@@ -105,6 +105,26 @@ class MenuScreen extends StatelessWidget {
               },
             ),
 
+            // Botão Ciclo Menstrual
+            _buildMenuButton(
+              icon: Icons.favorite_rounded,
+              title: 'Ciclo\nMenstrual',
+              color: const Color(0xFF1F4068),
+              onPressed: () {
+                Get.toNamed(Routes.MENSTRUACAO_FORM);
+              },
+            ),
+
+            // Botão Histórico de Ciclos Menstruais
+            _buildMenuButton(
+              icon: Icons.history_rounded,
+              title: 'Histórico\nMenstrual',
+              color: const Color(0xFF1F4068),
+              onPressed: () {
+                Get.toNamed(Routes.MENSTRUACAO_HISTORY);
+              },
+            ),
+
             // Botão Configurações
             _buildMenuButton(
               icon: Icons.settings,

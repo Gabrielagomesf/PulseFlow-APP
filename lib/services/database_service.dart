@@ -5,6 +5,7 @@ import '../models/enxaqueca.dart';
 import '../models/diabetes.dart';
 import '../models/evento_clinico.dart';
 import '../models/crise_gastrite.dart';
+import '../models/menstruacao.dart';
 import '../config/database_config.dart';
 
 class DatabaseService {
@@ -958,6 +959,143 @@ class DatabaseService {
       }
       
       return CriseGastrite.fromJson(doc);
+      
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // ========== MENSTRUAÇÃO METHODS ==========
+
+  // Criar nova menstruação
+  Future<Menstruacao> createMenstruacao(Menstruacao menstruacao) async {
+    try {
+      await _ensureConnection();
+      final collection = _db!.collection('menstruacaos');
+      
+      final data = menstruacao.toJson();
+      data.remove('_id'); // Remove o ID para permitir que o MongoDB gere um novo
+      data['createdAt'] = DateTime.now().toIso8601String();
+      data['updatedAt'] = DateTime.now().toIso8601String();
+      
+      final result = await collection.insert(data);
+      
+      // Buscar o documento criado para retornar normalizado
+      Map<String, dynamic>? created;
+      if (result['_id'] != null) {
+        created = await collection.findOne(where.id(result['_id']));
+      } else {
+        // Fallback: buscar pelo match de campos
+        created = await collection.findOne(
+          where
+              .eq('pacienteId', data['pacienteId'])
+              .eq('dataInicio', data['dataInicio'])
+              .eq('dataFim', data['dataFim']),
+        );
+      }
+      
+      if (created == null) throw 'Erro ao criar menstruação';
+      
+      return Menstruacao.fromJson(created);
+      
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Buscar menstruações por paciente
+  Future<List<Menstruacao>> getMenstruacoesByPacienteId(String pacienteId) async {
+    try {
+      await _ensureConnection();
+      final collection = _db!.collection('menstruacaos');
+      
+      final list = await collection.find(
+        where.eq('pacienteId', ObjectId.parse(pacienteId))
+      ).toList();
+      
+      final menstruacoes = <Menstruacao>[];
+      for (final doc in list) {
+        menstruacoes.add(Menstruacao.fromJson(doc));
+      }
+      
+      // Ordenar por data de início decrescente
+      menstruacoes.sort((a, b) => b.dataInicio.compareTo(a.dataInicio));
+      
+      return menstruacoes;
+      
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Atualizar menstruação
+  Future<Menstruacao> updateMenstruacao(Menstruacao menstruacao) async {
+    try {
+      await _ensureConnection();
+      final collection = _db!.collection('menstruacaos');
+      
+      final data = menstruacao.toJson();
+      data['updatedAt'] = DateTime.now().toIso8601String();
+      
+      final result = await collection.update(
+        where.eq('_id', ObjectId.parse(menstruacao.id!)),
+        data,
+      );
+      
+      if (result['ok'] != 1) {
+        throw 'Falha ao atualizar menstruação: ${result['errmsg']}';
+      }
+      
+      // Buscar o documento atualizado
+      final updated = await collection.findOne(
+        where.eq('_id', ObjectId.parse(menstruacao.id!))
+      );
+      
+      if (updated == null) throw 'Menstruação não encontrada após atualização';
+      
+      return Menstruacao.fromJson(updated);
+      
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Deletar menstruação
+  Future<void> deleteMenstruacao(String menstruacaoId) async {
+    try {
+      await _ensureConnection();
+      final collection = _db!.collection('menstruacaos');
+      
+      final result = await collection.remove(
+        where.eq('_id', ObjectId.parse(menstruacaoId))
+      );
+      
+      if (result['ok'] != 1) {
+        throw 'Falha ao deletar menstruação: ${result['errmsg']}';
+      }
+      
+      if (result['n'] == 0) {
+        throw 'Menstruação não encontrada';
+      }
+      
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Buscar menstruação por ID
+  Future<Menstruacao?> getMenstruacaoById(String menstruacaoId) async {
+    try {
+      await _ensureConnection();
+      final collection = _db!.collection('menstruacaos');
+      
+      final doc = await collection.findOne(
+        where.eq('_id', ObjectId.parse(menstruacaoId))
+      );
+      
+      if (doc == null) return null;
+      
+      return Menstruacao.fromJson(doc);
       
     } catch (e) {
       rethrow;

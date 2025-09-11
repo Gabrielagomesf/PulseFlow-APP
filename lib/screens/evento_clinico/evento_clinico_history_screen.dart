@@ -246,7 +246,7 @@ class _EventoClinicoHistoryScreenState extends State<EventoClinicoHistoryScreen>
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                'Histórico de Eventos',
+                                'Histórico de Eventos Clínicos',
                                 style: AppTheme.titleMedium.copyWith(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w700,
@@ -257,7 +257,7 @@ class _EventoClinicoHistoryScreenState extends State<EventoClinicoHistoryScreen>
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                'Acompanhe seus eventos',
+                                'Acompanhe seus eventos clínicos',
                                 style: AppTheme.bodySmall.copyWith(
                                   color: Colors.white.withOpacity(0.9),
                                   fontSize: isTablet ? 12 : 11,
@@ -367,7 +367,7 @@ class _EventoClinicoHistoryScreenState extends State<EventoClinicoHistoryScreen>
           ),
           const SizedBox(height: 16),
           Text(
-            'Seu Histórico Clínico',
+            'Seu Histórico de Eventos Clínicos',
             style: AppTheme.titleLarge.copyWith(
               color: const Color(0xFF1E293B),
               fontWeight: FontWeight.w700,

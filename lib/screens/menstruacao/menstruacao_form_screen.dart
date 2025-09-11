@@ -147,7 +147,7 @@ class _MenstruacaoFormScreenState extends State<MenstruacaoFormScreen> {
             fontWeight: FontWeight.w700,
           ),
         ),
-        backgroundColor: const Color(0xFFEC4899),
+        backgroundColor: const Color(0xFF1E3A8A),
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
@@ -168,16 +168,16 @@ class _MenstruacaoFormScreenState extends State<MenstruacaoFormScreen> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      const Color(0xFFEC4899),
-                      const Color(0xFFF472B6),
-                      const Color(0xFFFBBF24),
+                      const Color(0xFF1E3A8A),
+                      const Color(0xFF3B82F6),
+                      const Color(0xFF60A5FA),
                     ],
                     stops: const [0.0, 0.6, 1.0],
                   ),
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFEC4899).withOpacity(0.4),
+                      color: const Color(0xFF1E3A8A).withOpacity(0.4),
                       blurRadius: 24,
                       offset: const Offset(0, 12),
                     ),
@@ -274,7 +274,7 @@ class _MenstruacaoFormScreenState extends State<MenstruacaoFormScreen> {
                       children: [
                         Icon(
                           Icons.calendar_month_rounded,
-                          color: const Color(0xFFEC4899),
+                          color: const Color(0xFF1E3A8A),
                           size: 20,
                         ),
                         const SizedBox(width: 12),
@@ -316,7 +316,7 @@ class _MenstruacaoFormScreenState extends State<MenstruacaoFormScreen> {
                       children: [
                         Icon(
                           Icons.calendar_month_rounded,
-                          color: const Color(0xFFEC4899),
+                          color: const Color(0xFF1E3A8A),
                           size: 20,
                         ),
                         const SizedBox(width: 12),
@@ -358,7 +358,7 @@ class _MenstruacaoFormScreenState extends State<MenstruacaoFormScreen> {
                         children: [
                           Icon(
                             Icons.schedule_rounded,
-                            color: const Color(0xFFEC4899),
+                            color: const Color(0xFF1E3A8A),
                             size: 20,
                           ),
                           const SizedBox(width: 12),
@@ -384,7 +384,7 @@ class _MenstruacaoFormScreenState extends State<MenstruacaoFormScreen> {
                         children: [
                           Icon(
                             Icons.calendar_today_rounded,
-                            color: const Color(0xFFEC4899),
+                            color: const Color(0xFF1E3A8A),
                             size: 20,
                           ),
                           const SizedBox(width: 12),
@@ -435,14 +435,14 @@ class _MenstruacaoFormScreenState extends State<MenstruacaoFormScreen> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      const Color(0xFFEC4899),
-                      const Color(0xFFF472B6),
+                      const Color(0xFF1E3A8A),
+                      const Color(0xFF3B82F6),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFEC4899).withOpacity(0.3),
+                      color: const Color(0xFF1E3A8A).withOpacity(0.3),
                       blurRadius: 16,
                       offset: const Offset(0, 8),
                     ),
@@ -534,12 +534,12 @@ class _MenstruacaoFormScreenState extends State<MenstruacaoFormScreen> {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEC4899).withOpacity(0.1),
+                  color: const Color(0xFF1E3A8A).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   icon,
-                  color: const Color(0xFFEC4899),
+                  color: const Color(0xFF1E3A8A),
                   size: 18,
                 ),
               ),
@@ -593,8 +593,8 @@ class _MenstruacaoFormScreenState extends State<MenstruacaoFormScreen> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      const Color(0xFFEC4899),
-                      const Color(0xFFF472B6),
+                      const Color(0xFF1E3A8A),
+                      const Color(0xFF3B82F6),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(25),

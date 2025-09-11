@@ -132,19 +132,19 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              const Color(0xFFEC4899),
-              const Color(0xFFF472B6),
+              const Color(0xFF1E3A8A),
+              const Color(0xFF3B82F6),
             ],
           ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFFEC4899).withOpacity(0.4),
+              color: const Color(0xFF1E3A8A).withOpacity(0.4),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),
             BoxShadow(
-              color: const Color(0xFFEC4899).withOpacity(0.2),
+              color: const Color(0xFF1E3A8A).withOpacity(0.2),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -190,9 +190,9 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                const Color(0xFFEC4899),
-                const Color(0xFFF472B6),
-                const Color(0xFFFBBF24),
+                const Color(0xFF1E3A8A),
+                const Color(0xFF3B82F6),
+                const Color(0xFF60A5FA),
               ],
               stops: const [0.0, 0.6, 1.0],
             ),
@@ -330,15 +330,15 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFFEC4899),
-            const Color(0xFFF472B6),
-            const Color(0xFFFBBF24),
+            const Color(0xFF1E3A8A),
+            const Color(0xFF3B82F6),
+            const Color(0xFF60A5FA),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFEC4899).withOpacity(0.3),
+            color: const Color(0xFF1E3A8A).withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -390,13 +390,13 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  const Color(0xFFEC4899).withOpacity(0.1),
+                  const Color(0xFF1E3A8A).withOpacity(0.1),
                   const Color(0xFFF472B6).withOpacity(0.05),
                 ],
               ),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: const Color(0xFFEC4899).withOpacity(0.2),
+                color: const Color(0xFF1E3A8A).withOpacity(0.2),
               ),
             ),
             child: Column(
@@ -406,15 +406,15 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
                   height: 60,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [
-                        const Color(0xFFEC4899),
-                        const Color(0xFFF472B6),
-                      ],
+                    colors: [
+                      const Color(0xFF1E3A8A),
+                      const Color(0xFF3B82F6),
+                    ],
                     ),
                     borderRadius: BorderRadius.circular(30),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFFEC4899).withOpacity(0.3),
+                        color: const Color(0xFF1E3A8A).withOpacity(0.3),
                         blurRadius: 20,
                         offset: const Offset(0, 8),
                       ),
@@ -519,15 +519,15 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
                 Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [
-                        const Color(0xFFEC4899),
-                        const Color(0xFFF472B6),
-                      ],
+                    colors: [
+                      const Color(0xFF1E3A8A),
+                      const Color(0xFF3B82F6),
+                    ],
                     ),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFFEC4899).withOpacity(0.3),
+                        color: const Color(0xFF1E3A8A).withOpacity(0.3),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -567,13 +567,13 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  const Color(0xFFEC4899).withOpacity(0.1),
+                  const Color(0xFF1E3A8A).withOpacity(0.1),
                   const Color(0xFFF472B6).withOpacity(0.05),
                 ],
               ),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: const Color(0xFFEC4899).withOpacity(0.2),
+                color: const Color(0xFF1E3A8A).withOpacity(0.2),
               ),
             ),
             child: Column(
@@ -583,15 +583,15 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
                   height: 100,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [
-                        const Color(0xFFEC4899),
-                        const Color(0xFFF472B6),
-                      ],
+                    colors: [
+                      const Color(0xFF1E3A8A),
+                      const Color(0xFF3B82F6),
+                    ],
                     ),
                     borderRadius: BorderRadius.circular(50),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFFEC4899).withOpacity(0.3),
+                        color: const Color(0xFF1E3A8A).withOpacity(0.3),
                         blurRadius: 20,
                         offset: const Offset(0, 8),
                       ),
@@ -624,15 +624,15 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
                 Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [
-                        const Color(0xFFEC4899),
-                        const Color(0xFFF472B6),
-                      ],
+                    colors: [
+                      const Color(0xFF1E3A8A),
+                      const Color(0xFF3B82F6),
+                    ],
                     ),
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFFEC4899).withOpacity(0.3),
+                        color: const Color(0xFF1E3A8A).withOpacity(0.3),
                         blurRadius: 16,
                         offset: const Offset(0, 6),
                       ),
@@ -797,13 +797,13 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFEC4899).withOpacity(0.1),
+                              color: const Color(0xFF1E3A8A).withOpacity(0.1),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Icon(
                               Icons.calendar_today_rounded,
                               size: 18,
-                              color: const Color(0xFFEC4899),
+                              color: const Color(0xFF1E3A8A),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -894,7 +894,7 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEC4899),
+                        color: const Color(0xFF1E3A8A),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -1177,7 +1177,7 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
                       children: [
                         Icon(
                           Icons.water_drop_rounded,
-                          color: const Color(0xFFEC4899),
+                          color: const Color(0xFF1E3A8A),
                           size: 16,
                         ),
                         const SizedBox(width: 6),
@@ -1211,7 +1211,7 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
                       children: [
                         Icon(
                           Icons.health_and_safety_rounded,
-                          color: const Color(0xFFEC4899),
+                          color: const Color(0xFF1E3A8A),
                           size: 16,
                         ),
                         const SizedBox(width: 6),
@@ -1245,7 +1245,7 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
                       children: [
                         Icon(
                           Icons.mood_rounded,
-                          color: const Color(0xFFEC4899),
+                          color: const Color(0xFF1E3A8A),
                           size: 16,
                         ),
                         const SizedBox(width: 6),

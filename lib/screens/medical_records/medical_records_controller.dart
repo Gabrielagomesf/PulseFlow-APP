@@ -43,6 +43,17 @@ class MedicalRecordsController extends GetxController {
     notes.assignAll(fetched);
   }
 
+  Future<void> loadNotes() async {
+    if (patient.value?.id != null) {
+      isLoading.value = true;
+      try {
+        await _loadNotes(patient.value!.id!);
+      } finally {
+        isLoading.value = false;
+      }
+    }
+  }
+
   void toggleSidebar() {
     isSidebarOpen.toggle();
   }

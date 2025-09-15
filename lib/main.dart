@@ -28,7 +28,10 @@ void main() async {
 
   Get.put(MigrationService());
 
-  Get.put(AuthService());
+  // Inicializar AuthService e aguardar a inicialização
+  final authService = Get.put(AuthService());
+  await authService.init();
+  
   Get.put(PacienteController());
   Get.put(EnxaquecaService());
   Get.put(DiabetesService());
@@ -55,7 +58,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'Paciente App',
+      title: 'PulseFlow',
       theme: ThemeData(
         primaryColor: AppTheme.primaryBlue,
         colorScheme: ColorScheme.fromSeed(

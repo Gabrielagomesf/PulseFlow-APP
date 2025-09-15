@@ -3,10 +3,10 @@ import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // Cores principais
-  static const Color primaryBlue = Color(0xFF1E88E5); // Azul principal
+  static const Color primaryBlue = Color(0xFF00324A); // Azul principal
   static const Color secondaryBlue = Color(0xFF64B5F6); // Azul secundário
   static const Color lightBlue = Color(0xFFE3F2FD); // Azul claro para fundos
-  static const Color darkBlue = Color(0xFF1565C0); // Azul escuro para hover/press
+  static const Color darkBlue = Color(0xFF00324A); // Azul escuro para hover/press
 
   // Cores de texto
   static const Color textPrimary = Color(0xFF212121);

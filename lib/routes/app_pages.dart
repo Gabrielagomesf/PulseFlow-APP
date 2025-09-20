@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../screens/login/login_screen.dart';
 import '../screens/registration/registration_screen.dart';
@@ -19,9 +20,26 @@ import '../screens/crise_gastrite/crise_gastrite_form_screen.dart';
 import '../screens/crise_gastrite/crise_gastrite_history_screen.dart';
 import '../screens/menstruacao/menstruacao_form_screen.dart';
 import '../screens/menstruacao/menstruacao_history_screen.dart';
-
+import '../services/auth_service.dart';
 
 import  'app_routes.dart';
+
+// Middleware para verificar autenticação
+class AuthMiddleware extends GetMiddleware {
+  @override
+  RouteSettings? redirect(String? route) {
+    try {
+      final authService = Get.find<AuthService>();
+      if (!authService.isAuthenticated) {
+        return RouteSettings(name: Routes.LOGIN);
+      }
+    } catch (e) {
+      // Se não conseguir encontrar o AuthService, redireciona para login
+      return RouteSettings(name: Routes.LOGIN);
+    }
+    return null;
+  }
+}
 
 class AppPages {
   static const INITIAL = Routes.LOGIN;
@@ -38,6 +56,7 @@ class AppPages {
     GetPage(
       name: Routes.HOME,
       page: () => const HomeScreen(),
+      middlewares: [AuthMiddleware()],
     ),
     GetPage(
       name: Routes.SUCCESS,

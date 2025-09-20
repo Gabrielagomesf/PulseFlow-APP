@@ -96,9 +96,8 @@ class SuccessScreen extends StatelessWidget {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      //Get.toNamed('/medical-records');
-                      Get.offAllNamed(Routes.MENU); // Vai direto para o menu
-
+                      // Vai para a tela home primeiro
+                      Get.offAllNamed(Routes.HOME);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryBlue,

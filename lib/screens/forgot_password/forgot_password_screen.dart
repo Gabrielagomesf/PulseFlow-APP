@@ -25,51 +25,53 @@ class ForgotPasswordScreen extends StatelessWidget {
                 children: [
                   // Header section
                   Expanded(
-                    flex: isSmallScreen ? 1 : 1,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(height: isSmallScreen ? 10 : 15),
-                        // Logo
-                        Image.asset(
-                          'assets/images/pulseflow2.png',
-                          width: isSmallScreen ? 80 : isMediumScreen ? 100 : isLargeScreen ? 120 : 140,
-                          height: isSmallScreen ? 80 : isMediumScreen ? 100 : isLargeScreen ? 120 : 140,
-                          fit: BoxFit.contain,
-                        ),
-                        SizedBox(height: isSmallScreen ? 8 : 12),
-                        Text(
-                          'Esqueceu sua senha?',
-                          style: TextStyle(
-                            fontSize: isSmallScreen ? 18 : isMediumScreen ? 22 : 26,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                    flex: isSmallScreen ? 2 : 3,
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(height: isSmallScreen ? 30 : 40),
+                          // Logo
+                          Image.asset(
+                            'assets/images/pulseflow2.png',
+                            width: isSmallScreen ? 160 : isMediumScreen ? 180 : isLargeScreen ? 200 : 220,
+                            height: isSmallScreen ? 160 : isMediumScreen ? 180 : isLargeScreen ? 200 : 220,
+                            fit: BoxFit.contain,
                           ),
-                        ),
-                        SizedBox(height: isSmallScreen ? 4 : 6),
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 20 : 30),
-                          child: Text(
-                            'Digite seu e-mail para receber um código de redefinição',
-                            textAlign: TextAlign.center,
+                          SizedBox(height: isSmallScreen ? 35 : 45),
+                          Text(
+                            'Esqueceu sua senha?',
                             style: TextStyle(
-                              fontSize: isSmallScreen ? 12 : 14,
-                              color: Colors.white.withValues(alpha: 0.9),
-                              height: 1.3,
+                              fontSize: isSmallScreen ? 16 : isMediumScreen ? 20 : 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
                           ),
-                        ),
-                        SizedBox(height: isSmallScreen ? 10 : 15),
-                      ],
+                          SizedBox(height: isSmallScreen ? 8 : 10),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 20 : 30),
+                            child: Text(
+                              'Digite seu e-mail para receber um código de redefinição',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: isSmallScreen ? 11 : 13,
+                                color: Colors.white.withValues(alpha: 0.9),
+                                height: 1.2,
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: isSmallScreen ? 15 : 20),
+                        ],
+                      ),
                     ),
                   ),
                   
                   // Content section
                   Expanded(
-                    flex: isSmallScreen ? 4 : 5,
+                    flex: isSmallScreen ? 3 : 4,
                     child: Container(
                       width: double.infinity,
-                      margin: EdgeInsets.only(top: isSmallScreen ? 20 : isMediumScreen ? 30 : isLargeScreen ? 35 : 40),
+                      margin: EdgeInsets.only(top: isSmallScreen ? 15 : isMediumScreen ? 20 : isLargeScreen ? 25 : 30),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: const BorderRadius.only(

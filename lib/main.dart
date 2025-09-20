@@ -8,6 +8,7 @@ import 'services/auth_service.dart';
 import 'services/database_service.dart';
 import 'services/migration_service.dart';
 import 'screens/login/paciente_controller.dart';
+import 'screens/login/login_controller.dart';
 import 'services/enxaqueca_service.dart';
 import 'services/diabetes_service.dart';
 
@@ -33,6 +34,7 @@ void main() async {
   await authService.init();
   
   Get.put(PacienteController());
+  Get.put(LoginController());
   Get.put(EnxaquecaService());
   Get.put(DiabetesService());
 

@@ -129,38 +129,41 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+    final isSmallScreen = size.width < 480;
+    final isMediumScreen = size.width >= 480 && size.width < 768;
+    final isLargeScreen = size.width >= 768;
     
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1CB5E0),
-              Color(0xFF000046),
-            ],
-          ),
+          color: Color(0xFF00324A), // Mudança: cor de fundo igual ao login
         ),
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 16 : isMediumScreen ? 24 : 32,
+                ),
                 child: FadeTransition(
                   opacity: _fadeAnimation,
                   child: SlideTransition(
                     position: _slideAnimation,
                     child: Container(
-                      width: size.width > 400 ? 400 : size.width * 0.9,
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+                      width: isSmallScreen ? size.width * 0.95 : 
+                             isMediumScreen ? size.width * 0.8 : 
+                             size.width > 600 ? 500 : size.width * 0.9,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isSmallScreen ? 20 : isMediumScreen ? 28 : 32, 
+                        vertical: isSmallScreen ? 24 : isMediumScreen ? 32 : 40
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(28),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.15),
+                            color: Colors.black.withValues(alpha: 0.15),
                             blurRadius: 30,
                             offset: const Offset(0, 12),
                           ),
@@ -174,49 +177,47 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
                           children: [
                             // Ícone animado
                             Container(
-                              height: 80,
-                              width: 80,
+                              height: isSmallScreen ? 70 : isMediumScreen ? 75 : 80,
+                              width: isSmallScreen ? 70 : isMediumScreen ? 75 : 80,
                               decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [Color(0xFF1CB5E0), Color(0xFF000046)],
-                                ),
-                                borderRadius: BorderRadius.circular(20),
+                                color: const Color(0xFF00324A), // Mudança: cor igual ao login
+                                borderRadius: BorderRadius.circular(isSmallScreen ? 18 : 20),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFF1CB5E0).withOpacity(0.3),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 8),
+                                    color: const Color(0xFF00324A).withValues(alpha: 0.3), // Mudança: cor igual ao login
+                                    blurRadius: isSmallScreen ? 15 : 20,
+                                    offset: Offset(0, isSmallScreen ? 6 : 8),
                                   ),
                                 ],
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.verified_user_rounded,
                                 color: Colors.white,
-                                size: 40,
+                                size: isSmallScreen ? 35 : isMediumScreen ? 38 : 40,
                               ),
                             ),
                             const SizedBox(height: 24),
                             
                             // Título
-                            const Text(
+                            Text(
                               'Verificação em duas etapas',
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                color: Color(0xFF1CB5E0),
+                                color: const Color(0xFF00324A), // Mudança: cor igual ao login
                                 fontWeight: FontWeight.bold,
-                                fontSize: 24,
+                                fontSize: isSmallScreen ? 20 : isMediumScreen ? 22 : 24,
                                 height: 1.2,
                               ),
                             ),
-                            const SizedBox(height: 12),
+                            SizedBox(height: isSmallScreen ? 10 : 12),
                             
                             // Subtítulo
-                            const Text(
+                            Text(
                               'Enviamos um código de 6 dígitos para:',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: Colors.grey,
-                                fontSize: 16,
+                                fontSize: isSmallScreen ? 14 : isMediumScreen ? 15 : 16,
                                 height: 1.4,
                               ),
                             ),
@@ -225,33 +226,39 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
                             // Email do paciente
                             if (_patientEmail != null)
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                                width: double.infinity,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isSmallScreen ? 16 : 20, 
+                                  vertical: isSmallScreen ? 12 : 16
+                                ),
                                 decoration: BoxDecoration(
-                                  color: Colors.blue.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(16),
+                                  color: const Color(0xFF00324A).withValues(alpha: 0.1), // Mudança: cor igual ao login
+                                  borderRadius: BorderRadius.circular(isSmallScreen ? 12 : 16),
                                   border: Border.all(
-                                    color: Colors.blue.withOpacity(0.3),
+                                    color: const Color(0xFF00324A).withValues(alpha: 0.3), // Mudança: cor igual ao login
                                     width: 1,
                                   ),
                                 ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    const Icon(
+                                    Icon(
                                       Icons.email_rounded,
-                                      color: Colors.blue,
-                                      size: 20,
+                                      color: const Color(0xFF00324A), // Mudança: cor igual ao login
+                                      size: isSmallScreen ? 18 : 20,
                                     ),
-                                    const SizedBox(width: 8),
-                                    Flexible(
+                                    SizedBox(width: isSmallScreen ? 6 : 8),
+                                    Expanded(
                                       child: Text(
                                         _patientEmail!,
-                                        style: const TextStyle(
-                                          color: Colors.blue,
+                                        style: TextStyle(
+                                          color: const Color(0xFF00324A), // Mudança: cor igual ao login
                                           fontWeight: FontWeight.w600,
-                                          fontSize: 16,
+                                          fontSize: isSmallScreen ? 14 : isMediumScreen ? 15 : 16,
                                         ),
                                         textAlign: TextAlign.center,
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 2,
                                       ),
                                     ),
                                   ],
@@ -260,39 +267,45 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
                             
                             const SizedBox(height: 16),
                             
-                            const Text(
+                            Text(
                               'Insira o código abaixo para continuar',
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: Colors.grey,
-                                fontSize: 14,
+                                fontSize: isSmallScreen ? 13 : 14,
                               ),
                             ),
                             
-                            const SizedBox(height: 32),
+                            SizedBox(height: isSmallScreen ? 24 : 32),
                             
                             // Container do campo de código
                             Container(
                               decoration: BoxDecoration(
                                 color: Colors.grey[100],
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: const Color(0xFF1CB5E0), width: 2),
+                                borderRadius: BorderRadius.circular(isSmallScreen ? 12 : 16),
+                                border: Border.all(
+                                  color: const Color(0xFF00324A), 
+                                  width: isSmallScreen ? 1.5 : 2
+                                ), // Mudança: cor igual ao login
                               ),
                               child: TextFormField(
                                 controller: _codeController,
                                 keyboardType: TextInputType.number,
                                 maxLength: 6,
                                 textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontSize: 24,
+                                style: TextStyle(
+                                  fontSize: isSmallScreen ? 20 : isMediumScreen ? 22 : 24,
                                   fontWeight: FontWeight.bold,
-                                  letterSpacing: 8,
+                                  letterSpacing: isSmallScreen ? 6 : 8,
                                 ),
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
                                   hintText: '000000',
                                   counterText: '',
                                   border: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                                  contentPadding: EdgeInsets.symmetric(
+                                    horizontal: isSmallScreen ? 16 : 20, 
+                                    vertical: isSmallScreen ? 14 : 16
+                                  ),
                                 ),
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
@@ -334,21 +347,19 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
                               ),
                             ],
                             
-                            const SizedBox(height: 24),
+                            SizedBox(height: isSmallScreen ? 20 : 24),
                             
                             // Botão de verificar
                             Container(
-                              height: 56,
+                              height: isSmallScreen ? 48 : isMediumScreen ? 52 : 56,
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20),
-                                gradient: const LinearGradient(
-                                  colors: [Color(0xFF1CB5E0), Color(0xFF000046)],
-                                ),
+                                borderRadius: BorderRadius.circular(isSmallScreen ? 16 : 20),
+                                color: const Color(0xFF00324A), // Mudança: cor igual ao login
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFF1CB5E0).withOpacity(0.3),
-                                    blurRadius: 15,
-                                    offset: const Offset(0, 6),
+                                    color: const Color(0xFF00324A).withValues(alpha: 0.3), // Mudança: cor igual ao login
+                                    blurRadius: isSmallScreen ? 12 : 15,
+                                    offset: Offset(0, isSmallScreen ? 4 : 6),
                                   ),
                                 ],
                               ),
@@ -366,8 +377,8 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
                                             _patientId,
                                             _codeController.text.trim(),
                                           );
-                                          // Redirecionar para tela de sucesso após verificação bem-sucedida
-                                          Get.offAllNamed('/success');
+                                          // Redirecionar para tela home após verificação bem-sucedida
+                                          Get.offAllNamed('/home');
                                         } catch (e) {
                                           setState(() {
                                             _error = e.toString();
@@ -379,25 +390,25 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
                                         }
                                       },
                                 icon: _isLoading
-                                    ? const SizedBox(
-                                        width: 24,
-                                        height: 24,
-                                        child: CircularProgressIndicator(
+                                    ? SizedBox(
+                                        width: isSmallScreen ? 20 : 24,
+                                        height: isSmallScreen ? 20 : 24,
+                                        child: const CircularProgressIndicator(
                                           color: Colors.white,
                                           strokeWidth: 2,
                                         ),
                                       )
-                                    : const Icon(
+                                    : Icon(
                                         Icons.verified_rounded,
                                         color: Colors.white,
-                                        size: 24,
+                                        size: isSmallScreen ? 20 : 24,
                                       ),
                                 label: Text(
                                   _isLoading ? 'Verificando...' : 'Verificar código',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 18,
+                                    fontSize: isSmallScreen ? 16 : isMediumScreen ? 17 : 18,
                                   ),
                                 ),
                                 style: ElevatedButton.styleFrom(
@@ -410,31 +421,31 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
                               ),
                             ),
                             
-                            const SizedBox(height: 24),
+                            SizedBox(height: isSmallScreen ? 20 : 24),
                             
                             // Botão de reenviar código
                             TextButton.icon(
                               onPressed: _isResending ? null : _resendCode,
                               icon: _isResending
-                                  ? const SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(
-                                        color: Color(0xFF1CB5E0),
+                                  ? SizedBox(
+                                      width: isSmallScreen ? 14 : 16,
+                                      height: isSmallScreen ? 14 : 16,
+                                      child: const CircularProgressIndicator(
+                                        color: Color(0xFF00324A), // Mudança: cor igual ao login
                                         strokeWidth: 2,
                                       ),
                                     )
-                                  : const Icon(
+                                  : Icon(
                                       Icons.refresh_rounded,
-                                      color: Color(0xFF1CB5E0),
-                                      size: 20,
+                                      color: const Color(0xFF00324A), // Mudança: cor igual ao login
+                                      size: isSmallScreen ? 18 : 20,
                                     ),
                               label: Text(
                                 _isResending ? 'Reenviando...' : 'Reenviar código',
-                                style: const TextStyle(
-                                  color: Color(0xFF1CB5E0),
+                                style: TextStyle(
+                                  color: const Color(0xFF00324A), // Mudança: cor igual ao login
                                   fontWeight: FontWeight.w600,
-                                  fontSize: 16,
+                                  fontSize: isSmallScreen ? 14 : isMediumScreen ? 15 : 16,
                                 ),
                               ),
                             ),
@@ -451,4 +462,4 @@ class _Verify2FAScreenState extends State<Verify2FAScreen>
       ),
     );
   }
-} 
+}

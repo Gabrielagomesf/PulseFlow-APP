@@ -25,11 +25,11 @@ class ResetPasswordScreen extends StatelessWidget {
                 children: [
                   // Header section
                   Expanded(
-                    flex: isSmallScreen ? 1 : 1,
+                    flex: isSmallScreen ? 2 : 3,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        SizedBox(height: isSmallScreen ? 10 : 15),
+                        SizedBox(height: isSmallScreen ? 6 : 10),
                         // Logo
                         Image.asset(
                           'assets/images/pulseflow2.png',
@@ -37,7 +37,7 @@ class ResetPasswordScreen extends StatelessWidget {
                           height: isSmallScreen ? 80 : isMediumScreen ? 100 : isLargeScreen ? 120 : 140,
                           fit: BoxFit.contain,
                         ),
-                        SizedBox(height: isSmallScreen ? 8 : 12),
+                        SizedBox(height: isSmallScreen ? 4 : 8),
                         Text(
                           'Redefinir Senha',
                           style: TextStyle(
@@ -46,7 +46,7 @@ class ResetPasswordScreen extends StatelessWidget {
                             color: Colors.white,
                           ),
                         ),
-                        SizedBox(height: isSmallScreen ? 4 : 6),
+                        SizedBox(height: isSmallScreen ? 2 : 4),
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 20 : 30),
                           child: Text(
@@ -59,14 +59,14 @@ class ResetPasswordScreen extends StatelessWidget {
                             ),
                           ),
                         ),
-                        SizedBox(height: isSmallScreen ? 10 : 15),
+                        SizedBox(height: isSmallScreen ? 6 : 10),
                       ],
                     ),
                   ),
                   
                   // Content section
                   Expanded(
-                    flex: isSmallScreen ? 4 : 5,
+                    flex: isSmallScreen ? 6 : 7,
                     child: Container(
                       width: double.infinity,
                       margin: EdgeInsets.only(top: isSmallScreen ? 20 : isMediumScreen ? 30 : isLargeScreen ? 35 : 40),
@@ -137,7 +137,7 @@ class ResetPasswordScreen extends StatelessWidget {
                               padding: EdgeInsets.fromLTRB(
                                 isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 24 : 28,
                                 0,
-                                isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 24 : 28,
+                                isSmallScreen ? 8 : isMediumScreen ? 12 : isLargeScreen ? 16 : 20,
                                 isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 24 : 28,
                               ),
                               child: Form(
@@ -167,7 +167,7 @@ class ResetPasswordScreen extends StatelessWidget {
                                       isLargeScreen: isLargeScreen,
                                     ),
                                     
-                                    SizedBox(height: isSmallScreen ? 20 : 24),
+                                    SizedBox(height: isSmallScreen ? 4 : 8),
                                     
                                     // Campo de nova senha
                                     Obx(() => _buildPasswordField(
@@ -191,7 +191,7 @@ class ResetPasswordScreen extends StatelessWidget {
                                       isLargeScreen: isLargeScreen,
                                     )),
                                     
-                                    SizedBox(height: isSmallScreen ? 20 : 24),
+                                    SizedBox(height: isSmallScreen ? 4 : 8),
                                     
                                     // Campo de confirmar senha
                                     Obx(() => _buildPasswordField(
@@ -215,7 +215,7 @@ class ResetPasswordScreen extends StatelessWidget {
                                       isLargeScreen: isLargeScreen,
                                     )),
                                     
-                                    SizedBox(height: isSmallScreen ? 24 : 30),
+                                    SizedBox(height: isSmallScreen ? 4 : 8),
                                     
                                     // Botão de redefinir senha
                                     Obx(() => Container(
@@ -276,7 +276,7 @@ class ResetPasswordScreen extends StatelessWidget {
                                       ),
                                     )),
                                     
-                                    SizedBox(height: isSmallScreen ? 16 : 20),
+                                    SizedBox(height: isSmallScreen ? 4 : 8),
                                     
                                     // Botão reenviar código
                                     Obx(() => Container(
@@ -326,7 +326,7 @@ class ResetPasswordScreen extends StatelessWidget {
                                       ),
                                     )),
                                     
-                                    SizedBox(height: isSmallScreen ? 16 : 20),
+                                    SizedBox(height: isSmallScreen ? 4 : 8),
                                     
                                     // Botão voltar
                                     Container(
@@ -554,7 +554,7 @@ class ResetPasswordScreen extends StatelessWidget {
           ),
           contentPadding: EdgeInsets.symmetric(
             horizontal: isSmallScreen ? 20 : isMediumScreen ? 22 : isLargeScreen ? 23 : 24, 
-            vertical: isSmallScreen ? 18 : isMediumScreen ? 20 : isLargeScreen ? 21 : 22
+            vertical: isSmallScreen ? 14 : isMediumScreen ? 16 : isLargeScreen ? 17 : 18
           ),
         ),
         validator: validator,

@@ -5,7 +5,6 @@ import '../screens/registration/registration_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/login/verify_2fa_screen.dart';
 
-import '../screens/success/success_screen.dart';
 import '../screens/forgot_password/forgot_password_screen.dart';
 import '../screens/reset_password/reset_password_screen.dart';
 import '../screens/medical_records/medical_records_screen.dart';
@@ -57,11 +56,6 @@ class AppPages {
       name: Routes.HOME,
       page: () => const HomeScreen(),
       middlewares: [AuthMiddleware()],
-    ),
-    GetPage(
-      name: Routes.SUCCESS,
-      page: () => const SuccessScreen(),
-      transition: Transition.fadeIn,
     ),
     GetPage(
       name: Routes.FORGOT_PASSWORD,

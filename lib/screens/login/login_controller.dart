@@ -94,8 +94,8 @@ class LoginController extends GetxController with SafeControllerMixin {
       if (patient != null && patient.isAdmin) {
         // Usuário admin: finaliza login diretamente
         await _authService.verify2FACode(patientId, ''); // código vazio para admin
-        // Redirecionar para tela de sucesso
-        Get.offAllNamed('/success');
+        // Redirecionar para tela home
+        Get.offAllNamed('/home');
       } else {
         // Usuário normal: redireciona direto para verificação 2FA
         Get.toNamed('/verify-2fa', arguments: {'patientId': patientId, 'method': 'email'});

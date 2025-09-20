@@ -2,7 +2,6 @@ abstract class Routes {
   static const LOGIN = '/login';
   static const REGISTRATION = '/registration';
   static const HOME = '/home';
-  static const SUCCESS = '/success';
   static const FORGOT_PASSWORD = '/forgot-password';
   static const RESET_PASSWORD = '/reset-password';
   static const PROFILE = '/profile';

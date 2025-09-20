@@ -41,13 +41,13 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
   @override
   Widget build(BuildContext context) {
     return GetBuilder<LoginController>(
-      init: LoginController(),
       builder: (controller) {
         final size = MediaQuery.of(context).size;
         final isSmallScreen = size.width < 480;  // Mobile
         final isMediumScreen = size.width >= 480 && size.width < 768;  // Tablet portrait
         final isLargeScreen = size.width >= 768 && size.width < 1024;  // Tablet landscape
         final isXLargeScreen = size.width >= 1024;  // Desktop
+        final isVerySmallScreen = size.height < 700; // Para telas muito baixas
         
         return Scaffold(
           body: Container(
@@ -68,27 +68,23 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                           children: [
                             // Header section
                             Expanded(
-                              flex: isSmallScreen ? 1 : 2,
+                              flex: isVerySmallScreen ? 2 : isSmallScreen ? 2 : isMediumScreen ? 3 : 3,
                               child: FadeTransition(
                                 opacity: _fadeAnimation,
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    // Logo - Responsive size
-                                    Image.asset(
-                                      'assets/images/pulseflow2.png',
-                                      width: isSmallScreen ? 220 : isMediumScreen ? 280 : isLargeScreen ? 320 : 380,
-                                      height: isSmallScreen ? 220 : isMediumScreen ? 280 : isLargeScreen ? 320 : 380,
-                                      fit: BoxFit.contain,
-                                    ),
-                                  ],
+                                child: Center(
+                                  child: Image.asset(
+                                    'assets/images/pulseflow2.png',
+                                    width: isVerySmallScreen ? 120 : isSmallScreen ? 150 : isMediumScreen ? 200 : isLargeScreen ? 240 : 280,
+                                    height: isVerySmallScreen ? 120 : isSmallScreen ? 150 : isMediumScreen ? 200 : isLargeScreen ? 240 : 280,
+                                    fit: BoxFit.contain,
+                                  ),
                                 ),
                               ),
                             ),
                             
                             // Login form section - Container branco vai até o final
                             Expanded(
-                              flex: isSmallScreen ? 2 : 3,
+                              flex: isVerySmallScreen ? 5 : isSmallScreen ? 4 : isMediumScreen ? 4 : 4,
                               child: SlideTransition(
                                 position: _slideAnimation,
                                 child: FadeTransition(
@@ -121,7 +117,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                         Container(
                                           width: double.infinity,
                                           padding: EdgeInsets.symmetric(
-                                            vertical: isSmallScreen ? 20 : 24,
+                                            vertical: isVerySmallScreen ? 12 : isSmallScreen ? 16 : isMediumScreen ? 20 : 24,
                                             horizontal: isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 24 : 28,
                                           ),
                                           decoration: const BoxDecoration(
@@ -142,17 +138,17 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                                   borderRadius: BorderRadius.circular(2),
                                                 ),
                                               ),
-                                              SizedBox(height: isSmallScreen ? 16 : 20),
+                                              SizedBox(height: isSmallScreen ? 12 : isMediumScreen ? 16 : 20),
                                               // Título de boas-vindas
                                               Text(
                                                 'Bem-vindo de volta',
                                                 style: TextStyle(
-                                                  fontSize: isSmallScreen ? 24 : isMediumScreen ? 26 : 28,
+                                                  fontSize: isVerySmallScreen ? 20 : isSmallScreen ? 24 : isMediumScreen ? 26 : 28,
                                                   fontWeight: FontWeight.bold,
                                                   color: const Color(0xFF00324A),
                                                 ),
                                               ),
-                                              SizedBox(height: isSmallScreen ? 6 : 8),
+                                              SizedBox(height: isSmallScreen ? 4 : isMediumScreen ? 6 : 8),
                                               Text(
                                                 'Entre com suas credenciais para acessar sua conta',
                                                 textAlign: TextAlign.center,
@@ -167,11 +163,12 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                         ),
                                         // Conteúdo do formulário
                                         Expanded(
-                                          child: Padding(
+                                          child: SingleChildScrollView(
+                                            physics: const BouncingScrollPhysics(),
                                             padding: EdgeInsets.fromLTRB(
                                               isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 24 : 28,
                                               0,
-                                              isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 24 : 28,
+                                              isVerySmallScreen ? 8 : isSmallScreen ? 12 : isMediumScreen ? 16 : isLargeScreen ? 20 : 24,
                                               isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 24 : 28,
                                             ),
                                             child: _buildLoginForm(),
@@ -213,8 +210,8 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                 // Logo
                 Image.asset(
                   'assets/images/pulseflow2.png',
-                  width: isXLargeScreen ? 420 : 380,
-                  height: isXLargeScreen ? 420 : 380,
+                  width: isXLargeScreen ? 360 : 320,
+                  height: isXLargeScreen ? 360 : 320,
                   fit: BoxFit.contain,
                 ),
               ],
@@ -259,13 +256,14 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     final isMediumScreen = size.width >= 480 && size.width < 768;
     final isLargeScreen = size.width >= 768 && size.width < 1024;
     final isXLargeScreen = size.width >= 1024;
+    final isVerySmallScreen = size.height < 700;
     
     return Form(
       key: Get.find<LoginController>().formKey,
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
           // Email field
           _buildTextField(
             controller: Get.find<LoginController>().emailController,
@@ -282,7 +280,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
               return null;
             },
           ),
-          SizedBox(height: isSmallScreen ? 12 : isMediumScreen ? 16 : isLargeScreen ? 18 : 20),
+          SizedBox(height: isVerySmallScreen ? 6 : isSmallScreen ? 8 : isMediumScreen ? 12 : isLargeScreen ? 14 : 16),
           
           // Password field
           Obx(() => _buildPasswordField(
@@ -300,7 +298,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
               return null;
             },
           )),
-          SizedBox(height: isSmallScreen ? 8 : isMediumScreen ? 10 : isLargeScreen ? 12 : 14),
+          SizedBox(height: isVerySmallScreen ? 4 : isSmallScreen ? 6 : isMediumScreen ? 8 : isLargeScreen ? 10 : 12),
           
           // Remember me and forgot password
           Row(
@@ -367,11 +365,11 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
               ),
             ],
           ),
-          SizedBox(height: isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 22 : 24),
+          SizedBox(height: isVerySmallScreen ? 8 : isSmallScreen ? 12 : isMediumScreen ? 14 : isLargeScreen ? 16 : 18),
           
           // Login button
           Obx(() => Container(
-            height: isSmallScreen ? 48 : isMediumScreen ? 52 : isLargeScreen ? 56 : 60,
+            height: isVerySmallScreen ? 44 : isSmallScreen ? 48 : isMediumScreen ? 52 : isLargeScreen ? 56 : 60,
             decoration: BoxDecoration(
               color: const Color(0xFF00324A),
               borderRadius: BorderRadius.circular(isSmallScreen ? 14 : isMediumScreen ? 16 : isLargeScreen ? 18 : 20),
@@ -422,7 +420,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                     ),
             ),
           )),
-          SizedBox(height: isSmallScreen ? 16 : isMediumScreen ? 18 : isLargeScreen ? 19 : 20),
+          SizedBox(height: isVerySmallScreen ? 8 : isSmallScreen ? 12 : isMediumScreen ? 14 : isLargeScreen ? 16 : 18),
           
           // Divider
           Row(
@@ -441,11 +439,11 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
               Expanded(child: Divider(color: Colors.grey[300])),
             ],
           ),
-          SizedBox(height: isSmallScreen ? 16 : isMediumScreen ? 18 : isLargeScreen ? 19 : 20),
+          SizedBox(height: isVerySmallScreen ? 8 : isSmallScreen ? 12 : isMediumScreen ? 14 : isLargeScreen ? 16 : 18),
           
           // Register button
           Container(
-            height: isSmallScreen ? 44 : isMediumScreen ? 48 : isLargeScreen ? 52 : 56,
+            height: isVerySmallScreen ? 40 : isSmallScreen ? 44 : isMediumScreen ? 48 : isLargeScreen ? 52 : 56,
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(isSmallScreen ? 10 : isMediumScreen ? 12 : isLargeScreen ? 13 : 14),
@@ -477,7 +475,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
           ),
           ],
         ),
-      ),
     );
   }
 
@@ -547,8 +544,8 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
             borderSide: BorderSide(color: Colors.red[400]!, width: 1),
           ),
           contentPadding: EdgeInsets.symmetric(
-            horizontal: isSmallScreen ? 20 : isMediumScreen ? 22 : isLargeScreen ? 23 : 24, 
-            vertical: isSmallScreen ? 18 : isMediumScreen ? 20 : isLargeScreen ? 21 : 22
+            horizontal: isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 22 : 24, 
+            vertical: isSmallScreen ? 14 : isMediumScreen ? 16 : isLargeScreen ? 18 : 20
           ),
         ),
         validator: validator,
@@ -633,8 +630,8 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
             borderSide: BorderSide(color: Colors.red[400]!, width: 1),
           ),
           contentPadding: EdgeInsets.symmetric(
-            horizontal: isSmallScreen ? 20 : isMediumScreen ? 22 : isLargeScreen ? 23 : 24, 
-            vertical: isSmallScreen ? 18 : isMediumScreen ? 20 : isLargeScreen ? 21 : 22
+            horizontal: isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 22 : 24, 
+            vertical: isSmallScreen ? 14 : isMediumScreen ? 16 : isLargeScreen ? 18 : 20
           ),
         ),
         validator: validator,

@@ -49,428 +49,135 @@ class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistratio
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final isSmallScreen = size.width < 480;
+    final isMediumScreen = size.width >= 480 && size.width < 768;
+    final isLargeScreen = size.width >= 768 && size.width < 1024;
+    
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF1CB5E0),
-              Color(0xFF000046),
-              Color(0xFF1CB5E0),
-            ],
-            stops: [0.0, 0.5, 1.0],
-          ),
+          color: Color(0xFF00324A),
         ),
         child: SafeArea(
-          child: Stack(
+          child: Column(
             children: [
-              // Background decorative elements
-              Positioned(
-                top: -100,
-                right: -100,
-                child: Container(
-                  width: 200,
-                  height: 200,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.1),
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: -50,
-                left: -50,
-                child: Container(
-                  width: 150,
-                  height: 150,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.1),
+              // Header section
+              Expanded(
+                flex: isSmallScreen ? 1 : 2,
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Logo
+                      Image.asset(
+                        'assets/images/pulseflow2.png',
+                        width: isSmallScreen ? 180 : isMediumScreen ? 220 : isLargeScreen ? 260 : 300,
+                        height: isSmallScreen ? 180 : isMediumScreen ? 220 : isLargeScreen ? 260 : 300,
+                        fit: BoxFit.contain,
+                      ),
+                    ],
                   ),
                 ),
               ),
               
-              // Main content
-              FadeTransition(
-                opacity: _fadeAnimation,
+              // Form section
+              Expanded(
+                flex: isSmallScreen ? 3 : 4,
                 child: SlideTransition(
                   position: _slideAnimation,
-                  child: SingleChildScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    child: Column(
-                      children: [
-                        // Header section
-                        Container(
-                          padding: const EdgeInsets.all(24),
-                          child: Column(
-                            children: [
-                              // Logo and title
-                              Container(
-                                width: 100,
-                                height: 100,
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [Colors.white, Color(0xFFE3F2FD)],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.2),
-                                      blurRadius: 20,
-                                      offset: const Offset(0, 10),
-                                    ),
-                                  ],
-                                ),
-                                child: const Icon(
-                                  Icons.local_hospital_rounded,
-                                  color: Color(0xFF1CB5E0),
-                                  size: 50,
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                              
-                              const Text(
-                                'Cadastro de Paciente',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 1.2,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Complete seus dados para acessar nossos serviços médicos',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.9),
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w300,
-                                ),
-                              ),
-                            ],
-                          ),
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Container(
+                      width: double.infinity,
+                      margin: EdgeInsets.only(top: isSmallScreen ? 20 : isMediumScreen ? 30 : isLargeScreen ? 35 : 40),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(32),
+                          topRight: Radius.circular(32),
                         ),
-                        
-                        // Form section
-                        Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 16),
-                          padding: const EdgeInsets.all(24),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(24),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 20,
-                                offset: const Offset(0, 10),
-                              ),
-                            ],
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.15),
+                            blurRadius: 40,
+                            offset: const Offset(0, 20),
                           ),
-                          child: Form(
-                            key: controller.formKey,
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          // Header do container com linha decorativa
+                          Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.symmetric(
+                              vertical: isSmallScreen ? 20 : 24,
+                              horizontal: isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 24 : 28,
+                            ),
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(32),
+                                topRight: Radius.circular(32),
+                              ),
+                            ),
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                // Account section
-                                _buildSectionHeader(
-                                  icon: Icons.person_outline,
-                                  title: 'Informações de Conta',
-                                  subtitle: 'Dados básicos para acesso',
-                                ),
-                                const SizedBox(height: 20),
-                                
-                                _buildTextField(
-                                  context,
-                                  controller: controller.nameController,
-                                  label: 'Nome completo',
-                                  icon: Icons.person_outline,
-                                  validator: controller.validateName,
-                                ),
-                                const SizedBox(height: 16),
-                                
-                                _buildTextField(
-                                  context,
-                                  controller: controller.emailController,
-                                  label: 'Email',
-                                  icon: Icons.email_outlined,
-                                  keyboardType: TextInputType.emailAddress,
-                                  validator: controller.validateEmail,
-                                ),
-                                const SizedBox(height: 16),
-                                
-                                _buildPasswordField(
-                                  context,
-                                  controller: controller.passwordController,
-                                  label: 'Senha',
-                                  validator: controller.validatePassword,
-                                ),
-                                const SizedBox(height: 16),
-                                
-                                _buildPasswordField(
-                                  context,
-                                  controller: controller.confirmPasswordController,
-                                  label: 'Confirmar Senha',
-                                  validator: controller.validateConfirmPassword,
-                                ),
-                                const SizedBox(height: 16),
-                                
-                                // Campo de foto de perfil
-                                _buildProfilePhotoField(context, controller),
-                                const SizedBox(height: 32),
-
-                                // Personal section
-                                _buildSectionHeader(
-                                  icon: Icons.assignment_ind_outlined,
-                                  title: 'Informações Pessoais',
-                                  subtitle: 'Dados de identificação',
-                                ),
-                                const SizedBox(height: 20),
-                                
-                                _buildTextField(
-                                  context,
-                                  controller: controller.cpfController,
-                                  label: 'CPF',
-                                  icon: Icons.badge_outlined,
-                                  keyboardType: TextInputType.number,
-                                  inputFormatters: [controller.cpfMask],
-                                  validator: controller.validateCPF,
-                                ),
-                                const SizedBox(height: 16),
-                                
-                                _buildTextField(
-                                  context,
-                                  controller: controller.rgController,
-                                  label: 'RG',
-                                  icon: Icons.credit_card_outlined,
-                                  keyboardType: TextInputType.text,
-                                  inputFormatters: [controller.rgMask],
-                                  validator: controller.validateRG,
-                                ),
-                                const SizedBox(height: 16),
-                                
-                                _buildTextField(
-                                  context,
-                                  controller: controller.phoneController,
-                                  label: 'Telefone',
-                                  icon: Icons.phone_iphone_outlined,
-                                  keyboardType: TextInputType.phone,
-                                  inputFormatters: [controller.phoneMask],
-                                  validator: controller.validatePhone,
-                                ),
-                                const SizedBox(height: 16),
-                                
-                                _buildTextField(
-                                  context,
-                                  controller: controller.nationalityController,
-                                  label: 'Nacionalidade',
-                                  icon: Icons.flag_outlined,
-                                  validator: (value) => controller.validateRequired(value, 'Nacionalidade'),
-                                ),
-                                const SizedBox(height: 16),
-                                
-                                _buildTextField(
-                                  context,
-                                  controller: controller.birthDateController,
-                                  label: 'Data de Nascimento',
-                                  icon: Icons.cake_outlined,
-                                  readOnly: true,
-                                  onTap: () => controller.selectDate(context),
-                                  validator: controller.validateBirthDate,
-                                ),
-                                const SizedBox(height: 16),
-                                
-                                Obx(() => _buildDropdownField(
-                                  context,
-                                  value: controller.gender.value,
-                                  label: 'Sexo / Gênero',
-                                  icon: Icons.transgender,
-                                  items: controller.genders,
-                                  onChanged: (String? newValue) { controller.gender.value = newValue; },
-                                  validator: (v) => controller.validateDropdown(v, 'Sexo / Gênero'),
-                                )),
-                                const SizedBox(height: 16),
-                                
-                                Obx(() => _buildDropdownField(
-                                  context,
-                                  value: controller.maritalStatus.value,
-                                  label: 'Estado Civil',
-                                  icon: Icons.family_restroom_outlined,
-                                  items: controller.maritalStatuses,
-                                  onChanged: (String? newValue) { controller.maritalStatus.value = newValue; },
-                                  validator: (v) => controller.validateDropdown(v, 'Estado Civil'),
-                                )),
-                                const SizedBox(height: 32),
-
-                                // Address section
-                                _buildSectionHeader(
-                                  icon: Icons.home_outlined,
-                                  title: 'Endereço',
-                                  subtitle: 'Localização residencial',
-                                ),
-                                const SizedBox(height: 20),
-                                
-                                _buildTextField(
-                                  context,
-                                  controller: controller.cepController,
-                                  label: 'CEP',
-                                  icon: Icons.location_on_outlined,
-                                  keyboardType: TextInputType.number,
-                                  inputFormatters: [controller.cepMask],
-                                  validator: controller.validateCEP,
-                                  onChanged: (value) {
-                                    if (value.length == 9) {
-                                      _buscarEnderecoPorCep(value);
-                                    } else {
-                                      cepError.value = '';
-                                    }
-                                  },
-                                  suffixIcon: Obx(() => isCepLoading.value
-                                    ? const Padding(
-                                        padding: EdgeInsets.all(8.0),
-                                        child: CircularProgressIndicator(strokeWidth: 2)
-                                      )
-                                    : const SizedBox.shrink()
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                
-                                _buildTextField(
-                                  context,
-                                  controller: controller.streetController,
-                                  label: 'Rua',
-                                  icon: Icons.alt_route,
-                                  validator: (value) => controller.validateRequired(value, 'Rua'),
-                                ),
-                                const SizedBox(height: 16),
-                                
-                                _buildTextField(
-                                  context,
-                                  controller: controller.numberController,
-                                  label: 'Número',
-                                  icon: Icons.numbers_outlined,
-                                  keyboardType: TextInputType.number,
-                                  validator: (value) => controller.validateRequired(value, 'Número'),
-                                ),
-                                const SizedBox(height: 16),
-                                
-                                _buildTextField(
-                                  context,
-                                  controller: controller.complementController,
-                                  label: 'Complemento',
-                                  icon: Icons.add_location_alt_outlined,
-                                ),
-                                const SizedBox(height: 16),
-                                
-                                _buildTextField(
-                                  context,
-                                  controller: controller.neighborhoodController,
-                                  label: 'Bairro',
-                                  icon: Icons.location_city_outlined,
-                                  validator: (value) => controller.validateRequired(value, 'Bairro'),
-                                ),
-                                const SizedBox(height: 16),
-                                
-                                _buildTextField(
-                                  context,
-                                  controller: controller.cityController,
-                                  label: 'Cidade',
-                                  icon: Icons.apartment_outlined,
-                                  validator: (value) => controller.validateRequired(value, 'Cidade'),
-                                ),
-                                const SizedBox(height: 16),
-                                
-                                Obx(() => _buildDropdownField(
-                                  context,
-                                  value: controller.state.value,
-                                  label: 'UF',
-                                  icon: Icons.map_outlined,
-                                  items: controller.states,
-                                  onChanged: (String? newValue) { controller.state.value = newValue; },
-                                  validator: (v) => controller.validateDropdown(v, 'UF'),
-                                )),
-                                const SizedBox(height: 32),
-
-                                // Terms section
-                                _buildSectionHeader(
-                                  icon: Icons.gavel_outlined,
-                                  title: 'Termos e Condições',
-                                  subtitle: 'Autorizações necessárias',
-                                ),
-                                const SizedBox(height: 20),
-                                
-                                _buildCheckboxTile(
-                                  value: controller.acceptTerms,
-                                  title: 'Eu aceito os termos de uso e autorizo o uso dos meus dados para fins de atendimento e cadastro',
-                                  onLinkTap: () => Get.to(() => const TermsScreen()),
-                                ),
-                                const SizedBox(height: 40),
-
-                                // Register button
+                                // Linha decorativa
                                 Container(
-                                  height: 60,
+                                  width: 50,
+                                  height: 4,
                                   decoration: BoxDecoration(
-                                    gradient: const LinearGradient(
-                                      colors: [Color(0xFF1CB5E0), Color(0xFF000046)],
-                                      begin: Alignment.centerLeft,
-                                      end: Alignment.centerRight,
-                                    ),
-                                    borderRadius: BorderRadius.circular(16),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: const Color(0xFF1CB5E0).withOpacity(0.3),
-                                        blurRadius: 12,
-                                        offset: const Offset(0, 6),
-                                      ),
-                                    ],
+                                    color: const Color(0xFF00324A).withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(2),
                                   ),
-                                  child: Obx(() => ElevatedButton(
-                                    onPressed: controller.isLoading.value ? null : _submitForm,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.transparent,
-                                      shadowColor: Colors.transparent,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                    ),
-                                    child: controller.isLoading.value
-                                        ? const SizedBox(
-                                            width: 24,
-                                            height: 24,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2.5,
-                                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                            ),
-                                          )
-                                        : const Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              Icon(Icons.person_add, color: Colors.white, size: 24),
-                                              SizedBox(width: 12),
-                                              Text(
-                                                'CRIAR MINHA CONTA',
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 16,
-                                                  letterSpacing: 0.5,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                  )),
                                 ),
-                                const SizedBox(height: 32),
+                                SizedBox(height: isSmallScreen ? 16 : 20),
+                                // Título de boas-vindas
+                                Text(
+                                  'Criar Nova Conta',
+                                  style: TextStyle(
+                                    fontSize: isSmallScreen ? 24 : isMediumScreen ? 26 : 28,
+                                    fontWeight: FontWeight.bold,
+                                    color: const Color(0xFF00324A),
+                                  ),
+                                ),
+                                SizedBox(height: isSmallScreen ? 6 : 8),
+                                Text(
+                                  'Complete seus dados para acessar nossos serviços médicos',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: isSmallScreen ? 14 : 16,
+                                    color: Colors.grey[600],
+                                    height: 1.4,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 20),
-                      ],
+                          // Conteúdo do formulário
+                          Expanded(
+                            child: SingleChildScrollView(
+                              physics: const BouncingScrollPhysics(),
+                              child: Padding(
+                                padding: EdgeInsets.fromLTRB(
+                                  isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 24 : 28,
+                                  0,
+                                  isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 24 : 28,
+                                  isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 24 : 28,
+                                ),
+                                child: _buildRegistrationForm(),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -478,6 +185,311 @@ class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistratio
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildRegistrationForm() {
+    final size = MediaQuery.of(context).size;
+    final isSmallScreen = size.width < 480;
+    final isMediumScreen = size.width >= 480 && size.width < 768;
+    final isLargeScreen = size.width >= 768 && size.width < 1024;
+    
+    return Form(
+      key: controller.formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Account section
+          _buildSectionHeader(
+            icon: Icons.person_outline,
+            title: 'Informações de Conta',
+            subtitle: 'Dados básicos para acesso',
+          ),
+          const SizedBox(height: 20),
+          
+          _buildTextField(
+            context,
+            controller: controller.nameController,
+            label: 'Nome completo',
+            icon: Icons.person_outline,
+            validator: controller.validateName,
+          ),
+          const SizedBox(height: 16),
+          
+          _buildTextField(
+            context,
+            controller: controller.emailController,
+            label: 'Email',
+            icon: Icons.email_outlined,
+            keyboardType: TextInputType.emailAddress,
+            validator: controller.validateEmail,
+          ),
+          const SizedBox(height: 16),
+          
+          _buildPasswordField(
+            context,
+            controller: controller.passwordController,
+            label: 'Senha',
+            validator: controller.validatePassword,
+          ),
+          const SizedBox(height: 16),
+          
+          _buildPasswordField(
+            context,
+            controller: controller.confirmPasswordController,
+            label: 'Confirmar Senha',
+            validator: controller.validateConfirmPassword,
+          ),
+          const SizedBox(height: 16),
+          
+          // Campo de foto de perfil
+          _buildProfilePhotoField(context, controller),
+          const SizedBox(height: 32),
+
+          // Personal section
+          _buildSectionHeader(
+            icon: Icons.assignment_ind_outlined,
+            title: 'Informações Pessoais',
+            subtitle: 'Dados de identificação',
+          ),
+          const SizedBox(height: 20),
+          
+          _buildTextField(
+            context,
+            controller: controller.cpfController,
+            label: 'CPF',
+            icon: Icons.badge_outlined,
+            keyboardType: TextInputType.number,
+            inputFormatters: [controller.cpfMask],
+            validator: controller.validateCPF,
+          ),
+          const SizedBox(height: 16),
+          
+          _buildTextField(
+            context,
+            controller: controller.rgController,
+            label: 'RG',
+            icon: Icons.credit_card_outlined,
+            keyboardType: TextInputType.text,
+            inputFormatters: [controller.rgMask],
+            validator: controller.validateRG,
+          ),
+          const SizedBox(height: 16),
+          
+          _buildTextField(
+            context,
+            controller: controller.phoneController,
+            label: 'Telefone',
+            icon: Icons.phone_iphone_outlined,
+            keyboardType: TextInputType.phone,
+            inputFormatters: [controller.phoneMask],
+            validator: controller.validatePhone,
+          ),
+          const SizedBox(height: 16),
+          
+          _buildTextField(
+            context,
+            controller: controller.nationalityController,
+            label: 'Nacionalidade',
+            icon: Icons.flag_outlined,
+            validator: (value) => controller.validateRequired(value, 'Nacionalidade'),
+          ),
+          const SizedBox(height: 16),
+          
+          _buildTextField(
+            context,
+            controller: controller.birthDateController,
+            label: 'Data de Nascimento',
+            icon: Icons.cake_outlined,
+            readOnly: true,
+            onTap: () => controller.selectDate(context),
+            validator: controller.validateBirthDate,
+          ),
+          const SizedBox(height: 16),
+          
+          Obx(() => _buildDropdownField(
+            context,
+            value: controller.gender.value,
+            label: 'Sexo / Gênero',
+            icon: Icons.transgender,
+            items: controller.genders,
+            onChanged: (String? newValue) { controller.gender.value = newValue; },
+            validator: (v) => controller.validateDropdown(v, 'Sexo / Gênero'),
+          )),
+          const SizedBox(height: 16),
+          
+          Obx(() => _buildDropdownField(
+            context,
+            value: controller.maritalStatus.value,
+            label: 'Estado Civil',
+            icon: Icons.family_restroom_outlined,
+            items: controller.maritalStatuses,
+            onChanged: (String? newValue) { controller.maritalStatus.value = newValue; },
+            validator: (v) => controller.validateDropdown(v, 'Estado Civil'),
+          )),
+          const SizedBox(height: 32),
+
+          // Address section
+          _buildSectionHeader(
+            icon: Icons.home_outlined,
+            title: 'Endereço',
+            subtitle: 'Localização residencial',
+          ),
+          const SizedBox(height: 20),
+          
+          _buildTextField(
+            context,
+            controller: controller.cepController,
+            label: 'CEP',
+            icon: Icons.location_on_outlined,
+            keyboardType: TextInputType.number,
+            inputFormatters: [controller.cepMask],
+            validator: controller.validateCEP,
+            onChanged: (value) {
+              if (value.length == 9) {
+                _buscarEnderecoPorCep(value);
+              } else {
+                cepError.value = '';
+              }
+            },
+            suffixIcon: Obx(() => isCepLoading.value
+              ? const Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: CircularProgressIndicator(strokeWidth: 2)
+                )
+              : const SizedBox.shrink()
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          _buildTextField(
+            context,
+            controller: controller.streetController,
+            label: 'Rua',
+            icon: Icons.alt_route,
+            validator: (value) => controller.validateRequired(value, 'Rua'),
+          ),
+          const SizedBox(height: 16),
+          
+          _buildTextField(
+            context,
+            controller: controller.numberController,
+            label: 'Número',
+            icon: Icons.numbers_outlined,
+            keyboardType: TextInputType.number,
+            validator: (value) => controller.validateRequired(value, 'Número'),
+          ),
+          const SizedBox(height: 16),
+          
+          _buildTextField(
+            context,
+            controller: controller.complementController,
+            label: 'Complemento',
+            icon: Icons.add_location_alt_outlined,
+          ),
+          const SizedBox(height: 16),
+          
+          _buildTextField(
+            context,
+            controller: controller.neighborhoodController,
+            label: 'Bairro',
+            icon: Icons.location_city_outlined,
+            validator: (value) => controller.validateRequired(value, 'Bairro'),
+          ),
+          const SizedBox(height: 16),
+          
+          _buildTextField(
+            context,
+            controller: controller.cityController,
+            label: 'Cidade',
+            icon: Icons.apartment_outlined,
+            validator: (value) => controller.validateRequired(value, 'Cidade'),
+          ),
+          const SizedBox(height: 16),
+          
+          Obx(() => _buildDropdownField(
+            context,
+            value: controller.state.value,
+            label: 'UF',
+            icon: Icons.map_outlined,
+            items: controller.states,
+            onChanged: (String? newValue) { controller.state.value = newValue; },
+            validator: (v) => controller.validateDropdown(v, 'UF'),
+          )),
+          const SizedBox(height: 32),
+
+          // Terms section
+          _buildSectionHeader(
+            icon: Icons.gavel_outlined,
+            title: 'Termos e Condições',
+            subtitle: 'Autorizações necessárias',
+          ),
+          const SizedBox(height: 20),
+          
+          _buildCheckboxTile(
+            value: controller.acceptTerms,
+            title: 'Eu aceito os ',
+            linkText: 'termos de uso',
+            onLinkTap: () => Get.to(() => const TermsScreen()),
+          ),
+          const SizedBox(height: 40),
+
+          // Register button
+          Container(
+            height: isSmallScreen ? 48 : isMediumScreen ? 52 : isLargeScreen ? 56 : 60,
+            decoration: BoxDecoration(
+              color: const Color(0xFF00324A),
+              borderRadius: BorderRadius.circular(isSmallScreen ? 14 : isMediumScreen ? 16 : isLargeScreen ? 18 : 20),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF00324A).withValues(alpha: 0.3),
+                  blurRadius: isSmallScreen ? 10 : isMediumScreen ? 12 : isLargeScreen ? 15 : 18,
+                  offset: Offset(0, isSmallScreen ? 5 : isMediumScreen ? 6 : isLargeScreen ? 8 : 10),
+                ),
+              ],
+            ),
+            child: Obx(() => ElevatedButton(
+              onPressed: controller.isLoading.value ? null : _submitForm,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                padding: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 24 : 28,
+                  vertical: isSmallScreen ? 12 : isMediumScreen ? 14 : isLargeScreen ? 16 : 18,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(isSmallScreen ? 14 : isMediumScreen ? 16 : isLargeScreen ? 18 : 20),
+                ),
+              ),
+              child: controller.isLoading.value
+                  ? SizedBox(
+                      width: isSmallScreen ? 20 : isMediumScreen ? 24 : isLargeScreen ? 26 : 28,
+                      height: isSmallScreen ? 20 : isMediumScreen ? 24 : isLargeScreen ? 26 : 28,
+                      child: const CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.person_add, color: Colors.white, size: isSmallScreen ? 18 : isMediumScreen ? 20 : isLargeScreen ? 21 : 22),
+                        SizedBox(width: isSmallScreen ? 8 : isMediumScreen ? 10 : isLargeScreen ? 12 : 14),
+                        Text(
+                          'CRIAR MINHA CONTA',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: isSmallScreen ? 15 : isMediumScreen ? 16 : isLargeScreen ? 17 : 18,
+                          ),
+                        ),
+                      ],
+                    ),
+            )),
+          ),
+          const SizedBox(height: 32),
+        ],
       ),
     );
   }
@@ -491,14 +503,14 @@ class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistratio
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF1CB5E0), Color(0xFF000046)],
+          colors: [Color(0xFF00324A), Color(0xFF00324A)],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1CB5E0).withOpacity(0.2),
+            color: const Color(0xFF00324A).withValues(alpha: 0.2),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -509,7 +521,7 @@ class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistratio
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: Colors.white, size: 20),
@@ -530,7 +542,7 @@ class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistratio
                 Text(
                   subtitle,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                     fontSize: 12,
                   ),
                 ),
@@ -558,47 +570,79 @@ class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistratio
     bool readOnly = false,
     Function()? onTap,
   }) {
-    return TextFormField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(
-          color: Colors.grey[600],
+    final size = MediaQuery.of(context).size;
+    final isSmallScreen = size.width < 480;
+    final isMediumScreen = size.width >= 480 && size.width < 768;
+    final isLargeScreen = size.width >= 768 && size.width < 1024;
+    
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        style: TextStyle(
+          fontSize: isSmallScreen ? 16 : isMediumScreen ? 17 : isLargeScreen ? 17 : 18,
           fontWeight: FontWeight.w500,
         ),
-        prefixIcon: icon != null ? Icon(icon, color: const Color(0xFF1CB5E0), size: 20) : null,
-        suffixIcon: suffixIcon,
-        suffixText: suffixText,
-        helperText: helperText,
-        helperStyle: TextStyle(color: Colors.grey[500], fontSize: 12),
-        filled: true,
-        fillColor: Colors.grey[50],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
+            fontSize: isSmallScreen ? 14 : isMediumScreen ? 15 : isLargeScreen ? 15 : 16,
+          ),
+          prefixIcon: icon != null ? Container(
+            margin: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF00324A).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: const Color(0xFF00324A), size: isSmallScreen ? 18 : isMediumScreen ? 19 : isLargeScreen ? 19 : 20),
+          ) : null,
+          suffixIcon: suffixIcon,
+          suffixText: suffixText,
+          helperText: helperText,
+          helperStyle: TextStyle(color: Colors.grey[500], fontSize: 12),
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.grey[200]!),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.grey[200]!),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Color(0xFF00324A), width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.red[400]!, width: 1),
+          ),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: isSmallScreen ? 20 : isMediumScreen ? 22 : isLargeScreen ? 23 : 24, 
+            vertical: isSmallScreen ? 18 : isMediumScreen ? 20 : isLargeScreen ? 21 : 22
+          ),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF1CB5E0), width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 1),
-        ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        obscureText: obscureText,
+        validator: validator,
+        inputFormatters: inputFormatters,
+        onChanged: onChanged,
+        readOnly: readOnly,
+        onTap: onTap,
       ),
-      style: Theme.of(context).textTheme.bodyMedium,
-      keyboardType: keyboardType,
-      obscureText: obscureText,
-      validator: validator,
-      inputFormatters: inputFormatters,
-      onChanged: onChanged,
-      readOnly: readOnly,
-      onTap: onTap,
     );
   }
 
@@ -608,46 +652,82 @@ class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistratio
     required String label,
     String? Function(String?)? validator,
   }) {
+    final size = MediaQuery.of(context).size;
+    final isSmallScreen = size.width < 480;
+    final isMediumScreen = size.width >= 480 && size.width < 768;
+    final isLargeScreen = size.width >= 768 && size.width < 1024;
     final obscure = true.obs;
     
-    return Obx(() => TextFormField(
-      controller: controller,
-      obscureText: obscure.value,
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(
-          color: Colors.grey[600],
+    return Obx(() => Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextFormField(
+        controller: controller,
+        obscureText: obscure.value,
+        style: TextStyle(
+          fontSize: isSmallScreen ? 16 : isMediumScreen ? 17 : isLargeScreen ? 17 : 18,
           fontWeight: FontWeight.w500,
         ),
-        prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF1CB5E0), size: 20),
-        suffixIcon: IconButton(
-          icon: Icon(
-            obscure.value ? Icons.visibility_off : Icons.visibility,
-            color: Colors.grey[500],
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
+            fontSize: isSmallScreen ? 14 : isMediumScreen ? 15 : isLargeScreen ? 15 : 16,
           ),
-          onPressed: () => obscure.value = !obscure.value,
+          prefixIcon: Container(
+            margin: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF00324A).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(Icons.lock_outline, color: const Color(0xFF00324A), size: isSmallScreen ? 18 : isMediumScreen ? 19 : isLargeScreen ? 19 : 20),
+          ),
+          suffixIcon: Container(
+            margin: const EdgeInsets.all(12),
+            child: IconButton(
+              icon: Icon(
+                obscure.value ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                color: Colors.grey[500],
+                size: isSmallScreen ? 18 : isMediumScreen ? 19 : isLargeScreen ? 19 : 20,
+              ),
+              onPressed: () => obscure.value = !obscure.value,
+            ),
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.grey[200]!),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.grey[200]!),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Color(0xFF00324A), width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.red[400]!, width: 1),
+          ),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: isSmallScreen ? 20 : isMediumScreen ? 22 : isLargeScreen ? 23 : 24, 
+            vertical: isSmallScreen ? 18 : isMediumScreen ? 20 : isLargeScreen ? 21 : 22
+          ),
         ),
-        filled: true,
-        fillColor: Colors.grey[50],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF1CB5E0), width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 1),
-        ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+        validator: validator,
       ),
-      validator: validator,
     ));
   }
 
@@ -660,55 +740,91 @@ class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistratio
     required Function(String?) onChanged,
     String? Function(String?)? validator,
   }) {
-    return DropdownButtonFormField<String>(
-      value: value,
-      isExpanded: true,
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(
-          color: Colors.grey[600],
-          fontWeight: FontWeight.w500,
-        ),
-        prefixIcon: Icon(icon, color: const Color(0xFF1CB5E0), size: 20),
-        filled: true,
-        fillColor: Colors.grey[50],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF1CB5E0), width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 1),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      ),
-      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-        overflow: TextOverflow.ellipsis,
-      ),
-      items: items.map((String value) {
-        return DropdownMenuItem<String>(
-          value: value,
-          child: Text(
-            value,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 14),
+    final size = MediaQuery.of(context).size;
+    final isSmallScreen = size.width < 480;
+    final isMediumScreen = size.width >= 480 && size.width < 768;
+    final isLargeScreen = size.width >= 768 && size.width < 1024;
+    
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
-        );
-      }).toList(),
-      onChanged: onChanged,
-      validator: validator,
-      dropdownColor: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      icon: Icon(Icons.arrow_drop_down, color: Colors.grey[600]),
-      menuMaxHeight: 300,
+        ],
+      ),
+      child: DropdownButtonFormField<String>(
+        initialValue: value,
+        isExpanded: true,
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
+            fontSize: isSmallScreen ? 14 : isMediumScreen ? 15 : isLargeScreen ? 15 : 16,
+          ),
+          prefixIcon: Container(
+            margin: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF00324A).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: const Color(0xFF00324A), size: isSmallScreen ? 18 : isMediumScreen ? 19 : isLargeScreen ? 19 : 20),
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.grey[200]!),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.grey[200]!),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Color(0xFF00324A), width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.red[400]!, width: 1),
+          ),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: isSmallScreen ? 20 : isMediumScreen ? 22 : isLargeScreen ? 23 : 24, 
+            vertical: isSmallScreen ? 18 : isMediumScreen ? 20 : isLargeScreen ? 21 : 22
+          ),
+        ),
+        style: TextStyle(
+          fontSize: isSmallScreen ? 16 : isMediumScreen ? 17 : isLargeScreen ? 17 : 18,
+          fontWeight: FontWeight.w500,
+          color: const Color(0xFF00324A),
+          overflow: TextOverflow.ellipsis,
+        ),
+        items: items.map((String value) {
+          return DropdownMenuItem<String>(
+            value: value,
+            child: Text(
+              value,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: isSmallScreen ? 14 : isMediumScreen ? 15 : isLargeScreen ? 15 : 16,
+                color: const Color(0xFF00324A),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          );
+        }).toList(),
+        onChanged: onChanged,
+        validator: validator,
+        dropdownColor: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF00324A)),
+        menuMaxHeight: 300,
+      ),
     );
   }
 
@@ -721,10 +837,10 @@ class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistratio
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF1CB5E0).withOpacity(0.05),
+        color: const Color(0xFF00324A).withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: const Color(0xFF1CB5E0).withOpacity(0.2),
+          color: const Color(0xFF00324A).withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -740,7 +856,7 @@ class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistratio
                   value.value = newValue;
                 }
               },
-              activeColor: const Color(0xFF1CB5E0),
+              activeColor: const Color(0xFF00324A),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(4),
               ),
@@ -762,7 +878,7 @@ class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistratio
                         TextSpan(
                           text: linkText,
                           style: const TextStyle(
-                            color: Color(0xFF1CB5E0),
+                            color: Color(0xFF00324A),
                             fontWeight: FontWeight.bold,
                             decoration: TextDecoration.underline,
                           ),
@@ -805,7 +921,7 @@ class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistratio
         children: [
           Row(
             children: [
-              Icon(Icons.photo_camera, color: const Color(0xFF1CB5E0), size: 20),
+              const Icon(Icons.photo_camera, color: Color(0xFF00324A), size: 20),
               const SizedBox(width: 8),
               Text(
                 'Foto de Perfil',
@@ -854,10 +970,10 @@ class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistratio
           height: 120,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(60),
-            border: Border.all(color: const Color(0xFF1CB5E0), width: 3),
+            border: Border.all(color: const Color(0xFF00324A), width: 3),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF1CB5E0).withOpacity(0.3),
+                color: const Color(0xFF00324A).withValues(alpha: 0.3),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),
@@ -880,7 +996,7 @@ class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistratio
               icon: const Icon(Icons.edit, size: 18),
               label: const Text('Alterar'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1CB5E0),
+                backgroundColor: const Color(0xFF00324A),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),

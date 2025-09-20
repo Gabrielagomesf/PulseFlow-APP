@@ -627,24 +627,10 @@ class HomeScreen extends StatelessWidget {
             Get.toNamed('/menu');
           }),
           _buildNavItem(Icons.vpn_key, 'Pulse Key', false, () {
-            // TODO: Implementar tela Pulse Key
-            Get.snackbar(
-              'Em Breve',
-              'Funcionalidade Pulse Key será implementada em breve!',
-              backgroundColor: const Color(0xFF00324A), // Nova cor azul
-              colorText: Colors.white,
-              snackPosition: SnackPosition.BOTTOM,
-            );
+            Get.toNamed('/pulse-key');
           }),
           _buildNavItem(Icons.person, 'Perfil', false, () {
-            // TODO: Implementar tela de perfil
-            Get.snackbar(
-              'Em Breve',
-              'Tela de perfil será implementada em breve!',
-              backgroundColor: const Color(0xFF00324A), // Nova cor azul
-              colorText: Colors.white,
-              snackPosition: SnackPosition.BOTTOM,
-            );
+            Get.toNamed('/profile');
           }),
         ],
       ),

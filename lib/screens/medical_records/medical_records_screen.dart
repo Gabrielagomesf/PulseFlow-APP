@@ -398,12 +398,14 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
                   ),
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  'Filtros de Pesquisa',
-                  style: AppTheme.titleMedium.copyWith(
-                    color: const Color(0xFF1E293B),
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.3,
+                Expanded(
+                  child: Text(
+                    'Filtros de Pesquisa',
+                    style: AppTheme.titleMedium.copyWith(
+                      color: const Color(0xFF1E293B),
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.3,
+                    ),
                   ),
                 ),
                 const Spacer(),

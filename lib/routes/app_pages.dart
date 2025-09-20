@@ -19,6 +19,9 @@ import '../screens/crise_gastrite/crise_gastrite_form_screen.dart';
 import '../screens/crise_gastrite/crise_gastrite_history_screen.dart';
 import '../screens/menstruacao/menstruacao_form_screen.dart';
 import '../screens/menstruacao/menstruacao_history_screen.dart';
+import '../screens/profile/profile_screen.dart';
+import '../screens/profile/profile_controller.dart';
+import '../screens/pulse_key/pulse_key_screen.dart';
 import '../services/auth_service.dart';
 
 import  'app_routes.dart';
@@ -131,6 +134,19 @@ class AppPages {
     GetPage(
       name: Routes.MENSTRUACAO_HISTORY,
       page: () => const MenstruacaoHistoryScreen(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.PROFILE,
+      page: () => const ProfileScreen(),
+      binding: BindingsBuilder(() {
+        Get.lazyPut<ProfileController>(() => ProfileController());
+      }),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.PULSE_KEY,
+      page: () => const PulseKeyScreen(),
       transition: Transition.rightToLeft,
     ),
   ];

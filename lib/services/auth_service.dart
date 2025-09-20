@@ -25,6 +25,7 @@ class AuthService extends GetxController {
   String get token => _token.value;
   bool get isAuthenticated => _isAuthenticated.value;
   Patient? get currentUser => _currentUser.value;
+  set currentUser(Patient? user) => _currentUser.value = user;
   bool get isAdmin => currentUser?.isAdmin ?? false;
 
   // Inicialização do serviço

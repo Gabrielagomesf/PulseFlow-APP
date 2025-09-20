@@ -19,6 +19,13 @@ class AppTheme {
   static const Color warning = Color(0xFFFFA726);
 
   // Estilos de texto
+  static TextStyle get headlineSmall => GoogleFonts.montserrat(
+        fontSize: 24,
+        fontWeight: FontWeight.bold,
+        color: textPrimary,
+        letterSpacing: 0.5,
+      );
+
   static TextStyle get titleLarge => GoogleFonts.montserrat(
         fontSize: 28,
         fontWeight: FontWeight.bold,

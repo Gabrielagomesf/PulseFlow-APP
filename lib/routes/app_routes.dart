@@ -21,5 +21,6 @@ abstract class Routes {
   static const CRISE_GASTRITE_HISTORY = '/crise-gastrite-history';
   static const MENSTRUACAO_FORM = '/menstruacao-form';
   static const MENSTRUACAO_HISTORY = '/menstruacao-history';
+  static const PULSE_KEY = '/pulse-key';
 
 } 

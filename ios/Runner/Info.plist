@@ -54,5 +54,11 @@
 	
 	<key>NSUserNotificationUsageDescription</key>
 	<string>Este app precisa de notificações para enviar lembretes de medicamentos e consultas médicas.</string>
+	
+	<key>NSFaceIDUsageDescription</key>
+	<string>Este app usa Face ID para autenticação biométrica segura.</string>
+	
+	<key>NSBiometricUsageDescription</key>
+	<string>Este app usa biometria para autenticação segura.</string>
 </dict>
 </plist>

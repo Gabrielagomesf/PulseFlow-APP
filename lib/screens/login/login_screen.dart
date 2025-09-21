@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'login_controller.dart';
+import '../../widgets/biometric_login_button.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -421,6 +422,16 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
             ),
           )),
           SizedBox(height: isVerySmallScreen ? 8 : isSmallScreen ? 12 : isMediumScreen ? 14 : isLargeScreen ? 16 : 18),
+          
+          // Biometric Login Button
+          BiometricLoginButton(
+            onSuccess: () {
+              Get.offAllNamed('/home');
+            },
+            onError: () {
+              // Tratar erro se necessário
+            },
+          ),
           
           // Divider
           Row(

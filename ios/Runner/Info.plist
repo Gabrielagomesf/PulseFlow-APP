@@ -45,5 +45,14 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+		<string>background-processing</string>
+	</array>
+	
+	<key>NSUserNotificationUsageDescription</key>
+	<string>Este app precisa de notificações para enviar lembretes de medicamentos e consultas médicas.</string>
 </dict>
 </plist>

@@ -14,6 +14,7 @@ import 'services/enxaqueca_service.dart';
 import 'services/diabetes_service.dart';
 import 'services/notification_service.dart';
 import 'services/biometric_service.dart';
+import 'services/smartwatch_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,6 +44,7 @@ void main() async {
   
   Get.put(NotificationService());
   Get.put(BiometricService());
+  Get.put(SmartwatchService());
 
   // Verifica se precisa migrar senhas antigas
   try {

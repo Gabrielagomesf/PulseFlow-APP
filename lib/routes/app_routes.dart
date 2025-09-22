@@ -22,5 +22,6 @@ abstract class Routes {
   static const MENSTRUACAO_FORM = '/menstruacao-form';
   static const MENSTRUACAO_HISTORY = '/menstruacao-history';
   static const PULSE_KEY = '/pulse-key';
+  static const SMARTWATCH = '/smartwatch';
 
 } 

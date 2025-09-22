@@ -22,6 +22,7 @@ import '../screens/menstruacao/menstruacao_history_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/profile/profile_controller.dart';
 import '../screens/pulse_key/pulse_key_screen.dart';
+import '../screens/smartwatch/smartwatch_screen.dart';
 import '../services/auth_service.dart';
 
 import  'app_routes.dart';
@@ -147,6 +148,11 @@ class AppPages {
     GetPage(
       name: Routes.PULSE_KEY,
       page: () => const PulseKeyScreen(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.SMARTWATCH,
+      page: () => const SmartwatchScreen(),
       transition: Transition.rightToLeft,
     ),
   ];

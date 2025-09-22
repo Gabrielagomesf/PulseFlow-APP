@@ -135,6 +135,16 @@ class MenuScreen extends StatelessWidget {
                       },
                     ),
 
+                    // Botão Smartwatch
+                    _buildMenuButton(
+                      icon: Icons.watch,
+                      title: 'Smartwatch',
+                      color: const Color(0xFF00324A),
+                      onPressed: () {
+                        Get.toNamed(Routes.SMARTWATCH);
+                      },
+                    ),
+
                     // Botão Configurações
                     _buildMenuButton(
                       icon: Icons.settings,

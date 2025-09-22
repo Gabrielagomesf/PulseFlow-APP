@@ -50,11 +50,14 @@ class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistratio
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final isSmallScreen = size.width < 480;
-    final isMediumScreen = size.width >= 480 && size.width < 768;
-    final isLargeScreen = size.width >= 768 && size.width < 1024;
+    final isSmallScreen = size.width < 480;  // Mobile
+    final isMediumScreen = size.width >= 480 && size.width < 768;  // Tablet portrait
+    final isLargeScreen = size.width >= 768 && size.width < 1024;  // Tablet landscape
+    final isVerySmallScreen = size.height < 700; // Para telas muito baixas
+    final isLandscape = size.width > size.height; // Orientação paisagem
     
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: Container(
         decoration: const BoxDecoration(
           color: Color(0xFF00324A),
@@ -64,7 +67,9 @@ class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistratio
             children: [
               // Header section
               Expanded(
-                flex: isSmallScreen ? 1 : 2,
+                flex: isLandscape 
+                  ? (isVerySmallScreen ? 1 : isSmallScreen ? 1 : isMediumScreen ? 1 : 1)
+                  : (isVerySmallScreen ? 1 : isSmallScreen ? 1 : isMediumScreen ? 1 : 1),
                 child: FadeTransition(
                   opacity: _fadeAnimation,
                   child: Column(
@@ -73,8 +78,12 @@ class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistratio
                       // Logo
                       Image.asset(
                         'assets/images/pulseflow2.png',
-                        width: isSmallScreen ? 180 : isMediumScreen ? 220 : isLargeScreen ? 260 : 300,
-                        height: isSmallScreen ? 180 : isMediumScreen ? 220 : isLargeScreen ? 260 : 300,
+                        width: isLandscape 
+                          ? (isVerySmallScreen ? 80 : isSmallScreen ? 90 : isMediumScreen ? 100 : isLargeScreen ? 110 : 120)
+                          : (isVerySmallScreen ? 90 : isSmallScreen ? 100 : isMediumScreen ? 110 : isLargeScreen ? 120 : 130),
+                        height: isLandscape 
+                          ? (isVerySmallScreen ? 80 : isSmallScreen ? 90 : isMediumScreen ? 100 : isLargeScreen ? 110 : 120)
+                          : (isVerySmallScreen ? 90 : isSmallScreen ? 100 : isMediumScreen ? 110 : isLargeScreen ? 120 : 130),
                         fit: BoxFit.contain,
                       ),
                     ],
@@ -84,14 +93,20 @@ class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistratio
               
               // Form section
               Expanded(
-                flex: isSmallScreen ? 3 : 4,
+                flex: isLandscape 
+                  ? (isVerySmallScreen ? 6 : isSmallScreen ? 6 : isMediumScreen ? 6 : 5)
+                  : (isVerySmallScreen ? 6 : isSmallScreen ? 6 : isMediumScreen ? 6 : 5),
                 child: SlideTransition(
                   position: _slideAnimation,
                   child: FadeTransition(
                     opacity: _fadeAnimation,
                     child: Container(
                       width: double.infinity,
-                      margin: EdgeInsets.only(top: isSmallScreen ? 20 : isMediumScreen ? 30 : isLargeScreen ? 35 : 40),
+                      margin: EdgeInsets.only(
+                        top: isLandscape 
+                          ? (isVerySmallScreen ? 10 : isSmallScreen ? 15 : isMediumScreen ? 20 : isLargeScreen ? 25 : 30)
+                          : (isVerySmallScreen ? 15 : isSmallScreen ? 20 : isMediumScreen ? 25 : isLargeScreen ? 30 : 35),
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: const BorderRadius.only(
@@ -113,12 +128,16 @@ class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistratio
                       ),
                       child: Column(
                         children: [
-                          // Header do container com linha decorativa
+                          // Header do container com botão de voltar
                           Container(
                             width: double.infinity,
                             padding: EdgeInsets.symmetric(
-                              vertical: isSmallScreen ? 20 : 24,
-                              horizontal: isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 24 : 28,
+                              vertical: isLandscape 
+                                ? (isVerySmallScreen ? 12 : isSmallScreen ? 14 : isMediumScreen ? 16 : isLargeScreen ? 18 : 20)
+                                : (isVerySmallScreen ? 14 : isSmallScreen ? 16 : isMediumScreen ? 18 : isLargeScreen ? 20 : 22),
+                              horizontal: isLandscape 
+                                ? (isVerySmallScreen ? 12 : isSmallScreen ? 14 : isMediumScreen ? 16 : isLargeScreen ? 18 : 20)
+                                : (isVerySmallScreen ? 14 : isSmallScreen ? 16 : isMediumScreen ? 18 : isLargeScreen ? 20 : 22),
                             ),
                             decoration: const BoxDecoration(
                               color: Colors.white,
@@ -127,37 +146,63 @@ class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistratio
                                 topRight: Radius.circular(32),
                               ),
                             ),
-                            child: Column(
+                            child: Row(
                               children: [
-                                // Linha decorativa
-                                Container(
-                                  width: 50,
-                                  height: 4,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF00324A).withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(2),
-                                  ),
-                                ),
-                                SizedBox(height: isSmallScreen ? 16 : 20),
-                                // Título de boas-vindas
-                                Text(
-                                  'Criar Nova Conta',
-                                  style: TextStyle(
-                                    fontSize: isSmallScreen ? 24 : isMediumScreen ? 26 : 28,
-                                    fontWeight: FontWeight.bold,
+                                IconButton(
+                                  onPressed: () => Get.back(),
+                                  icon: Icon(
+                                    Icons.arrow_back_ios_new_rounded,
                                     color: const Color(0xFF00324A),
+                                    size: isLandscape 
+                                      ? (isVerySmallScreen ? 18 : isSmallScreen ? 20 : isMediumScreen ? 22 : isLargeScreen ? 24 : 26)
+                                      : (isVerySmallScreen ? 20 : isSmallScreen ? 22 : isMediumScreen ? 24 : isLargeScreen ? 26 : 28),
                                   ),
                                 ),
-                                SizedBox(height: isSmallScreen ? 6 : 8),
-                                Text(
-                                  'Complete seus dados para acessar nossos serviços médicos',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: isSmallScreen ? 14 : 16,
-                                    color: Colors.grey[600],
-                                    height: 1.4,
+                                Expanded(
+                                  child: Column(
+                                    children: [
+                                      // Linha decorativa
+                                      Container(
+                                        width: 50,
+                                        height: 4,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF00324A).withValues(alpha: 0.2),
+                                          borderRadius: BorderRadius.circular(2),
+                                        ),
+                                      ),
+                                      SizedBox(height: isLandscape 
+                                        ? (isVerySmallScreen ? 8 : isSmallScreen ? 10 : isMediumScreen ? 12 : isLargeScreen ? 14 : 16)
+                                        : (isVerySmallScreen ? 10 : isSmallScreen ? 12 : isMediumScreen ? 14 : isLargeScreen ? 16 : 18)),
+                                      // Título de boas-vindas
+                                      Text(
+                                        'Criar Nova Conta',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontSize: isLandscape 
+                                            ? (isVerySmallScreen ? 20 : isSmallScreen ? 22 : isMediumScreen ? 24 : isLargeScreen ? 26 : 28)
+                                            : (isVerySmallScreen ? 22 : isSmallScreen ? 24 : isMediumScreen ? 26 : isLargeScreen ? 28 : 30),
+                                          fontWeight: FontWeight.bold,
+                                          color: const Color(0xFF00324A),
+                                        ),
+                                      ),
+                                      SizedBox(height: isLandscape 
+                                        ? (isVerySmallScreen ? 2 : isSmallScreen ? 3 : isMediumScreen ? 4 : isLargeScreen ? 5 : 6)
+                                        : (isVerySmallScreen ? 3 : isSmallScreen ? 4 : isMediumScreen ? 5 : isLargeScreen ? 6 : 7)),
+                                      Text(
+                                        'Complete seus dados para acessar nossos serviços médicos',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontSize: isLandscape 
+                                            ? (isVerySmallScreen ? 12 : isSmallScreen ? 13 : isMediumScreen ? 14 : isLargeScreen ? 15 : 16)
+                                            : (isVerySmallScreen ? 13 : isSmallScreen ? 14 : isMediumScreen ? 15 : isLargeScreen ? 16 : 17),
+                                          color: Colors.grey[600],
+                                          height: 1.4,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
+                                const SizedBox(width: 48), // Espaço para balancear o layout
                               ],
                             ),
                           ),
@@ -167,10 +212,16 @@ class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistratio
                               physics: const BouncingScrollPhysics(),
                               child: Padding(
                                 padding: EdgeInsets.fromLTRB(
-                                  isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 24 : 28,
+                                  isLandscape 
+                                    ? (isVerySmallScreen ? 12 : isSmallScreen ? 14 : isMediumScreen ? 16 : isLargeScreen ? 18 : 20)
+                                    : (isVerySmallScreen ? 14 : isSmallScreen ? 16 : isMediumScreen ? 18 : isLargeScreen ? 20 : 22),
                                   0,
-                                  isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 24 : 28,
-                                  isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 24 : 28,
+                                  isLandscape 
+                                    ? (isVerySmallScreen ? 12 : isSmallScreen ? 14 : isMediumScreen ? 16 : isLargeScreen ? 18 : 20)
+                                    : (isVerySmallScreen ? 14 : isSmallScreen ? 16 : isMediumScreen ? 18 : isLargeScreen ? 20 : 22),
+                                  isLandscape 
+                                    ? (isVerySmallScreen ? 12 : isSmallScreen ? 14 : isMediumScreen ? 16 : isLargeScreen ? 18 : 20)
+                                    : (isVerySmallScreen ? 14 : isSmallScreen ? 16 : isMediumScreen ? 18 : isLargeScreen ? 20 : 22),
                                 ),
                                 child: _buildRegistrationForm(),
                               ),
@@ -429,7 +480,7 @@ class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistratio
           
           _buildCheckboxTile(
             value: controller.acceptTerms,
-            title: 'Eu aceito os ',
+            title: 'Aceito os ',
             linkText: 'termos de uso',
             onLinkTap: () => Get.to(() => const TermsScreen()),
           ),
@@ -845,7 +896,7 @@ class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistratio
         ),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Obx(() => Transform.scale(
             scale: 1.2,

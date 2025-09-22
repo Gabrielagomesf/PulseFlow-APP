@@ -49,8 +49,10 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
         final isLargeScreen = size.width >= 768 && size.width < 1024;  // Tablet landscape
         final isXLargeScreen = size.width >= 1024;  // Desktop
         final isVerySmallScreen = size.height < 700; // Para telas muito baixas
+        final isLandscape = size.width > size.height; // Orientação paisagem
         
         return Scaffold(
+          resizeToAvoidBottomInset: false,
           body: Container(
             decoration: const BoxDecoration(
               color: Color(0xFF00324A),
@@ -62,21 +64,25 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                   isXLargeScreen 
                     ? _buildLargeScreenLayout()
                     : Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: isSmallScreen ? 20 : isMediumScreen ? 32 : isLargeScreen ? 40 : 48,
-                        ),
+                        padding: EdgeInsets.zero,
                         child: Column(
                           children: [
                             // Header section
                             Expanded(
-                              flex: isVerySmallScreen ? 2 : isSmallScreen ? 2 : isMediumScreen ? 3 : 3,
+                              flex: isLandscape 
+                                ? (isVerySmallScreen ? 2 : isSmallScreen ? 2 : isMediumScreen ? 2 : 3)
+                                : (isVerySmallScreen ? 2 : isSmallScreen ? 2 : isMediumScreen ? 2 : 3),
                               child: FadeTransition(
                                 opacity: _fadeAnimation,
                                 child: Center(
                                   child: Image.asset(
                                     'assets/images/pulseflow2.png',
-                                    width: isVerySmallScreen ? 120 : isSmallScreen ? 150 : isMediumScreen ? 200 : isLargeScreen ? 240 : 280,
-                                    height: isVerySmallScreen ? 120 : isSmallScreen ? 150 : isMediumScreen ? 200 : isLargeScreen ? 240 : 280,
+                                    width: isLandscape 
+                                      ? (isVerySmallScreen ? 120 : isSmallScreen ? 140 : isMediumScreen ? 160 : isLargeScreen ? 180 : 200)
+                                      : (isVerySmallScreen ? 180 : isSmallScreen ? 220 : isMediumScreen ? 260 : isLargeScreen ? 300 : 340),
+                                    height: isLandscape 
+                                      ? (isVerySmallScreen ? 120 : isSmallScreen ? 140 : isMediumScreen ? 160 : isLargeScreen ? 180 : 200)
+                                      : (isVerySmallScreen ? 180 : isSmallScreen ? 220 : isMediumScreen ? 260 : isLargeScreen ? 300 : 340),
                                     fit: BoxFit.contain,
                                   ),
                                 ),
@@ -85,14 +91,16 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                             
                             // Login form section - Container branco vai até o final
                             Expanded(
-                              flex: isVerySmallScreen ? 5 : isSmallScreen ? 4 : isMediumScreen ? 4 : 4,
+                              flex: isLandscape 
+                                ? (isVerySmallScreen ? 5 : isSmallScreen ? 5 : isMediumScreen ? 5 : 4)
+                                : (isVerySmallScreen ? 5 : isSmallScreen ? 5 : isMediumScreen ? 5 : 4),
                               child: SlideTransition(
                                 position: _slideAnimation,
                                 child: FadeTransition(
                                   opacity: _fadeAnimation,
                                   child: Container(
                                     width: double.infinity,
-                                    margin: EdgeInsets.only(top: isSmallScreen ? 20 : isMediumScreen ? 30 : isLargeScreen ? 35 : 40),
+                                    margin: EdgeInsets.only(top: 0),
                                     decoration: BoxDecoration(
                                       color: Colors.white,
                                       borderRadius: const BorderRadius.only(
@@ -118,7 +126,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                         Container(
                                           width: double.infinity,
                                           padding: EdgeInsets.symmetric(
-                                            vertical: isVerySmallScreen ? 12 : isSmallScreen ? 16 : isMediumScreen ? 20 : 24,
+                                            vertical: isLandscape 
+                                              ? (isVerySmallScreen ? 4 : isSmallScreen ? 6 : isMediumScreen ? 8 : 10)
+                                              : (isVerySmallScreen ? 6 : isSmallScreen ? 8 : isMediumScreen ? 12 : 16),
                                             horizontal: isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 24 : 28,
                                           ),
                                           decoration: const BoxDecoration(
@@ -149,7 +159,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                                   color: const Color(0xFF00324A),
                                                 ),
                                               ),
-                                              SizedBox(height: isSmallScreen ? 4 : isMediumScreen ? 6 : 8),
+                                              SizedBox(height: isSmallScreen ? 6 : isMediumScreen ? 8 : 10),
                                               Text(
                                                 'Entre com suas credenciais para acessar sua conta',
                                                 textAlign: TextAlign.center,
@@ -164,13 +174,18 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                         ),
                                         // Conteúdo do formulário
                                         Expanded(
-                                          child: SingleChildScrollView(
-                                            physics: const BouncingScrollPhysics(),
+                                          child: Padding(
                                             padding: EdgeInsets.fromLTRB(
-                                              isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 24 : 28,
+                                              isLandscape 
+                                                ? (isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 24 : 28)
+                                                : (isSmallScreen ? 24 : isMediumScreen ? 28 : isLargeScreen ? 32 : 36),
                                               0,
-                                              isVerySmallScreen ? 8 : isSmallScreen ? 12 : isMediumScreen ? 16 : isLargeScreen ? 20 : 24,
-                                              isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 24 : 28,
+                                              isLandscape 
+                                                ? (isVerySmallScreen ? 8 : isSmallScreen ? 12 : isMediumScreen ? 16 : isLargeScreen ? 20 : 24)
+                                                : (isVerySmallScreen ? 16 : isSmallScreen ? 20 : isMediumScreen ? 24 : isLargeScreen ? 28 : 32),
+                                              isLandscape 
+                                                ? (isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 24 : 28)
+                                                : (isSmallScreen ? 24 : isMediumScreen ? 28 : isLargeScreen ? 32 : 36),
                                             ),
                                             child: _buildLoginForm(),
                                           ),
@@ -258,13 +273,15 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     final isLargeScreen = size.width >= 768 && size.width < 1024;
     final isXLargeScreen = size.width >= 1024;
     final isVerySmallScreen = size.height < 700;
+    final isLandscape = size.width > size.height;
     
     return Form(
       key: Get.find<LoginController>().formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        mainAxisAlignment: MainAxisAlignment.end,
         children: [
+          const Spacer(),
           // Email field
           _buildTextField(
             controller: Get.find<LoginController>().emailController,
@@ -281,7 +298,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
               return null;
             },
           ),
-          SizedBox(height: isVerySmallScreen ? 6 : isSmallScreen ? 8 : isMediumScreen ? 12 : isLargeScreen ? 14 : 16),
+          SizedBox(height: isLandscape 
+            ? (isVerySmallScreen ? 4 : isSmallScreen ? 6 : isMediumScreen ? 8 : isLargeScreen ? 10 : 12)
+            : (isVerySmallScreen ? 6 : isSmallScreen ? 8 : isMediumScreen ? 12 : isLargeScreen ? 16 : 20)),
           
           // Password field
           Obx(() => _buildPasswordField(
@@ -299,7 +318,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
               return null;
             },
           )),
-          SizedBox(height: isVerySmallScreen ? 4 : isSmallScreen ? 6 : isMediumScreen ? 8 : isLargeScreen ? 10 : 12),
+          SizedBox(height: isLandscape 
+            ? (isVerySmallScreen ? 4 : isSmallScreen ? 6 : isMediumScreen ? 8 : isLargeScreen ? 10 : 12)
+            : (isVerySmallScreen ? 6 : isSmallScreen ? 8 : isMediumScreen ? 12 : isLargeScreen ? 16 : 20)),
           
           // Remember me and forgot password
           Row(
@@ -366,7 +387,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
               ),
             ],
           ),
-          SizedBox(height: isVerySmallScreen ? 8 : isSmallScreen ? 12 : isMediumScreen ? 14 : isLargeScreen ? 16 : 18),
+          SizedBox(height: isLandscape 
+            ? (isVerySmallScreen ? 6 : isSmallScreen ? 8 : isMediumScreen ? 10 : isLargeScreen ? 12 : 14)
+            : (isVerySmallScreen ? 8 : isSmallScreen ? 12 : isMediumScreen ? 16 : isLargeScreen ? 20 : 24)),
           
           // Login button
           Obx(() => Container(
@@ -421,7 +444,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                     ),
             ),
           )),
-          SizedBox(height: isVerySmallScreen ? 8 : isSmallScreen ? 12 : isMediumScreen ? 14 : isLargeScreen ? 16 : 18),
+          SizedBox(height: isLandscape 
+            ? (isVerySmallScreen ? 6 : isSmallScreen ? 8 : isMediumScreen ? 10 : isLargeScreen ? 12 : 14)
+            : (isVerySmallScreen ? 8 : isSmallScreen ? 12 : isMediumScreen ? 16 : isLargeScreen ? 20 : 24)),
           
           // Biometric Login Button
           BiometricLoginButton(
@@ -450,7 +475,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
               Expanded(child: Divider(color: Colors.grey[300])),
             ],
           ),
-          SizedBox(height: isVerySmallScreen ? 8 : isSmallScreen ? 12 : isMediumScreen ? 14 : isLargeScreen ? 16 : 18),
+          SizedBox(height: isLandscape 
+            ? (isVerySmallScreen ? 6 : isSmallScreen ? 8 : isMediumScreen ? 10 : isLargeScreen ? 12 : 14)
+            : (isVerySmallScreen ? 8 : isSmallScreen ? 12 : isMediumScreen ? 16 : isLargeScreen ? 20 : 24)),
           
           // Register button
           Container(
@@ -484,6 +511,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
               ),
             ),
           ),
+          const Spacer(),
           ],
         ),
     );

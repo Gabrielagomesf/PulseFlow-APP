@@ -30,6 +30,7 @@ dependencies:
   animated_text_kit: ^4.2.3
   image_picker: ^1.0.4
   google_fonts: ^6.2.1
+  url_launcher: ^6.3.0
 
 dev_dependencies:
   flutter_test:

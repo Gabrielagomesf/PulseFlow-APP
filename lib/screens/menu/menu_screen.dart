@@ -33,10 +33,11 @@ class MenuScreen extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: GridView.count(
+                  padding: const EdgeInsets.only(bottom: 24),
                   crossAxisCount: 2,
                   crossAxisSpacing: 20,
                   mainAxisSpacing: 20,
-                  childAspectRatio: 1.1,
+                  childAspectRatio: 1.0,
                   children: [
                     // Botão Enxaqueca
                     _buildMenuButton(
@@ -61,6 +62,16 @@ class MenuScreen extends StatelessWidget {
                         Get.to(() => DiabetesScreen(
                           pacienteId: pacienteController.pacienteId.value,
                         ));
+                      },
+                    ),
+
+                    // Botão Pressão Arterial
+                    _buildMenuButton(
+                      icon: Icons.bloodtype,
+                      title: 'Pressão\nArterial',
+                      color: const Color(0xFF00324A),
+                      onPressed: () {
+                        Get.toNamed(Routes.PRESSAO);
                       },
                     ),
 
@@ -314,7 +325,7 @@ class MenuScreen extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Colors.grey.withOpacity(0.3)),
         boxShadow: [
           BoxShadow(
@@ -328,7 +339,7 @@ class MenuScreen extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(24),
           onTap: onPressed,
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -337,7 +348,7 @@ class MenuScreen extends StatelessWidget {
               children: [
                 Icon(
                   icon,
-                  size: 50,
+                  size: 44,
                   color: Colors.white,
                 ),
                 const SizedBox(height: 12),
@@ -346,7 +357,7 @@ class MenuScreen extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 16,
+                    fontSize: 18,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

@@ -3,6 +3,7 @@ import '../models/patient.dart';
 import '../models/medical_note.dart';
 import '../models/enxaqueca.dart';
 import '../models/diabetes.dart';
+import '../models/pressao_arterial.dart';
 import '../models/evento_clinico.dart';
 import '../models/crise_gastrite.dart';
 import '../models/menstruacao.dart';
@@ -365,6 +366,84 @@ class DatabaseService {
       });
 
       return unique.map((m) => Diabetes.fromMap(m)).toList();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // =================== PRESSÃO ARTERIAL ===================
+  Future<PressaoArterial> createPressao(PressaoArterial registro) async {
+    try {
+      await _ensureConnection();
+      final collection = _db!.collection('pressoes');
+
+      final data = registro.toMap();
+      data.remove('_id');
+      try {
+        data['pacienteId'] = ObjectId.parse(registro.pacienteId);
+      } catch (_) {
+        data['pacienteId'] = registro.pacienteId;
+      }
+
+      final result = await collection.insert(data);
+      Map<String, dynamic>? created;
+      if (result['_id'] != null) {
+        created = await collection.findOne(where.id(result['_id']));
+      } else {
+        created = await collection.findOne(where
+            .eq('pacienteId', data['pacienteId'])
+            .eq('data', data['data'])
+            .eq('sistolica', data['sistolica'])
+            .eq('diastolica', data['diastolica']));
+      }
+      if (created == null) throw 'Erro ao criar registro de pressão';
+
+      final normalized = Map<String, dynamic>.from(created);
+      normalized['_id'] = normalized['_id'].toString();
+      if (normalized['pacienteId'] != null) {
+        normalized['pacienteId'] = normalized['pacienteId'].toString();
+      }
+      return PressaoArterial.fromMap(normalized);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<List<PressaoArterial>> getPressoesByPacienteId(String pacienteId) async {
+    try {
+      await _ensureConnection();
+      final collection = _db!.collection('pressoes');
+
+      final results = <Map<String, dynamic>>[];
+      try {
+        final objId = ObjectId.parse(pacienteId);
+        final list = await collection.find(where.eq('pacienteId', objId)).toList();
+        results.addAll(list.map((e) => Map<String, dynamic>.from(e)));
+      } catch (_) {}
+
+      final list2 = await collection.find(where.eq('pacienteId', pacienteId)).toList();
+      results.addAll(list2.map((e) => Map<String, dynamic>.from(e)));
+
+      final normalized = results.map((doc) {
+        final data = Map<String, dynamic>.from(doc);
+        data['_id'] = data['_id'].toString();
+        if (data['pacienteId'] != null) {
+          data['pacienteId'] = data['pacienteId'].toString();
+        }
+        return data;
+      }).toList();
+
+      normalized.sort((a, b) {
+        try {
+          final da = DateTime.parse(a['data'].toString());
+          final db = DateTime.parse(b['data'].toString());
+          return db.compareTo(da);
+        } catch (_) {
+          return 0;
+        }
+      });
+
+      return normalized.map((m) => PressaoArterial.fromMap(m)).toList();
     } catch (e) {
       rethrow;
     }

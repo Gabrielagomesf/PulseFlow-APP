@@ -1,7 +1,76 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:fl_chart/fl_chart.dart'; // Import fl_chart
+import 'package:url_launcher/url_launcher_string.dart';
 import 'enxaqueca_controller.dart';
 import '../../models/enxaqueca.dart';
+
+String formatarData(DateTime d) {
+  final dd = d.day.toString().padLeft(2, '0');
+  final mm = d.month.toString().padLeft(2, '0');
+  final yyyy = d.year.toString();
+  return "$dd/$mm/$yyyy";
+}
+
+String formatarMesAno(DateTime d) {
+  const meses = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
+  return '${meses[d.month - 1]} de ${d.year}';
+}
+
+String formatarMes(int mes) {
+  const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+  return meses[mes - 1];
+}
+
+String calcularMediaIntensidade(List<Enxaqueca> data) {
+  if (data.isEmpty) return '0';
+  final soma = data.fold<int>(0, (sum, item) => sum + (int.tryParse(item.intensidade) ?? 0));
+  return (soma / data.length).toStringAsFixed(1);
+}
+
+String calcularMaiorIntensidade(List<Enxaqueca> data) {
+  if (data.isEmpty) return '0';
+  final valores = data.map((e) => int.tryParse(e.intensidade) ?? 0).toList();
+  final maior = valores.reduce((a, b) => a > b ? a : b);
+  return maior.toString();
+}
+
+double calcularFatorIntensidade(String intensidade) {
+  final valor = int.tryParse(intensidade) ?? 0;
+  return valor / 10.0;
+}
+
+Color getCorIntensidade(String intensidade) {
+  final valor = int.tryParse(intensidade) ?? 0;
+  if (valor <= 3) {
+    return Colors.green;
+  }
+  if (valor <= 6) {
+    return Colors.orange;
+  }
+  return Colors.red;
+}
+
+String classificarIntensidade(String intensidade) {
+  final valor = int.tryParse(intensidade) ?? 0;
+  if (valor <= 0) return 'Sem dor';
+  if (valor <= 2) return 'Leve';
+  if (valor <= 4) return 'Desconforto';
+  if (valor <= 6) return 'Moderada';
+  if (valor <= 8) return 'Intensa';
+  if (valor == 9) return 'Muito intensa';
+  return 'Pior dor'; // 10
+}
+
+String classificarDuracaoHoras(int horas) {
+  if (horas <= 0) return 'Sem duração';
+  if (horas <= 1) return 'Curta';
+  if (horas <= 3) return 'Moderada';
+  return 'Prolongada';
+}
 
 class EnxaquecaScreen extends StatelessWidget {
   final String pacienteId;
@@ -12,239 +81,328 @@ class EnxaquecaScreen extends StatelessWidget {
   final TextEditingController intensidadeController = TextEditingController();
   final TextEditingController duracaoController = TextEditingController();
   final Rx<DateTime?> dataSelecionada = Rx<DateTime?>(null);
-  final RxBool mostrarGrafico = false.obs;
-  final Rx<DateTime> mesSelecionado = DateTime(DateTime.now().year, DateTime.now().month).obs;
+  final RxBool mostrarGrafico = false.obs; // Reverting to false
 
   @override
   Widget build(BuildContext context) {
     controller.carregarRegistros(pacienteId);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0B132B),
+      backgroundColor: const Color(0xFFF1F1F1),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1C2541),
+        backgroundColor: const Color(0xFF00324A),
         elevation: 0,
         title: const Text("Registro de Enxaqueca", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            if (mostrarGrafico.value) {
+              mostrarGrafico.value = false;
+            } else {
+              Navigator.of(context).maybePop();
+            }
+          },
+        ),
         centerTitle: true,
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            // Card de input
-            Card(
-              color: const Color(0xFF1F4068),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              elevation: 0,
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "Novo registro",
-                      style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                  children: [
-                        Expanded(
-                          child: TextField(
-                      controller: intensidadeController,
-                            decoration: const InputDecoration(
-                              labelText: "Intensidade (1-10)",
-                              hintText: "Ex: 7",
-                            ),
-                          ),
+        child: Obx(() {
+          // debug: EnxaquecaScreen building with mostrarGrafico.value
+          return Column(
+            children: [
+              if (!mostrarGrafico.value) ...[
+                // debug: rendering registration and list view
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: Card(
+                      color: const Color(0xFFFFFFFF),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: 0,
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Novo registro",
+                              style: TextStyle(color: Color(0xFF00324A), fontSize: 16, fontWeight: FontWeight.w600),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: TextField(
-                      controller: duracaoController,
-                            decoration: const InputDecoration(
-                              labelText: "Duração (min)",
-                              hintText: "Ex: 45",
-                            ),
-                      keyboardType: TextInputType.number,
-                    ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Obx(() {
-                      final dataText = dataSelecionada.value == null
-                          ? 'Selecione a data'
-                          : _formatarData(dataSelecionada.value!);
-                      return InkWell(
-                        onTap: () async {
-                          final hoje = DateTime.now();
-                          final picked = await showDatePicker(
-                            context: context,
-                            initialDate: dataSelecionada.value ?? hoje,
-                            firstDate: DateTime(2000),
-                            lastDate: DateTime(hoje.year, hoje.month, hoje.day),
-                            helpText: 'Selecione a data do episódio',
-                            cancelText: 'Cancelar',
-                            confirmText: 'Confirmar',
-                            builder: (context, child) {
-                              return Theme(
-                                data: Theme.of(context).copyWith(
-                                  colorScheme: const ColorScheme.light(
-                                    primary: Color(0xFF00C3B7),
-                                  ),
-                                ),
-                                child: child!,
-                              );
-                            },
-                          );
-                          if (picked != null) {
-                            dataSelecionada.value = DateTime(
-                              picked.year,
-                              picked.month,
-                              picked.day,
-                            );
-                          }
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFF3A506B)),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.event, color: Color(0xFF1F4068)),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  dataText,
-                                  style: const TextStyle(color: Color(0xFF1F4068)),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: intensidadeController,
+                                decoration: const InputDecoration(
+                                  labelText: "Intensidade (1-10)",
+                                  hintText: "Ex: 7",
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }),
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF00C3B7),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                      onPressed: () async {
-                              if (dataSelecionada.value == null) {
-                                Get.snackbar('Data obrigatória', 'Selecione a data do episódio');
-                                return;
-                              }
-                        await controller.adicionarRegistro(
-                          pacienteId: pacienteId,
-                          intensidade: intensidadeController.text,
-                          duracao: int.tryParse(duracaoController.text) ?? 0,
-                                data: dataSelecionada.value!,
-                        );
-
-                        intensidadeController.clear();
-                        duracaoController.clear();
-                              dataSelecionada.value = null;
-                            },
-                            child: const Text("Registrar", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: OutlinedButton(
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Color(0xFF00C3B7), width: 2),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              padding: const EdgeInsets.symmetric(vertical: 14),
                             ),
-                            onPressed: () {
-                              mostrarGrafico.value = true;
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: TextField(
+                                controller: duracaoController,
+                                decoration: const InputDecoration(
+                                  labelText: "Duração (horas)",
+                                  hintText: "Ex: 2",
+                                ),
+                                keyboardType: TextInputType.number,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Obx(() {
+                          final dataText = dataSelecionada.value == null
+                              ? 'Selecione a data'
+                              : formatarData(dataSelecionada.value!);
+                          return InkWell(
+                            onTap: () async {
+                              final hoje = DateTime.now();
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: dataSelecionada.value ?? hoje,
+                                firstDate: DateTime(2000),
+                                lastDate: DateTime(hoje.year, hoje.month, hoje.day),
+                                helpText: 'Selecione a data do episódio',
+                                cancelText: 'Cancelar',
+                                confirmText: 'Confirmar',
+                                builder: (context, child) {
+                                  return Theme(
+                                    data: Theme.of(context).copyWith(
+                                      colorScheme: const ColorScheme.light(
+                                            primary: Color(0xFF00324A),
+                                      ),
+                                    ),
+                                    child: child!,
+                                  );
+                                },
+                              );
+                              if (picked != null) {
+                                dataSelecionada.value = DateTime(
+                                  picked.year,
+                                  picked.month,
+                                  picked.day,
+                                );
+                              }
                             },
-                            child: const Text("Visualizar dados", style: TextStyle(color: Color(0xFF00C3B7), fontSize: 16, fontWeight: FontWeight.w600)),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                              decoration: BoxDecoration(
+                                    color: const Color(0xFFFFFFFF),
+                                borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: const Color(0xFF00324A).withOpacity(0.2)),
+                              ),
+                              child: Row(
+                                children: [
+                                      const Icon(Icons.event, color: Color(0xFF00324A)),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      dataText,
+                                          style: const TextStyle(color: Color(0xFF00324A)),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }),
+                        const SizedBox(height: 20),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF00324A),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                ),
+                                onPressed: () async {
+                                  if (dataSelecionada.value == null) {
+                                    Get.snackbar('Data obrigatória', 'Selecione a data do episódio');
+                                    return;
+                                  }
+                                  await controller.adicionarRegistro(
+                                    pacienteId: pacienteId,
+                                    intensidade: intensidadeController.text,
+                                    duracao: int.tryParse(duracaoController.text) ?? 0,
+                                    data: dataSelecionada.value!,
+                                  );
+
+                                  intensidadeController.clear();
+                                  duracaoController.clear();
+                                  dataSelecionada.value = null;
+                                  Get.snackbar('Sucesso', 'Registro de enxaqueca salvo com sucesso');
+                                },
+                                child: const Text("Registrar", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: OutlinedButton(
+                                style: OutlinedButton.styleFrom(
+                                      side: const BorderSide(color: Color(0xFF00324A), width: 2),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                ),
+                                onPressed: () {
+                                  mostrarGrafico.value = !mostrarGrafico.value;
+                                },
+                                    child: Obx(() => Text(mostrarGrafico.value ? "Visualizar registros" : "Visualizar dados", style: const TextStyle(color: Color(0xFF00324A), fontSize: 16, fontWeight: FontWeight.w600))),
+                              ),
+                            ),
+                          ],
+                ),
+                const SizedBox(height: 24),
+                // Removido: lista de dados na tela de registro. As informações ficam na tela do gráfico.
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ] else ...[
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                  child: Column(
+                    children: [
+                      _GraficoEnxaqueca(
+                        registros: controller.registrosFiltrados,
+                        mesSelecionado: controller.mesSelecionado.value,
+                        onPrevMonth: () {
+                          final d = controller.mesSelecionado.value;
+                          controller.mesSelecionado.value = DateTime(d.year, d.month - 1);
+                        },
+                        onNextMonth: () {
+                          final d = controller.mesSelecionado.value;
+                          controller.mesSelecionado.value = DateTime(d.year, d.month + 1);
+                        },
+                        onClose: () {
+                          mostrarGrafico.value = false;
+                        },
+                      ),
+                        const SizedBox(height: 24),
+                      _MigraineAnalysisSection(registros: controller.registrosFiltrados),
+                        const SizedBox(height: 12),
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: controller.registrosFiltrados.length,
+                          itemBuilder: (context, index) {
+                            final item = controller.registrosFiltrados[index];
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFFFFF),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFF00324A).withOpacity(0.15)),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 50,
+                                    height: 50,
+                                    decoration: BoxDecoration(color: const Color(0xFF00324A), borderRadius: BorderRadius.circular(8)),
+                                    child: Center(
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Text('${item.data.day}', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                                          Text(formatarMes(item.data.month), style: const TextStyle(color: Colors.white, fontSize: 10)),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(children: [const Icon(Icons.health_and_safety, color: Color(0xFF00324A), size: 16), const SizedBox(width: 8), Text('Intensidade: ${item.intensidade}', style: const TextStyle(color: Color(0xFF00324A), fontSize: 16, fontWeight: FontWeight.w600))]),
+                                        const SizedBox(height: 4),
+                                        Row(children: [const Icon(Icons.timer, color: Color(0xFF00324A), size: 14), const SizedBox(width: 6), Text('Duração: ${item.duracao} h', style: const TextStyle(color: Color(0xFF00324A), fontSize: 14))]),
+                                        const SizedBox(height: 4),
+                                        Wrap(
+                                          spacing: 8,
+                                          runSpacing: 6,
+                                          children: [
+                                            _buildChipIntensidade(item.intensidade),
+                                            _buildChipDuracao(item.duracao),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        Center(
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () async {
+                              const url = 'https://www.disturbiosdomovimento.com.br/post/como-classificar-a-intensidade-da-dor-de-cabe%C3%A7a-e-por-que-isso-%C3%A9-importante';
+                              final ok = await launchUrlString(url);
+                              if (!ok) {
+                                await launchUrlString(url, mode: LaunchMode.externalApplication);
+                              }
+                            },
+                            child: const Text(
+                              'Referência: Classificação de intensidade da dor de cabeça',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Color(0xFF00324A), decoration: TextDecoration.underline),
+                            ),
                           ),
                         ),
-                      ],
+                    ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            // Lista de registros / Gráfico
-            Expanded(
-              child: Obx(() {
-                if (mostrarGrafico.value) {
-                  final todos = controller.registros.toList();
-                  
-                  final filtrados = todos.where((e) {
-                    final match = e.data.year == mesSelecionado.value.year && e.data.month == mesSelecionado.value.month;
-                    return match;
-                  }).toList();
-                  
-                  return _GraficoEnxaqueca(
-                    registros: filtrados,
-                    mesSelecionado: mesSelecionado.value,
-                    onPrevMonth: () {
-                      final d = mesSelecionado.value;
-                      mesSelecionado.value = DateTime(d.year, d.month - 1);
-                    },
-                    onNextMonth: () {
-                      final d = mesSelecionado.value;
-                      mesSelecionado.value = DateTime(d.year, d.month + 1);
-                    },
-                    onClose: () {
-                      mostrarGrafico.value = false;
-                    },
-                  );
-                }
-                return ListView.builder(
-                  padding: const EdgeInsets.only(bottom: 16),
-                itemCount: controller.registros.length,
-                itemBuilder: (context, index) {
-                  final item = controller.registros[index];
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1C2541),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFF3A506B)),
-                      ),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        title: Text(
-                          "Intensidade: ${item.intensidade}",
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-                        ),
-                        subtitle: Text(
-                          "Duração: ${item.duracao} min\nData: ${_formatarData(item.data)}",
-                          style: const TextStyle(color: Color(0xFFB0C4DE)),
-                        ),
-                        leading: const Icon(Icons.health_and_safety, color: Color(0xFF00C3B7)),
-                      ),
-                    );
-                  },
-                );
-              }),
-            ),
-          ],
-        ),
+              ],
+            ],
+          );
+        }),
       ),
     );
   }
+}
 
-  String _formatarData(DateTime d) {
-    final dd = d.day.toString().padLeft(2, '0');
-    final mm = d.month.toString().padLeft(2, '0');
-    final yyyy = d.year.toString();
-    return "$dd/$mm/$yyyy";
+Widget _buildChipIntensidade(String intensidade) {
+  final valor = int.tryParse(intensidade) ?? 0;
+  late final Color bg;
+  late final Color fg;
+  if (valor <= 3) {
+    bg = Colors.green.withOpacity(0.15);
+    fg = Colors.green.shade700;
+  } else if (valor <= 6) {
+    bg = Colors.amber.withOpacity(0.2);
+    fg = Colors.amber.shade800;
+  } else {
+    bg = Colors.red.withOpacity(0.15);
+    fg = Colors.red.shade700;
   }
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+    decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(16)),
+    child: Text(classificarIntensidade(intensidade), style: TextStyle(color: fg, fontSize: 12, fontWeight: FontWeight.w600)),
+  );
+}
+
+Widget _buildChipDuracao(int horas) {
+  // Mantém paleta principal para duração
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+    decoration: BoxDecoration(color: const Color(0xFF00324A).withOpacity(0.10), borderRadius: BorderRadius.circular(16)),
+    child: Text(classificarDuracaoHoras(horas), style: const TextStyle(color: Color(0xFF00324A), fontSize: 12, fontWeight: FontWeight.w600)),
+  );
 }
 
 class _GraficoEnxaqueca extends StatelessWidget {
@@ -257,13 +415,11 @@ class _GraficoEnxaqueca extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final data = registros.toList()
-      ..sort((a, b) => a.data.compareTo(b.data));
+    final data = registros.toList()..sort((a, b) => a.data.compareTo(b.data));
+    final mes = formatarMesAno(mesSelecionado);
 
-    final mes = _formatarMesAno(mesSelecionado);
-
-                  return Card(
-      color: const Color(0xFF1F4068),
+    return Card(
+      color: const Color(0xFFFFFFFF),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 0,
       child: Padding(
@@ -271,302 +427,132 @@ class _GraficoEnxaqueca extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Cabeçalho
             Row(
               children: [
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Evolução da Intensidade',
-                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600),
-                      ),
+                      const Text('Evolução da Intensidade', style: TextStyle(color: Color(0xFF00324A), fontSize: 18, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 4),
-                      Text(
-                        mes,
-                        style: const TextStyle(color: Colors.white70, fontSize: 14),
-                      ),
+                      Text(mes, style: const TextStyle(color: Color(0xFF00324A), fontSize: 14)),
                     ],
                   ),
                 ),
-                IconButton(
-                  onPressed: onClose,
-                  icon: const Icon(Icons.close, color: Colors.white70, size: 20),
-                ),
+                IconButton(onPressed: onClose, icon: const Icon(Icons.close, color: Color(0xFF00324A), size: 20)),
               ],
             ),
             const SizedBox(height: 20),
-            
-            // Conteúdo principal
             if (data.isEmpty) ...[
-              Expanded(
-                child: Center(
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.analytics_outlined,
-                        size: 64,
-                        color: Colors.white.withOpacity(0.3),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Sem dados para $mes',
-                        style: const TextStyle(color: Colors.white70, fontSize: 16),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Adicione registros para visualizar o gráfico',
-                        style: TextStyle(color: Colors.white54, fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ] else ...[
-              Expanded(
-                child: Column(
-                  children: [
-                    // Estatísticas rápidas
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1C2541),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              children: [
-                                const Text(
-                                  'Total',
-                                  style: TextStyle(color: Colors.white70, fontSize: 12),
-                                ),
-                                Text(
-                                  '${data.length}',
-                                  style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Expanded(
-                            child: Column(
-                              children: [
-                                const Text(
-                                  'Média',
-                                  style: TextStyle(color: Colors.white70, fontSize: 12),
-                                ),
-                                Text(
-                                  '${_calcularMediaIntensidade(data)}',
-                                  style: const TextStyle(color: Color(0xFF00C3B7), fontSize: 20, fontWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Expanded(
-                            child: Column(
-                              children: [
-                                const Text(
-                                  'Maior',
-                                  style: TextStyle(color: Colors.white70, fontSize: 12),
-                                ),
-                                Text(
-                                  '${_calcularMaiorIntensidade(data)}',
-                                  style: const TextStyle(color: Colors.orange, fontSize: 20, fontWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    
-                    // Lista de dados
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: data.length,
-                        itemBuilder: (context, index) {
-                          final item = data[index];
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1C2541),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: const Color(0xFF3A506B), width: 1),
-                            ),
-                            child: Row(
-                              children: [
-                                // Data
-                                Container(
-                                  width: 50,
-                                  height: 50,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF00C3B7),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Center(
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          '${item.data.day}',
-                                          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                                        ),
-                                        Text(
-                                          _formatarMes(item.data.month),
-                                          style: const TextStyle(color: Colors.white, fontSize: 10),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                
-                                // Informações
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          const Icon(Icons.health_and_safety, color: Color(0xFF00C3B7), size: 16),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            'Intensidade: ${item.intensidade}',
-                                            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Row(
-                                        children: [
-                                          const Icon(Icons.timer, color: Colors.white70, size: 14),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                            'Duração: ${item.duracao} min',
-                                            style: const TextStyle(color: Colors.white70, fontSize: 14),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                
-                                // Barra de intensidade
-                                Container(
-                                  width: 8,
-                                  height: 60,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF3A506B),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: FractionallySizedBox(
-                                    alignment: Alignment.bottomCenter,
-                                    heightFactor: _calcularFatorIntensidade(item.intensidade),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: _getCorIntensidade(item.intensidade),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                    ),
-                  );
-                },
-                      ),
-                    ),
-                    
-                    // Gráfico de linha interativo
-                    if (data.isNotEmpty) ...[
-                      const SizedBox(height: 20),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1C2541),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Gráfico de Intensidade',
-                              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
-                            ),
-                            const SizedBox(height: 16),
-                            SizedBox(
-                              height: 200,
-                              child: SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: SizedBox(
-                                  width: (data.length * 80.0).clamp(MediaQuery.of(context).size.width - 64, double.infinity),
-                                  height: 200,
-                                  child: Stack(
-                                    children: [
-                                      CustomPaint(
-                                        painter: _LineChartPainter(data),
-                                        size: Size.infinite,
-                                      ),
-                                      // Labels dos eixos
-                                      Positioned(
-                                        left: 10,
-                                        top: 10,
-                                        child: Text(
-                                          'Intensidade',
-                                          style: TextStyle(color: Colors.white70, fontSize: 12),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        left: 10,
-                                        bottom: 10,
-                                        child: Text(
-                                          'Dias',
-                                          style: TextStyle(color: Colors.white70, fontSize: 12),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                  children: const [
+                    Icon(Icons.insights_outlined, size: 48, color: Color(0xFF00324A)),
+                    SizedBox(height: 8),
+                    Text('Sem dados neste mês', style: TextStyle(color: Color(0xFF00324A), fontSize: 14)),
                   ],
                 ),
               ),
+            ] else ...[
+              SizedBox(
+                height: 320,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 20),
+                  decoration: BoxDecoration(color: const Color(0xFFFFFFFF), borderRadius: BorderRadius.circular(12)),
+                  child: LineChart(
+                    LineChartData(
+                      gridData: FlGridData(
+                        show: true,
+                        drawVerticalLine: false,
+                        drawHorizontalLine: true,
+                        getDrawingHorizontalLine: (v) => const FlLine(color: Colors.white12, strokeWidth: 1),
+                      ),
+                      titlesData: FlTitlesData(
+                        show: true,
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 28,
+                            getTitlesWidget: (value, meta) {
+                              final i = value.toInt();
+                              if (i < 0 || i >= data.length) return const SizedBox.shrink();
+                              final d = data[i].data;
+                              return SideTitleWidget(
+                                axisSide: meta.axisSide,
+                                space: 6,
+                                child: Text('${d.day}', style: const TextStyle(color: Color(0xFF00324A), fontSize: 10)),
+                              );
+                            },
+                            interval: (data.length / 6).clamp(1, 6).toDouble(),
+                          ),
+                        ),
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 36,
+                            getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: const TextStyle(color: Color(0xFF00324A), fontSize: 10)),
+                            interval: 1.0,
+                          ),
+                        ),
+                        topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      ),
+                      borderData: FlBorderData(show: true, border: Border.all(color: const Color(0xFF00324A).withOpacity(0.15), width: 1)),
+                      minX: 0,
+                      maxX: (data.length - 1).toDouble(),
+                      minY: 0,
+                      maxY: 10,
+                      lineBarsData: [
+                        LineChartBarData(
+                          spots: data.asMap().entries.map((e) => FlSpot(e.key.toDouble(), (int.tryParse(e.value.intensidade) ?? 0).toDouble())).toList(),
+                          isCurved: true,
+                          color: const Color(0xFF00324A),
+                          barWidth: 3,
+                          isStrokeCapRound: true,
+                          dotData: FlDotData(
+                            show: true,
+                            getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
+                              radius: 4,
+                              color: const Color(0xFF00324A),
+                              strokeWidth: 1.5,
+                              strokeColor: Colors.white,
+                            ),
+                          ),
+                          belowBarData: BarAreaData(
+                            show: true,
+                            gradient: LinearGradient(
+                              colors: [
+                                const Color(0xFF00324A).withOpacity(0.25),
+                                const Color(0xFF00324A).withOpacity(0),
+                              ],
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                            ),
+                          ),
+                        ),
+                      ],
+                      lineTouchData: LineTouchData(touchTooltipData: LineTouchTooltipData(getTooltipColor: (s) => const Color(0xFF00324A)), handleBuiltInTouches: true),
+                      ),
+                  ),
+                ),
+              ),
             ],
-            
-            // Botões de navegação (na parte inferior)
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 ElevatedButton.icon(
                   onPressed: onPrevMonth,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1C2541),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                  icon: const Icon(Icons.chevron_left, color: Colors.white70, size: 16),
-                  label: const Text('Anterior', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00324A), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+                  icon: const Icon(Icons.chevron_left, color: Colors.white, size: 16),
+                  label: const Text('Anterior', style: TextStyle(color: Colors.white, fontSize: 12)),
                 ),
                 ElevatedButton.icon(
                   onPressed: onNextMonth,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1C2541),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                  icon: const Icon(Icons.chevron_right, color: Colors.white70, size: 16),
-                  label: const Text('Próximo', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00324A), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+                  icon: const Icon(Icons.chevron_right, color: Colors.white, size: 16),
+                  label: const Text('Próximo', style: TextStyle(color: Colors.white, fontSize: 12)),
                 ),
               ],
             ),
@@ -575,126 +561,33 @@ class _GraficoEnxaqueca extends StatelessWidget {
       ),
     );
   }
+}
 
-  String _formatarMesAno(DateTime d) {
-    const meses = [
-      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-    ];
-    return '${meses[d.month - 1]} de ${d.year}';
-  }
+class _MigraineAnalysisSection extends StatelessWidget {
+  final List<Enxaqueca> registros;
+  const _MigraineAnalysisSection({Key? key, required this.registros}) : super(key: key);
 
-  String _formatarMes(int mes) {
-    const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-    return meses[mes - 1];
-  }
+  @override
+  Widget build(BuildContext context) {
+    final data = registros.toList()..sort((a, b) => a.data.compareTo(b.data));
 
-  String _calcularMediaIntensidade(List<Enxaqueca> data) {
-    if (data.isEmpty) return '0';
-    final soma = data.fold<int>(0, (sum, item) => sum + (int.tryParse(item.intensidade) ?? 0));
-    return (soma / data.length).toStringAsFixed(1);
-  }
-
-  String _calcularMaiorIntensidade(List<Enxaqueca> data) {
-    if (data.isEmpty) return '0';
-    final valores = data.map((e) => int.tryParse(e.intensidade) ?? 0).toList();
-    final maior = valores.reduce((a, b) => a > b ? a : b);
-    return maior.toString();
-  }
-
-  double _calcularFatorIntensidade(String intensidade) {
-    final valor = int.tryParse(intensidade) ?? 0;
-    return valor / 10.0;
-  }
-
-  Color _getCorIntensidade(String intensidade) {
-    final valor = int.tryParse(intensidade) ?? 0;
-    if (valor <= 3) {
-      return Colors.green;
-    }
-    if (valor <= 6) {
-      return Colors.orange;
-    }
-    return Colors.red;
+    return Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(color: const Color(0xFFFFFFFF), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF00324A).withOpacity(0.15))),
+              child: Row(
+                children: [
+                  Expanded(child: Column(children: const [Text('Média', style: TextStyle(color: Color(0xFF00324A), fontSize: 12))])),
+                  Expanded(child: Column(children: [const Text('Intensidade', style: TextStyle(color: Color(0xFF00324A), fontSize: 12)), Text(calcularMediaIntensidade(data), style: const TextStyle(color: Color(0xFF00324A), fontSize: 20, fontWeight: FontWeight.w600))])),
+                  Expanded(child: Column(children: [const Text('Maior', style: TextStyle(color: Color(0xFF00324A), fontSize: 12)), Text(calcularMaiorIntensidade(data), style: const TextStyle(color: Color(0xFF00324A), fontSize: 20, fontWeight: FontWeight.w600))])),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Removido: lista de dados na tela de registro. As informações ficam na tela do gráfico.
+          ],
+    );
   }
 }
 
-class _LineChartPainter extends CustomPainter {
-  final List<Enxaqueca> data;
-
-  _LineChartPainter(this.data);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white
-      ..strokeWidth = 2.0
-      ..style = PaintingStyle.stroke;
-
-    final minIntensity = data.map((e) => int.tryParse(e.intensidade) ?? 0).reduce((a, b) => a < b ? a : b);
-    final maxIntensity = data.map((e) => int.tryParse(e.intensidade) ?? 0).reduce((a, b) => a > b ? a : b);
-    final intensityRange = maxIntensity - minIntensity;
-
-    final yAxisWidth = 50.0; // Largura do eixo Y
-    final xAxisHeight = 50.0; // Altura do eixo X
-
-    final padding = 40.0; // Padding para o gráfico
-    final graphWidth = size.width - yAxisWidth - padding * 2;
-    final graphHeight = size.height - xAxisHeight - padding * 2;
-
-    final xAxisStart = padding + yAxisWidth;
-    final yAxisStart = size.height - padding - xAxisHeight;
-
-    // Desenha o eixo X
-    canvas.drawLine(
-      Offset(xAxisStart, yAxisStart),
-      Offset(size.width - padding, yAxisStart),
-      paint,
-    );
-
-    // Desenha o eixo Y
-    canvas.drawLine(
-      Offset(xAxisStart, yAxisStart),
-      Offset(xAxisStart, padding),
-      paint,
-    );
-
-    // Desenha os pontos
-    for (int i = 0; i < data.length; i++) {
-      final item = data[i];
-      final x = xAxisStart + (i * 80.0) + 40.0; // Posição X do ponto
-      final y = yAxisStart - ((int.tryParse(item.intensidade) ?? 0 - minIntensity) / intensityRange) * graphHeight;
-
-      canvas.drawCircle(Offset(x, y), 8.0, Paint()..color = _getCorIntensidade(item.intensidade));
-    }
-
-    // Desenha a linha conectando os pontos
-    if (data.length > 1) {
-      for (int i = 0; i < data.length - 1; i++) {
-        final startX = xAxisStart + (i * 80.0) + 40.0;
-        final startY = yAxisStart - ((int.tryParse(data[i].intensidade) ?? 0 - minIntensity) / intensityRange) * graphHeight;
-
-        final endX = xAxisStart + ((i + 1) * 80.0) + 40.0;
-        final endY = yAxisStart - ((int.tryParse(data[i + 1].intensidade) ?? 0 - minIntensity) / intensityRange) * graphHeight;
-
-        canvas.drawLine(Offset(startX, startY), Offset(endX, endY), paint);
-      }
-    }
-  }
-
-  Color _getCorIntensidade(String intensidade) {
-    final valor = int.tryParse(intensidade) ?? 0;
-    if (valor <= 3) {
-      return Colors.green;
-    }
-    if (valor <= 6) {
-      return Colors.orange;
-    }
-    return Colors.red;
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return true;
-  }
-}

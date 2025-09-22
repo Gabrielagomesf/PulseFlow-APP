@@ -4,8 +4,13 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   file_selector_windows
+  firebase_core
   flutter_secure_storage_windows
+<<<<<<< HEAD
   url_launcher_windows
+=======
+  local_auth_windows
+>>>>>>> 29af4702eccdd3753883047f0e5aa7ee791f848e
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST

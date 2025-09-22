@@ -11,6 +11,7 @@ import '../screens/medical_records/medical_records_screen.dart';
 import '../screens/menu/menu_screen.dart';
 import '../screens/enxaqueca/enxaqueca_screen.dart';
 import '../screens/diabetes/diabetes_screen.dart';
+import '../screens/pressaoArterial/pressao_screen.dart';
 import '../screens/login/paciente_controller.dart'; // Ajuste o caminho
 import '../screens/medical_records/medical_record_details_screen.dart';
 import '../screens/evento_clinico/evento_clinico_form_screen.dart';
@@ -100,6 +101,13 @@ class AppPages {
       page: () {
         final pacienteController = Get.find<PacienteController>();
         return DiabetesScreen(pacienteId: pacienteController.pacienteId.value);
+      },
+    ),
+    GetPage(
+      name: Routes.PRESSAO,
+      page: () {
+        final pacienteController = Get.find<PacienteController>();
+        return PressaoScreen(pacienteId: pacienteController.pacienteId.value);
       },
     ),
     GetPage(

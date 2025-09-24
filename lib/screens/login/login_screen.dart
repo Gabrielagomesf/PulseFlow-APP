@@ -277,11 +277,11 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     
     return Form(
       key: Get.find<LoginController>().formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          const Spacer(),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
           // Email field
           _buildTextField(
             controller: Get.find<LoginController>().emailController,
@@ -511,9 +511,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
               ),
             ),
           ),
-          const Spacer(),
           ],
         ),
+      ),
     );
   }
 

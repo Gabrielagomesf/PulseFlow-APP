@@ -27,6 +27,13 @@ class HomeController extends GetxController {
   // Favoritos personalizáveis
   final _favoriteItems = <String>[].obs;
   
+  // Dados para estatísticas
+  final _enxaquecaData = <Enxaqueca>[].obs;
+  final _diabetesData = <Diabetes>[].obs;
+  final _gastriteData = <CriseGastrite>[].obs;
+  final _eventoClinicoData = <EventoClinico>[].obs;
+  final _menstruacaoData = <Menstruacao>[].obs;
+  
   // Getters
   Patient? get currentPatient => _currentPatient.value;
   bool get isLoading => _isLoading.value;
@@ -60,13 +67,21 @@ class HomeController extends GetxController {
     try {
       final patientId = currentPatient!.id!;
       
-      // Verifica quais tipos de dados o paciente tem
+      // Carrega todos os dados do paciente
       final enxaquecas = await _databaseService.getEnxaquecasByPacienteId(patientId);
       final diabetes = await _databaseService.getDiabetesByPacienteId(patientId);
       final crisesGastrite = await _databaseService.getCrisesGastriteByPacienteId(patientId);
       final eventosClinicos = await _databaseService.getEventosClinicosByPacienteId(patientId);
       final menstruacoes = await _databaseService.getMenstruacoesByPacienteId(patientId);
       
+      // Armazena os dados para estatísticas
+      _enxaquecaData.value = enxaquecas;
+      _diabetesData.value = diabetes;
+      _gastriteData.value = crisesGastrite;
+      _eventoClinicoData.value = eventosClinicos;
+      _menstruacaoData.value = menstruacoes;
+      
+      // Verifica quais tipos de dados o paciente tem
       _hasEnxaqueca.value = enxaquecas.isNotEmpty;
       _hasDiabetes.value = diabetes.isNotEmpty;
       _hasCriseGastrite.value = crisesGastrite.isNotEmpty;
@@ -124,6 +139,12 @@ class HomeController extends GetxController {
     return currentPatient?.profilePhoto;
   }
 
+  // Verifica se a foto é base64
+  bool isBase64Photo(String? photo) {
+    if (photo == null) return false;
+    return photo.startsWith('data:image/');
+  }
+
   // Atualiza lista de favoritos baseada nos dados disponíveis
   void _updateFavoriteItems() {
     final availableItems = <String>[];
@@ -160,6 +181,94 @@ class HomeController extends GetxController {
            _hasEventoClinico.value || 
            _hasMenstruacao.value;
   }
+
+  // Calcula estatísticas para enxaqueca
+  Map<String, dynamic> getEnxaquecaStats() {
+    if (_enxaquecaData.isEmpty) return {};
+    
+    final intensidades = _enxaquecaData.map((e) => int.tryParse(e.intensidade) ?? 0).toList();
+    final maior = intensidades.reduce((a, b) => a > b ? a : b);
+    final menor = intensidades.reduce((a, b) => a < b ? a : b);
+    final media = intensidades.reduce((a, b) => a + b) / intensidades.length;
+    
+    return {
+      'maior': maior,
+      'menor': menor,
+      'media': media,
+      'total': intensidades.length,
+    };
+  }
+
+  // Calcula estatísticas para diabetes
+  Map<String, dynamic> getDiabetesStats() {
+    if (_diabetesData.isEmpty) return {};
+    
+    final glicoses = _diabetesData.map((d) => d.glicemia).toList();
+    final maior = glicoses.reduce((a, b) => a > b ? a : b);
+    final menor = glicoses.reduce((a, b) => a < b ? a : b);
+    final media = glicoses.reduce((a, b) => a + b) / glicoses.length;
+    
+    return {
+      'maior': maior,
+      'menor': menor,
+      'media': media,
+      'total': glicoses.length,
+    };
+  }
+
+  // Calcula estatísticas para gastrite
+  Map<String, dynamic> getGastriteStats() {
+    if (_gastriteData.isEmpty) return {};
+    
+    final intensidades = _gastriteData.map((g) => g.intensidadeDor).toList();
+    final maior = intensidades.reduce((a, b) => a > b ? a : b);
+    final menor = intensidades.reduce((a, b) => a < b ? a : b);
+    final media = intensidades.reduce((a, b) => a + b) / intensidades.length;
+    
+    return {
+      'maior': maior,
+      'menor': menor,
+      'media': media,
+      'total': intensidades.length,
+    };
+  }
+
+  // Calcula estatísticas para eventos clínicos
+  Map<String, dynamic> getEventoClinicoStats() {
+    if (_eventoClinicoData.isEmpty) return {};
+    
+    final now = DateTime.now();
+    final thisMonth = DateTime(now.year, now.month);
+    final lastMonth = DateTime(now.year, now.month - 1);
+    
+    final thisMonthEvents = _eventoClinicoData.where((e) {
+      final eventDate = e.dataHora;
+      return eventDate.isAfter(lastMonth) && eventDate.isBefore(thisMonth.add(const Duration(days: 31)));
+    }).length;
+    
+    return {
+      'total': _eventoClinicoData.length,
+      'este_mes': thisMonthEvents,
+    };
+  }
+
+  // Calcula estatísticas para menstruação
+  Map<String, dynamic> getMenstruacaoStats() {
+    if (_menstruacaoData.isEmpty) return {};
+    
+    final duracoes = _menstruacaoData.map((m) => m.duracaoEmDias).toList();
+    final maior = duracoes.reduce((a, b) => a > b ? a : b);
+    final menor = duracoes.reduce((a, b) => a < b ? a : b);
+    final media = duracoes.reduce((a, b) => a + b) / duracoes.length;
+    
+    return {
+      'maior': maior,
+      'menor': menor,
+      'media': media,
+      'total': duracoes.length,
+    };
+  }
+
 
   Future<void> logout() async {
     try {

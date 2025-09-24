@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -168,53 +170,79 @@ class ProfileController extends GetxController {
       return;
     }
 
-    // Atualiza o estado local PRIMEIRO para refletir as mudanças imediatamente
-    final updatedPatient = Patient(
-      id: currentPatient.id,
-      name: currentPatient.name,
-      email: currentPatient.email,
-      password: currentPatient.password,
-      phone: currentPatient.phone,
-      birthDate: currentPatient.birthDate,
-      cpf: currentPatient.cpf,
-      rg: currentPatient.rg,
-      gender: currentPatient.gender,
-      maritalStatus: currentPatient.maritalStatus,
-      nationality: currentPatient.nationality,
-      address: currentPatient.address,
-      acceptedTerms: currentPatient.acceptedTerms,
-      profilePhoto: photoPath,
-      emergencyContact: currentPatient.emergencyContact,
-      emergencyPhone: currentPatient.emergencyPhone,
-      isAdmin: currentPatient.isAdmin,
-      twoFactorCode: currentPatient.twoFactorCode,
-      twoFactorExpires: currentPatient.twoFactorExpires,
-      passwordResetCode: currentPatient.passwordResetCode,
-      passwordResetExpires: currentPatient.passwordResetExpires,
-      passwordResetRequired: currentPatient.passwordResetRequired,
-      createdAt: currentPatient.createdAt,
-      updatedAt: DateTime.now(),
-    );
+    try {
+      // Converter a foto para base64
+      final base64Photo = await _convertImageToBase64(photoPath);
+      
+      // Atualiza o estado local PRIMEIRO para refletir as mudanças imediatamente
+      final updatedPatient = Patient(
+        id: currentPatient.id,
+        name: currentPatient.name,
+        email: currentPatient.email,
+        password: currentPatient.password,
+        phone: currentPatient.phone,
+        birthDate: currentPatient.birthDate,
+        cpf: currentPatient.cpf,
+        rg: currentPatient.rg,
+        gender: currentPatient.gender,
+        maritalStatus: currentPatient.maritalStatus,
+        nationality: currentPatient.nationality,
+        address: currentPatient.address,
+        acceptedTerms: currentPatient.acceptedTerms,
+        profilePhoto: base64Photo, // Salvar como base64
+        emergencyContact: currentPatient.emergencyContact,
+        emergencyPhone: currentPatient.emergencyPhone,
+        isAdmin: currentPatient.isAdmin,
+        twoFactorCode: currentPatient.twoFactorCode,
+        twoFactorExpires: currentPatient.twoFactorExpires,
+        passwordResetCode: currentPatient.passwordResetCode,
+        passwordResetExpires: currentPatient.passwordResetExpires,
+        passwordResetRequired: currentPatient.passwordResetRequired,
+        createdAt: currentPatient.createdAt,
+        updatedAt: DateTime.now(),
+      );
 
-    _patient.value = updatedPatient;
-    _authService.currentUser = updatedPatient;
+      _patient.value = updatedPatient;
+      _authService.currentUser = updatedPatient;
 
-    // Atualiza no banco de dados em background
-    _updatePhotoInBackground(currentPatient.id!, photoPath);
+      // Atualiza no banco de dados em background
+      _updatePhotoInBackground(currentPatient.id!, base64Photo);
 
-    Get.snackbar(
-      'Sucesso',
-      'Foto atualizada com sucesso!',
-      backgroundColor: Colors.green,
-      colorText: Colors.white,
-    );
+      Get.snackbar(
+        'Sucesso',
+        'Foto atualizada com sucesso!',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+    } catch (e) {
+      print('Erro ao converter foto para base64: $e');
+      Get.snackbar(
+        'Erro',
+        'Erro ao processar a foto',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
+  }
+
+  // Converte imagem para base64
+  Future<String> _convertImageToBase64(String imagePath) async {
+    try {
+      final file = File(imagePath);
+      final bytes = await file.readAsBytes();
+      final base64String = base64Encode(bytes);
+      return 'data:image/jpeg;base64,$base64String';
+    } catch (e) {
+      print('Erro ao converter imagem para base64: $e');
+      rethrow;
+    }
   }
 
   // Atualiza a foto no banco de dados em background
-  Future<void> _updatePhotoInBackground(String patientId, String photoPath) async {
+  Future<void> _updatePhotoInBackground(String patientId, String photoBase64) async {
     try {
       print('Atualizando foto no banco de dados em background...');
-      await _databaseService.updatePatientField(patientId, 'profilePhoto', photoPath);
+      await _databaseService.updatePatientField(patientId, 'profilePhoto', photoBase64);
       print('Foto atualizada no banco de dados com sucesso!');
     } catch (e) {
       print('Erro ao atualizar foto no banco de dados (não crítico): $e');

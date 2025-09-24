@@ -433,3 +433,4 @@ class _PulseKeyScreenState extends State<PulseKeyScreen> {
     return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 }
+

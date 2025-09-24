@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../theme/app_theme.dart';
@@ -115,33 +117,7 @@ class HomeScreen extends StatelessWidget {
                 ),
                 child: controller.getProfilePhoto() != null
                     ? ClipOval(
-                        child: controller.getProfilePhoto()!.startsWith('http')
-                            ? Image.network(
-                                controller.getProfilePhoto()!,
-                                width: 70,
-                                height: 70,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return const Icon(
-                                    Icons.person,
-                                    color: Colors.white,
-                                    size: 40,
-                                  );
-                                },
-                              )
-                            : Image.file(
-                                File(controller.getProfilePhoto()!),
-                                width: 70,
-                                height: 70,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return const Icon(
-                                    Icons.person,
-                                    color: Colors.white,
-                                    size: 40,
-                                  );
-                                },
-                              ),
+                        child: _buildProfileImage(controller),
                       )
                     : const Icon(
                         Icons.person,
@@ -160,7 +136,7 @@ class HomeScreen extends StatelessWidget {
                       controller.getGreeting(),
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 16,
+                        fontSize: 15,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -169,7 +145,7 @@ class HomeScreen extends StatelessWidget {
                       controller.getPatientName(),
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 20,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                       overflow: TextOverflow.ellipsis,
@@ -335,6 +311,7 @@ class HomeScreen extends StatelessWidget {
 
   Widget _buildFavoriteChart(String item, HomeController controller) {
     final itemData = _getFavoriteItemData(item);
+    final stats = _getStatsForItem(controller, item);
     
     return Container(
       padding: const EdgeInsets.all(16),
@@ -372,21 +349,89 @@ class HomeScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          Container(
-            height: 200,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: itemData['color'].withOpacity(0.05),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: itemData['color'].withOpacity(0.2),
-                width: 1,
+          // Estatísticas
+          if (stats.isNotEmpty) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildStatItem('Maior', stats['maior']?.toString() ?? 'N/A', Colors.red),
+                _buildStatItem('Menor', stats['menor']?.toString() ?? 'N/A', Colors.green),
+                _buildStatItem('Média', stats['media']?.toStringAsFixed(1) ?? 'N/A', Colors.blue),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildStatItem('Total', stats['total']?.toString() ?? '0', Colors.grey[600]!),
+                if (stats['este_mes'] != null)
+                  _buildStatItem('Este Mês', stats['este_mes']?.toString() ?? '0', Colors.orange),
+              ],
+            ),
+          ] else ...[
+            Container(
+              height: 100,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.withOpacity(0.2)),
+              ),
+              child: const Center(
+                child: Text(
+                  'Nenhum dado disponível',
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 14,
+                  ),
+                ),
               ),
             ),
-            child: _buildChartForItem(item, itemData),
-          ),
+          ],
         ],
       ),
+    );
+  }
+
+  // Obtém estatísticas para um item específico
+  Map<String, dynamic> _getStatsForItem(HomeController controller, String item) {
+    switch (item) {
+      case 'enxaqueca':
+        return controller.getEnxaquecaStats();
+      case 'diabetes':
+        return controller.getDiabetesStats();
+      case 'crise_gastrite':
+        return controller.getGastriteStats();
+      case 'evento_clinico':
+        return controller.getEventoClinicoStats();
+      case 'menstruacao':
+        return controller.getMenstruacaoStats();
+      default:
+        return {};
+    }
+  }
+
+  // Widget para exibir um item de estatística
+  Widget _buildStatItem(String label, String value, Color color) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[600],
+          ),
+        ),
+      ],
     );
   }
 
@@ -1423,10 +1468,10 @@ class HomeScreen extends StatelessWidget {
     return Container(
       height: 80,
       decoration: const BoxDecoration(
-        color: Color(0xFF00324A), // Nova cor azul
+        color: Color(0xFF00324A),
         borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
         ),
       ),
       child: Row(
@@ -1461,20 +1506,24 @@ class HomeScreen extends StatelessWidget {
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               icon,
-              color: isSelected ? Colors.white : Colors.white.withOpacity(0.7),
+              color: isSelected ? Colors.white : Colors.white.withOpacity(0.6),
               size: isSelected ? 26 : 24,
             ),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? Colors.white : Colors.white.withOpacity(0.7),
-                fontSize: 12,
+                color: isSelected ? Colors.white : Colors.white.withOpacity(0.6),
+                fontSize: 11,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -1523,6 +1572,76 @@ class HomeScreen extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+
+  // Constrói a imagem do perfil baseada no tipo (base64, URL ou arquivo local)
+  Widget _buildProfileImage(HomeController controller) {
+    final photo = controller.getProfilePhoto();
+    if (photo == null) {
+      return const Icon(
+        Icons.person,
+        color: Colors.white,
+        size: 40,
+      );
+    }
+
+    // Se é base64
+    if (controller.isBase64Photo(photo)) {
+      try {
+        return Image.memory(
+          base64Decode(photo.split(',')[1]), // Remove o prefixo data:image/jpeg;base64,
+          width: 70,
+          height: 70,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return const Icon(
+              Icons.person,
+              color: Colors.white,
+              size: 40,
+            );
+          },
+        );
+      } catch (e) {
+        print('Erro ao decodificar base64: $e');
+        return const Icon(
+          Icons.person,
+          color: Colors.white,
+          size: 40,
+        );
+      }
+    }
+    
+    // Se é URL (http/https)
+    if (photo.startsWith('http')) {
+      return Image.network(
+        photo,
+        width: 70,
+        height: 70,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return const Icon(
+            Icons.person,
+            color: Colors.white,
+            size: 40,
+          );
+        },
+      );
+    }
+    
+    // Se é arquivo local
+    return Image.file(
+      File(photo),
+      width: 70,
+      height: 70,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return const Icon(
+          Icons.person,
+          color: Colors.white,
+          size: 40,
+        );
+      },
     );
   }
 } 

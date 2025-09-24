@@ -408,7 +408,7 @@ class RegistrationController extends GetxController with SafeControllerMixin {
     try {
       final bytes = await file.readAsBytes();
       final base64String = base64Encode(bytes);
-      profilePhotoBase64.value = base64String;
+      profilePhotoBase64.value = 'data:image/jpeg;base64,$base64String';
     } catch (e) {
       Get.snackbar(
         'Erro',

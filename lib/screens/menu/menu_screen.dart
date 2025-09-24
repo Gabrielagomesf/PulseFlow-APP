@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../enxaqueca/enxaqueca_screen.dart';
 import '../diabetes/diabetes_screen.dart';
@@ -30,141 +31,24 @@ class MenuScreen extends StatelessWidget {
                   topRight: Radius.circular(24),
                 ),
               ),
-              child: Padding(
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.all(20.0),
-                child: GridView.count(
-                  padding: const EdgeInsets.only(bottom: 24),
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 20,
-                  mainAxisSpacing: 20,
-                  childAspectRatio: 1.0,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Botão Enxaqueca
-                    _buildMenuButton(
-                      icon: Icons.medical_services,
-                      title: 'Enxaqueca',
-                      color: const Color(0xFF00324A),
-                      onPressed: () {
-                        print('Clicou em Enxaqueca');
-                        Get.to(() => EnxaquecaScreen(
-                          pacienteId: pacienteController.pacienteId.value,
-                        ));
-                      },
-                    ),
-
-                    // Botão Diabetes
-                    _buildMenuButton(
-                      icon: Icons.monitor_heart,
-                      title: 'Diabetes',
-                      color: const Color(0xFF00324A),
-                      onPressed: () {
-                        print('Clicou em Diabetes');
-                        Get.to(() => DiabetesScreen(
-                          pacienteId: pacienteController.pacienteId.value,
-                        ));
-                      },
-                    ),
-
-                    // Botão Pressão Arterial
-                    _buildMenuButton(
-                      icon: Icons.bloodtype,
-                      title: 'Pressão\nArterial',
-                      color: const Color(0xFF00324A),
-                      onPressed: () {
-                        Get.toNamed(Routes.PRESSAO);
-                      },
-                    ),
-
-                    // Botão Histórico
-                    _buildMenuButton(
-                      icon: Icons.history,
-                      title: 'Histórico',
-                      color: const Color(0xFF00324A),
-                      onPressed: () {
-                        Get.toNamed('/medical-records');
-                        Get.snackbar('Em breve', 'Tela de histórico ainda não implementada');
-                      },
-                    ),
-
-                    // Botão Evento Clínico
-                    _buildMenuButton(
-                      icon: Icons.event_note,
-                      title: 'Evento Clínico',
-                      color: const Color(0xFF00324A),
-                      onPressed: () {
-                        Get.toNamed(Routes.EVENTO_CLINICO_FORM);
-                      },
-                    ),
-
-                    // Botão Histórico de Eventos Clínicos
-                    _buildMenuButton(
-                      icon: Icons.history_rounded,
-                      title: 'Histórico de\nEventos',
-                      color: const Color(0xFF00324A),
-                      onPressed: () {
-                        Get.toNamed(Routes.EVENTO_CLINICO_HISTORY);
-                      },
-                    ),
-
-                    // Botão Crise de Gastrite
-                    _buildMenuButton(
-                      icon: Icons.restaurant_menu_rounded,
-                      title: 'Crise de\nGastrite',
-                      color: const Color(0xFF00324A),
-                      onPressed: () {
-                        Get.toNamed(Routes.CRISE_GASTRITE_FORM);
-                      },
-                    ),
-
-                    // Botão Histórico de Crises de Gastrite
-                    _buildMenuButton(
-                      icon: Icons.history_rounded,
-                      title: 'Histórico\nGastrite',
-                      color: const Color(0xFF00324A),
-                      onPressed: () {
-                        Get.toNamed(Routes.CRISE_GASTRITE_HISTORY);
-                      },
-                    ),
-
-                    // Botão Ciclo Menstrual
-                    _buildMenuButton(
-                      icon: Icons.favorite_rounded,
-                      title: 'Ciclo\nMenstrual',
-                      color: const Color(0xFF00324A),
-                      onPressed: () {
-                        Get.toNamed(Routes.MENSTRUACAO_FORM);
-                      },
-                    ),
-
-                    // Botão Histórico de Ciclos Menstruais
-                    _buildMenuButton(
-                      icon: Icons.history_rounded,
-                      title: 'Histórico\nMenstrual',
-                      color: const Color(0xFF00324A),
-                      onPressed: () {
-                        Get.toNamed(Routes.MENSTRUACAO_HISTORY);
-                      },
-                    ),
-
-                    // Botão Smartwatch
-                    _buildMenuButton(
-                      icon: Icons.watch,
-                      title: 'Smartwatch',
-                      color: const Color(0xFF00324A),
-                      onPressed: () {
-                        Get.toNamed(Routes.SMARTWATCH);
-                      },
-                    ),
-
-                    // Botão Configurações
-                    _buildMenuButton(
-                      icon: Icons.settings,
-                      title: 'Configurações',
-                      color: const Color(0xFF00324A),
-                      onPressed: () {
-                        Get.snackbar('Em breve', 'Funcionalidade em desenvolvimento');
-                      },
-                    ),
+                    // Seção Registros de Saúde
+                    _buildSectionHeader('Registros de Saúde'),
+                    const SizedBox(height: 16),
+                    _buildHealthRecordsGrid(pacienteController),
+                    
+                    const SizedBox(height: 32),
+                    
+                    // Seção Históricos
+                    _buildSectionHeader('Históricos'),
+                    const SizedBox(height: 16),
+                    _buildHistoryGrid(),
+                    
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),
@@ -253,10 +137,10 @@ class MenuScreen extends StatelessWidget {
     return Container(
       height: 80,
       decoration: const BoxDecoration(
-        color: Color(0xFF00324A), // Nova cor azul
+        color: Color(0xFF00324A),
         borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
         ),
       ),
       child: Row(
@@ -270,24 +154,10 @@ class MenuScreen extends StatelessWidget {
           }),
           _buildNavItem(Icons.add, 'Registro', true, () {}),
           _buildNavItem(Icons.vpn_key, 'Pulse Key', false, () {
-            // TODO: Implementar tela Pulse Key
-            Get.snackbar(
-              'Em Breve',
-              'Funcionalidade Pulse Key será implementada em breve!',
-              backgroundColor: const Color(0xFF00324A), // Nova cor azul
-              colorText: Colors.white,
-              snackPosition: SnackPosition.BOTTOM,
-            );
+            Get.toNamed('/pulse-key');
           }),
           _buildNavItem(Icons.person, 'Perfil', false, () {
-            // TODO: Implementar tela de perfil
-            Get.snackbar(
-              'Em Breve',
-              'Tela de perfil será implementada em breve!',
-              backgroundColor: const Color(0xFF00324A), // Nova cor azul
-              colorText: Colors.white,
-              snackPosition: SnackPosition.BOTTOM,
-            );
+            Get.toNamed('/profile');
           }),
         ],
       ),
@@ -308,15 +178,15 @@ class MenuScreen extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: isSelected ? Colors.white : Colors.white.withOpacity(0.7),
+              color: isSelected ? Colors.white : Colors.white.withOpacity(0.6),
               size: isSelected ? 26 : 24,
             ),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? Colors.white : Colors.white.withOpacity(0.7),
-                fontSize: 12,
+                color: isSelected ? Colors.white : Colors.white.withOpacity(0.6),
+                fontSize: 11,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),
@@ -326,17 +196,156 @@ class MenuScreen extends StatelessWidget {
     );
   }
 
+  // Cabeçalho de seção
+  Widget _buildSectionHeader(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        color: Color(0xFF1E293B),
+      ),
+    );
+  }
+
+  // Grid de registros de saúde
+  Widget _buildHealthRecordsGrid(PacienteController pacienteController) {
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      crossAxisSpacing: 16,
+      mainAxisSpacing: 16,
+      childAspectRatio: 1.1,
+      children: [
+        _buildMenuButton(
+          icon: Icons.psychology,
+          title: 'Enxaqueca',
+          color: const Color(0xFF00324A),
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            Get.to(() => EnxaquecaScreen(
+              pacienteId: pacienteController.pacienteId.value,
+            ));
+          },
+        ),
+        _buildMenuButton(
+          icon: Icons.bloodtype,
+          title: 'Diabetes',
+          color: const Color(0xFF00324A),
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            Get.to(() => DiabetesScreen(
+              pacienteId: pacienteController.pacienteId.value,
+            ));
+          },
+        ),
+        _buildMenuButton(
+          icon: Icons.monitor_heart,
+          title: 'Pressão\nArterial',
+          color: const Color(0xFF00324A),
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            Get.toNamed(Routes.PRESSAO);
+          },
+        ),
+        _buildMenuButton(
+          icon: Icons.sick,
+          title: 'Crise de\nGastrite',
+          color: const Color(0xFF00324A),
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            Get.toNamed(Routes.CRISE_GASTRITE_FORM);
+          },
+        ),
+        _buildMenuButton(
+          icon: Icons.event_note,
+          title: 'Evento\nClínico',
+          color: const Color(0xFF00324A),
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            Get.toNamed(Routes.EVENTO_CLINICO_FORM);
+          },
+        ),
+        _buildMenuButton(
+          icon: Icons.favorite,
+          title: 'Ciclo\nMenstrual',
+          color: const Color(0xFF00324A),
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            Get.toNamed(Routes.MENSTRUACAO_FORM);
+          },
+        ),
+      ],
+    );
+  }
+
+  // Grid de históricos
+  Widget _buildHistoryGrid() {
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      crossAxisSpacing: 16,
+      mainAxisSpacing: 16,
+      childAspectRatio: 1.1,
+      children: [
+        _buildMenuButton(
+          icon: Icons.history,
+          title: 'Histórico\nGeral',
+          color: const Color(0xFF00324A),
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            Get.toNamed('/medical-records');
+          },
+        ),
+        _buildMenuButton(
+          icon: Icons.event_available,
+          title: 'Histórico\nEventos',
+          color: const Color(0xFF00324A),
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            Get.toNamed(Routes.EVENTO_CLINICO_HISTORY);
+          },
+        ),
+        _buildMenuButton(
+          icon: Icons.restaurant,
+          title: 'Histórico\nGastrite',
+          color: const Color(0xFF00324A),
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            Get.toNamed(Routes.CRISE_GASTRITE_HISTORY);
+          },
+        ),
+        _buildMenuButton(
+          icon: Icons.timeline,
+          title: 'Histórico\nMenstrual',
+          color: const Color(0xFF00324A),
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            Get.toNamed(Routes.MENSTRUACAO_HISTORY);
+          },
+        ),
+      ],
+    );
+  }
+
+  // Grid de dispositivos - removido (smartwatch e configurações)
+
   Widget _buildMenuButton({
     required IconData icon,
     required String title,
     required Color color,
     required VoidCallback onPressed,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.grey.withOpacity(0.3)),
+    return Semantics(
+      button: true,
+      label: title,
+      hint: 'Toque para acessar $title',
+      child: Container(
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.1),
@@ -345,33 +354,34 @@ class MenuScreen extends StatelessWidget {
             offset: const Offset(0, 1),
           ),
         ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(24),
-          onTap: onPressed,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  icon,
-                  size: 44,
-                  color: Colors.white,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: onPressed,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    icon,
+                    size: 40,
                     color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
                   ),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

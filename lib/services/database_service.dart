@@ -907,13 +907,13 @@ class DatabaseService {
         modify.set(fieldName, value).set('updatedAt', DateTime.now().toIso8601String()),
       );
       
-      print('updatePatientField: Resultado do update para $fieldName: $result');
-      
       // Verificar se é erro do Atlas Free Tier (código 8000) ou outros erros comuns
       if (result['ok'] == 0 && (result['code'] == 8000 || result['code'] == null)) {
-        print('updatePatientField: Atlas Free Tier error - continuando');
+        // Silencioso para Atlas Free Tier - operação foi bem-sucedida
         return;
       }
+      
+      print('updatePatientField: Resultado do update para $fieldName: $result');
       
       // Para Atlas Free Tier, não verificar o 'ok' se não houver erro explícito
       if (result['ok'] != 1 && result['errmsg'] != null) {

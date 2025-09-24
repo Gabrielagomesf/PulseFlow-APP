@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:firebase_core/firebase_core.dart';
+// import 'package:firebase_core/firebase_core.dart';
 import 'theme/app_theme.dart';
 import 'routes/app_pages.dart';
 import 'services/auth_service.dart';
@@ -12,14 +12,14 @@ import 'screens/login/paciente_controller.dart';
 import 'screens/login/login_controller.dart';
 import 'services/enxaqueca_service.dart';
 import 'services/diabetes_service.dart';
-import 'services/notification_service.dart';
+// import 'services/notification_service.dart';
 import 'services/biometric_service.dart';
 import 'services/smartwatch_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  await Firebase.initializeApp();
+  // await Firebase.initializeApp();
   
   try {
     await dotenv.load(fileName: ".env");
@@ -27,10 +27,15 @@ void main() async {
     // Usar configurações padrão se .env não estiver disponível
   }
   
-  Get.put(DatabaseService());
-  //await dbService.connect();
-  //final dbService = Get.put(DatabaseService());
-//await dbService.connect();
+  final dbService = Get.put(DatabaseService());
+  print('DatabaseService inicializado');
+  // Teste de conexão
+  try {
+    await dbService.testConnection();
+    print('Conexão com banco de dados estabelecida');
+  } catch (e) {
+    print('Erro ao conectar com banco de dados: $e');
+  }
 
   Get.put(MigrationService());
 
@@ -42,9 +47,9 @@ void main() async {
   Get.put(EnxaquecaService());
   Get.put(DiabetesService());
   
-  Get.put(NotificationService());
+  // Get.put(NotificationService());
   Get.put(BiometricService());
-  Get.put(SmartwatchService());
+  // Get.put(SmartwatchService());
 
   // Verifica se precisa migrar senhas antigas
   try {

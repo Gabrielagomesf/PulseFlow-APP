@@ -157,118 +157,177 @@ class ProfileController extends GetxController {
 
   // Salva a foto do perfil
   Future<void> _saveProfilePhoto(String photoPath) async {
+    final currentPatient = _patient.value;
+    if (currentPatient == null) {
+      Get.snackbar(
+        'Erro',
+        'Usuário não encontrado',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return;
+    }
+
+    // Atualiza o estado local PRIMEIRO para refletir as mudanças imediatamente
+    final updatedPatient = Patient(
+      id: currentPatient.id,
+      name: currentPatient.name,
+      email: currentPatient.email,
+      password: currentPatient.password,
+      phone: currentPatient.phone,
+      birthDate: currentPatient.birthDate,
+      cpf: currentPatient.cpf,
+      rg: currentPatient.rg,
+      gender: currentPatient.gender,
+      maritalStatus: currentPatient.maritalStatus,
+      nationality: currentPatient.nationality,
+      address: currentPatient.address,
+      acceptedTerms: currentPatient.acceptedTerms,
+      profilePhoto: photoPath,
+      emergencyContact: currentPatient.emergencyContact,
+      emergencyPhone: currentPatient.emergencyPhone,
+      isAdmin: currentPatient.isAdmin,
+      twoFactorCode: currentPatient.twoFactorCode,
+      twoFactorExpires: currentPatient.twoFactorExpires,
+      passwordResetCode: currentPatient.passwordResetCode,
+      passwordResetExpires: currentPatient.passwordResetExpires,
+      passwordResetRequired: currentPatient.passwordResetRequired,
+      createdAt: currentPatient.createdAt,
+      updatedAt: DateTime.now(),
+    );
+
+    _patient.value = updatedPatient;
+    _authService.currentUser = updatedPatient;
+
+    // Atualiza no banco de dados em background
+    _updatePhotoInBackground(currentPatient.id!, photoPath);
+
+    Get.snackbar(
+      'Sucesso',
+      'Foto atualizada com sucesso!',
+      backgroundColor: Colors.green,
+      colorText: Colors.white,
+    );
+  }
+
+  // Atualiza a foto no banco de dados em background
+  Future<void> _updatePhotoInBackground(String patientId, String photoPath) async {
     try {
-      // Aqui você implementaria o upload da foto para o servidor
-      // Por enquanto, vamos apenas atualizar localmente
-      final currentPatient = _patient.value;
-      if (currentPatient != null) {
-        final updatedPatient = Patient(
-          id: currentPatient.id,
-          name: currentPatient.name,
-          email: currentPatient.email,
-          password: currentPatient.password,
-          phone: currentPatient.phone,
-          birthDate: currentPatient.birthDate,
-          cpf: currentPatient.cpf,
-          rg: currentPatient.rg,
-          gender: currentPatient.gender,
-          maritalStatus: currentPatient.maritalStatus,
-          nationality: currentPatient.nationality,
-          address: currentPatient.address,
-          acceptedTerms: currentPatient.acceptedTerms,
-          profilePhoto: photoPath,
-          emergencyContact: currentPatient.emergencyContact,
-          emergencyPhone: currentPatient.emergencyPhone,
-        );
-
-        await _databaseService.updatePatient(
-          ObjectId.parse(currentPatient.id!),
-          updatedPatient,
-        );
-
-        _authService.currentUser = updatedPatient;
-        _patient.value = updatedPatient;
-      }
+      print('Atualizando foto no banco de dados em background...');
+      await _databaseService.updatePatientField(patientId, 'profilePhoto', photoPath);
+      print('Foto atualizada no banco de dados com sucesso!');
     } catch (e) {
-      print('Erro ao salvar foto: $e');
+      print('Erro ao atualizar foto no banco de dados (não crítico): $e');
+      // Não mostra erro para o usuário pois a foto já foi atualizada localmente
     }
   }
 
   // Salva as alterações do paciente
   Future<void> savePatientData() async {
-    try {
-      _isSaving.value = true;
+    _isSaving.value = true;
 
-      final currentPatient = _patient.value;
-      if (currentPatient == null) return;
-
-      // Validações básicas
-      if (nameController.text.trim().isEmpty) {
-        Get.snackbar(
-          'Erro',
-          'Nome é obrigatório',
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
-        return;
-      }
-
-      if (emailController.text.trim().isEmpty) {
-        Get.snackbar(
-          'Erro',
-          'Email é obrigatório',
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
-        return;
-      }
-
-      // Cria o paciente atualizado
-      final updatedPatient = Patient(
-        id: currentPatient.id,
-        name: nameController.text.trim(),
-        email: emailController.text.trim(),
-        password: currentPatient.password,
-        phone: phoneController.text.trim().isEmpty ? '' : phoneController.text.trim(),
-        birthDate: currentPatient.birthDate,
-        cpf: cpfController.text.trim().isEmpty ? '' : cpfController.text.trim(),
-        rg: rgController.text.trim().isEmpty ? '' : rgController.text.trim(),
-        gender: currentPatient.gender,
-        maritalStatus: currentPatient.maritalStatus,
-        nationality: currentPatient.nationality,
-        address: currentPatient.address,
-        acceptedTerms: currentPatient.acceptedTerms,
-        profilePhoto: _profilePhoto.value,
-        emergencyContact: emergencyContactController.text.trim().isEmpty ? null : emergencyContactController.text.trim(),
-        emergencyPhone: emergencyPhoneController.text.trim().isEmpty ? null : emergencyPhoneController.text.trim(),
-      );
-
-      // Atualiza no banco de dados
-      await _databaseService.updatePatient(
-        ObjectId.parse(currentPatient.id!),
-        updatedPatient,
-      );
-
-      // Atualiza o usuário atual
-      _authService.currentUser = updatedPatient;
-      _patient.value = updatedPatient;
-
-      Get.snackbar(
-        'Sucesso',
-        'Dados atualizados com sucesso!',
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
-    } catch (e) {
-      print('Erro ao salvar dados: $e');
+    final currentPatient = _patient.value;
+    if (currentPatient == null) {
       Get.snackbar(
         'Erro',
-        'Não foi possível salvar os dados',
+        'Usuário não encontrado',
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
-    } finally {
       _isSaving.value = false;
+      return;
+    }
+
+    // Validações básicas
+    if (nameController.text.trim().isEmpty) {
+      Get.snackbar(
+        'Erro',
+        'Nome é obrigatório',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      _isSaving.value = false;
+      return;
+    }
+
+    if (emailController.text.trim().isEmpty) {
+      Get.snackbar(
+        'Erro',
+        'Email é obrigatório',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      _isSaving.value = false;
+      return;
+    }
+
+    // Cria o paciente atualizado
+    final updatedPatient = Patient(
+      id: currentPatient.id,
+      name: nameController.text.trim(),
+      email: emailController.text.trim(),
+      password: currentPatient.password,
+      phone: phoneController.text.trim().isEmpty ? '' : phoneController.text.trim(),
+      birthDate: currentPatient.birthDate,
+      cpf: cpfController.text.trim().isEmpty ? '' : cpfController.text.trim(),
+      rg: rgController.text.trim().isEmpty ? '' : rgController.text.trim(),
+      gender: currentPatient.gender,
+      maritalStatus: currentPatient.maritalStatus,
+      nationality: currentPatient.nationality,
+      address: currentPatient.address,
+      acceptedTerms: currentPatient.acceptedTerms,
+      profilePhoto: _profilePhoto.value ?? currentPatient.profilePhoto,
+      emergencyContact: emergencyContactController.text.trim().isEmpty ? null : emergencyContactController.text.trim(),
+      emergencyPhone: emergencyPhoneController.text.trim().isEmpty ? null : emergencyPhoneController.text.trim(),
+      isAdmin: currentPatient.isAdmin,
+      twoFactorCode: currentPatient.twoFactorCode,
+      twoFactorExpires: currentPatient.twoFactorExpires,
+      passwordResetCode: currentPatient.passwordResetCode,
+      passwordResetExpires: currentPatient.passwordResetExpires,
+      passwordResetRequired: currentPatient.passwordResetRequired,
+      createdAt: currentPatient.createdAt,
+      updatedAt: DateTime.now(),
+    );
+
+    // Atualiza o estado local PRIMEIRO para refletir as mudanças imediatamente
+    _patient.value = updatedPatient;
+    _authService.currentUser = updatedPatient;
+
+    // Atualiza no banco de dados em background (sem bloquear a UI)
+    _updateDatabaseInBackground(currentPatient.id!, updatedPatient);
+
+    Get.snackbar(
+      'Sucesso',
+      'Dados atualizados com sucesso!',
+      backgroundColor: Colors.green,
+      colorText: Colors.white,
+    );
+
+    _isSaving.value = false;
+  }
+
+  // Atualiza o banco de dados em background
+  Future<void> _updateDatabaseInBackground(String patientId, Patient updatedPatient) async {
+    try {
+      print('Atualizando banco de dados em background...');
+      
+      // Atualiza campos individuais
+      await _databaseService.updatePatientField(patientId, 'name', updatedPatient.name);
+      await _databaseService.updatePatientField(patientId, 'email', updatedPatient.email);
+      await _databaseService.updatePatientField(patientId, 'phone', updatedPatient.phone);
+      await _databaseService.updatePatientField(patientId, 'cpf', updatedPatient.cpf);
+      await _databaseService.updatePatientField(patientId, 'rg', updatedPatient.rg);
+      await _databaseService.updatePatientField(patientId, 'emergencyContact', updatedPatient.emergencyContact);
+      await _databaseService.updatePatientField(patientId, 'emergencyPhone', updatedPatient.emergencyPhone);
+      
+      if (updatedPatient.profilePhoto != null) {
+        await _databaseService.updatePatientField(patientId, 'profilePhoto', updatedPatient.profilePhoto);
+      }
+      
+      print('Banco de dados atualizado com sucesso!');
+    } catch (e) {
+      print('Erro ao atualizar banco de dados (não crítico): $e');
+      // Não mostra erro para o usuário pois os dados já foram atualizados localmente
     }
   }
 

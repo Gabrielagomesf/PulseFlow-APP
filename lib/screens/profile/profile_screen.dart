@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../theme/app_theme.dart';
@@ -257,7 +258,7 @@ class ProfileScreen extends StatelessWidget {
           // Foto do perfil
           GestureDetector(
             onTap: () => _showPhotoOptions(controller),
-            child: Container(
+            child: Obx(() => Container(
               width: 80,
               height: 80,
               decoration: BoxDecoration(
@@ -270,26 +271,40 @@ class ProfileScreen extends StatelessWidget {
               ),
               child: controller.profilePhoto != null
                   ? ClipOval(
-                      child: Image.network(
-                        controller.profilePhoto!,
-                        width: 80,
-                        height: 80,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Icon(
-                            Icons.person,
-                            color: Color(0xFF00324A),
-                            size: 40,
-                          );
-                        },
-                      ),
+                      child: controller.profilePhoto!.startsWith('http')
+                          ? Image.network(
+                              controller.profilePhoto!,
+                              width: 80,
+                              height: 80,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Icon(
+                                  Icons.person,
+                                  color: Color(0xFF00324A),
+                                  size: 40,
+                                );
+                              },
+                            )
+                          : Image.file(
+                              File(controller.profilePhoto!),
+                              width: 80,
+                              height: 80,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Icon(
+                                  Icons.person,
+                                  color: Color(0xFF00324A),
+                                  size: 40,
+                                );
+                              },
+                            ),
                     )
                   : const Icon(
                       Icons.person,
                       color: Color(0xFF00324A),
                       size: 40,
                     ),
-            ),
+            )),
           ),
           
           const SizedBox(height: 12),

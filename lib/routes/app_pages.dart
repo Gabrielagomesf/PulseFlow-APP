@@ -24,6 +24,7 @@ import '../screens/profile/profile_screen.dart';
 import '../screens/profile/profile_controller.dart';
 import '../screens/pulse_key/pulse_key_screen.dart';
 import '../screens/smartwatch/smartwatch_screen.dart';
+import '../screens/splash/splash_screen.dart';
 import '../services/auth_service.dart';
 
 import  'app_routes.dart';
@@ -46,9 +47,14 @@ class AuthMiddleware extends GetMiddleware {
 }
 
 class AppPages {
-  static const INITIAL = Routes.LOGIN;
+  static const INITIAL = Routes.SPLASH;
 
   static final routes = [
+    GetPage(
+      name: Routes.SPLASH,
+      page: () => const SplashScreen(),
+      transition: Transition.fadeIn,
+    ),
     GetPage(
       name: Routes.LOGIN,
       page: () => const LoginScreen(),

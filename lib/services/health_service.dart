@@ -6,7 +6,7 @@ class HealthService {
   factory HealthService() => _instance;
   HealthService._internal();
 
-  final HealthFactory _health = HealthFactory();
+  final Health _health = Health();
 
   // Tipos de dados de saúde que queremos acessar
   static const List<HealthDataType> _healthDataTypes = [
@@ -52,9 +52,9 @@ class HealthService {
       print('🫀 Período de busca: ${weekAgo.day}/${weekAgo.month} até ${now.day}/${now.month}');
       
       List<HealthDataPoint> healthData = await _health.getHealthDataFromTypes(
-        weekAgo,
-        now,
-        [HealthDataType.HEART_RATE],
+        startTime: weekAgo,
+        endTime: now,
+        types: [HealthDataType.HEART_RATE],
       );
 
       print('📊 Encontrados ${healthData.length} pontos de dados de frequência cardíaca');
@@ -111,9 +111,9 @@ class HealthService {
       final weekAgo = now.subtract(const Duration(days: 7));
 
       List<HealthDataPoint> healthData = await _health.getHealthDataFromTypes(
-        weekAgo,
-        now,
-        [HealthDataType.SLEEP_IN_BED],
+        startTime: weekAgo,
+        endTime: now,
+        types: [HealthDataType.SLEEP_IN_BED],
       );
 
       print('📊 Encontrados ${healthData.length} pontos de dados de sono');
@@ -165,9 +165,9 @@ class HealthService {
       print('🚶 Período de busca: ${weekAgo.day}/${weekAgo.month} até ${now.day}/${now.month}');
       
       List<HealthDataPoint> healthData = await _health.getHealthDataFromTypes(
-        weekAgo,
-        now,
-        [HealthDataType.STEPS],
+        startTime: weekAgo,
+        endTime: now,
+        types: [HealthDataType.STEPS],
       );
 
       print('📊 Encontrados ${healthData.length} pontos de dados de passos');
@@ -384,7 +384,9 @@ class HealthService {
       print('\n🫀 Testando frequência cardíaca...');
       try {
         final heartData = await _health.getHealthDataFromTypes(
-          weekAgo, now, [HealthDataType.HEART_RATE]
+          startTime: weekAgo, 
+          endTime: now, 
+          types: [HealthDataType.HEART_RATE]
         );
         print('🫀 Dados brutos de FC: ${heartData.length} pontos');
         if (heartData.isNotEmpty) {
@@ -397,7 +399,9 @@ class HealthService {
       print('\n😴 Testando dados de sono...');
       try {
         final sleepData = await _health.getHealthDataFromTypes(
-          weekAgo, now, [HealthDataType.SLEEP_IN_BED]
+          startTime: weekAgo, 
+          endTime: now, 
+          types: [HealthDataType.SLEEP_IN_BED]
         );
         print('😴 Dados brutos de sono: ${sleepData.length} pontos');
         if (sleepData.isNotEmpty) {
@@ -410,7 +414,9 @@ class HealthService {
       print('\n🚶 Testando dados de passos...');
       try {
         final stepsData = await _health.getHealthDataFromTypes(
-          weekAgo, now, [HealthDataType.STEPS]
+          startTime: weekAgo, 
+          endTime: now, 
+          types: [HealthDataType.STEPS]
         );
         print('🚶 Dados brutos de passos: ${stepsData.length} pontos');
         if (stepsData.isNotEmpty) {

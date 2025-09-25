@@ -37,7 +37,7 @@ dependencies:
   local_auth: ^2.2.0
   permission_handler: ^11.2.0
   flutter_blue_plus: ^1.32.11
-  health: ^9.0.1
+  health: ^13.1.4
 
 dev_dependencies:
   flutter_test:

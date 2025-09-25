@@ -7,12 +7,16 @@ import 'package:mongo_dart/mongo_dart.dart';
 import '../../models/patient.dart';
 import '../../services/auth_service.dart';
 import '../../services/database_service.dart';
-// import '../../services/health_service.dart';
+import '../../services/health_service.dart';
+import '../../services/health_data_service.dart';
+import '../../services/health_data_test_service.dart';
 
 class ProfileController extends GetxController {
   final AuthService _authService = Get.find<AuthService>();
   final DatabaseService _databaseService = Get.find<DatabaseService>();
-  // final HealthService _healthService = Get.find<HealthService>();
+  final HealthService _healthService = HealthService();
+  final HealthDataService _healthDataService = HealthDataService();
+  final HealthDataTestService _healthDataTestService = HealthDataTestService();
   final ImagePicker _imagePicker = ImagePicker();
 
   // Estados observáveis
@@ -53,6 +57,7 @@ class ProfileController extends GetxController {
   void onInit() {
     super.onInit();
     _loadPatientData();
+    _checkHealthPermissions();
   }
 
   @override
@@ -66,6 +71,61 @@ class ProfileController extends GetxController {
     emergencyContactController.dispose();
     emergencyPhoneController.dispose();
     super.onClose();
+  }
+
+  // Verifica permissões do HealthKit na inicialização
+  Future<void> _checkHealthPermissions() async {
+    try {
+      final hasPermissions = await _healthService.hasPermissions();
+      _healthDataAccessGranted.value = hasPermissions;
+      
+      if (hasPermissions) {
+        await _loadHealthData();
+      } else {
+        // Se não tem permissões, tenta carregar dados do banco
+        await _loadHealthDataFromDatabase();
+      }
+    } catch (e) {
+      print('Erro ao verificar permissões do HealthKit: $e');
+    }
+  }
+
+  // Carrega dados de saúde do banco de dados
+  Future<void> _loadHealthDataFromDatabase() async {
+    try {
+      if (_patient.value == null) return;
+      
+      print('📊 Carregando dados de saúde do banco de dados...');
+      
+      // Busca dados dos últimos 7 dias
+      final healthData = await _healthDataService.getHealthDataLastDays(_patient.value!.id!, 7);
+      
+      if (healthData.isNotEmpty) {
+        // Extrai dados mais recentes
+        final heartRateData = healthData.where((d) => d.dataType == 'heartRate').toList();
+        final sleepData = healthData.where((d) => d.dataType == 'sleep').toList();
+        final stepsData = healthData.where((d) => d.dataType == 'steps').toList();
+        
+        if (heartRateData.isNotEmpty) {
+          _heartRate.value = heartRateData.first.value;
+        }
+        
+        if (sleepData.isNotEmpty) {
+          _sleepQuality.value = sleepData.first.value * 10; // Converte horas para percentual
+        }
+        
+        if (stepsData.isNotEmpty) {
+          _dailySteps.value = stepsData.first.value.round();
+        }
+        
+        print('✅ Dados de saúde carregados do banco: FC=${_heartRate.value}, Sono=${_sleepQuality.value}, Passos=${_dailySteps.value}');
+      } else {
+        print('ℹ️ Nenhum dado de saúde encontrado no banco de dados');
+      }
+      
+    } catch (e) {
+      print('❌ Erro ao carregar dados do banco: $e');
+    }
   }
 
   // Carrega os dados do paciente
@@ -364,21 +424,29 @@ class ProfileController extends GetxController {
     try {
       _isRequestingHealthPermissions.value = true;
       
-      // Simular acesso aos dados de saúde (temporário)
-      await Future.delayed(const Duration(seconds: 2));
-      _healthDataAccessGranted.value = true;
+      // Solicita permissões reais do HealthKit
+      final granted = await _healthService.requestPermissions();
       
-      // Simular dados de saúde
-      _heartRate.value = 72.0;
-      _sleepQuality.value = 85.0;
-      _dailySteps.value = 8500;
-      
-      Get.snackbar(
-        'Sucesso',
-        'Acesso aos dados de saúde concedido!',
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
+      if (granted) {
+        _healthDataAccessGranted.value = true;
+        
+        // Carrega dados reais do HealthKit
+        await _loadHealthData();
+        
+        Get.snackbar(
+          'Sucesso',
+          'Acesso aos dados de saúde concedido!',
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+      } else {
+        Get.snackbar(
+          'Permissão Negada',
+          'É necessário conceder permissão para acessar os dados de saúde',
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+        );
+      }
     } catch (e) {
       print('Erro ao solicitar acesso aos dados de saúde: $e');
       Get.snackbar(
@@ -392,15 +460,68 @@ class ProfileController extends GetxController {
     }
   }
 
-  // Carrega dados de saúde (temporário - simulado)
+  // Carrega dados de saúde do HealthKit
   Future<void> _loadHealthData() async {
     try {
-      // Simular dados de saúde
+      // Verifica se tem permissões
+      final hasPermissions = await _healthService.hasPermissions();
+      print('🔐 Verificando permissões no _loadHealthData: $hasPermissions');
+      
+      if (!hasPermissions) {
+        print('⚠️ Sem permissões do HealthKit - tentando solicitar...');
+        final granted = await _healthService.requestPermissions();
+        print('🔐 Resultado da solicitação: $granted');
+        if (!granted) {
+          print('❌ Permissões negadas - usando dados simulados');
+          // Usa dados simulados mas ainda tenta salvar
+        }
+      }
+
+      // Busca dados reais do HealthKit
+      final healthData = await _healthService.getAllHealthData();
+      
+      // Extrai dados de frequência cardíaca (último valor)
+      if (healthData['heartRate'] != null && healthData['heartRate']!.isNotEmpty) {
+        final lastHeartRate = healthData['heartRate']!.last.y;
+        _heartRate.value = lastHeartRate;
+      }
+      
+      // Extrai dados de sono (último valor)
+      if (healthData['sleep'] != null && healthData['sleep']!.isNotEmpty) {
+        final lastSleep = healthData['sleep']!.last.y;
+        _sleepQuality.value = lastSleep * 10; // Converte horas para percentual
+      }
+      
+      // Extrai dados de passos (último valor)
+      if (healthData['steps'] != null && healthData['steps']!.isNotEmpty) {
+        final lastSteps = healthData['steps']!.last.y;
+        _dailySteps.value = lastSteps.round();
+      }
+      
+      print('Dados de saúde carregados: FC=${_heartRate.value}, Sono=${_sleepQuality.value}, Passos=${_dailySteps.value}');
+      
+      // Salva dados no banco de dados
+      if (_patient.value != null) {
+        print('💾 Iniciando salvamento no banco de dados...');
+        print('👤 Patient ID: ${_patient.value!.id}');
+        try {
+          await _healthDataService.saveHealthDataFromHealthKit(_patient.value!.id!);
+          print('✅ Dados de saúde salvos no banco de dados');
+        } catch (e) {
+          print('⚠️ Erro ao salvar dados no banco: $e');
+          print('⚠️ Stack trace: ${StackTrace.current}');
+          // Não falha o carregamento se não conseguir salvar no banco
+        }
+      } else {
+        print('❌ Paciente não encontrado - não é possível salvar dados');
+      }
+      
+    } catch (e) {
+      print('Erro ao carregar dados de saúde: $e');
+      // Em caso de erro, usa dados simulados
       _heartRate.value = 72.0;
       _sleepQuality.value = 85.0;
       _dailySteps.value = 8500;
-    } catch (e) {
-      print('Erro ao carregar dados de saúde: $e');
     }
   }
 
@@ -416,17 +537,133 @@ class ProfileController extends GetxController {
 
   // Desconecta do Apple Health
   Future<void> disconnectFromAppleHealth() async {
-    _healthDataAccessGranted.value = false;
-    _heartRate.value = 0.0;
-    _sleepQuality.value = 0.0;
-    _dailySteps.value = 0;
-    
-    Get.snackbar(
-      'Desconectado',
-      'Desconectado do Apple Health',
-      backgroundColor: Colors.orange,
-      colorText: Colors.white,
-    );
+    try {
+      // Verifica se ainda tem permissões
+      final hasPermissions = await _healthService.hasPermissions();
+      
+      if (!hasPermissions) {
+        _healthDataAccessGranted.value = false;
+        _heartRate.value = 0.0;
+        _sleepQuality.value = 0.0;
+        _dailySteps.value = 0;
+        
+        Get.snackbar(
+          'Desconectado',
+          'Permissões do Apple Health foram revogadas',
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+        );
+      } else {
+        Get.snackbar(
+          'Aviso',
+          'Para desconectar, revogue as permissões nas Configurações do iPhone',
+          backgroundColor: Colors.blue,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      print('Erro ao verificar status do Apple Health: $e');
+      _healthDataAccessGranted.value = false;
+    }
+  }
+
+  // Sincroniza dados de saúde
+  Future<void> syncHealthData() async {
+    try {
+      if (_patient.value == null) {
+        Get.snackbar(
+          'Erro',
+          'Usuário não encontrado',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+        return;
+      }
+
+      _isRequestingHealthPermissions.value = true;
+      
+      // Verifica permissões
+      final hasPermissions = await _healthService.hasPermissions();
+      if (!hasPermissions) {
+        Get.snackbar(
+          'Permissão Necessária',
+          'É necessário conceder permissão para sincronizar dados',
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+        );
+        return;
+      }
+
+      // Sincroniza dados
+      await _healthDataService.syncHealthData(_patient.value!.id!);
+      
+      // Recarrega dados
+      await _loadHealthData();
+      
+      Get.snackbar(
+        'Sucesso',
+        'Dados de saúde sincronizados!',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+      
+    } catch (e) {
+      print('Erro ao sincronizar dados: $e');
+      Get.snackbar(
+        'Erro',
+        'Erro ao sincronizar dados de saúde',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } finally {
+      _isRequestingHealthPermissions.value = false;
+    }
+  }
+
+
+  // Testa a integração com dados de saúde
+  Future<void> testHealthDataIntegration() async {
+    try {
+      if (_patient.value == null) {
+        Get.snackbar(
+          'Erro',
+          'Usuário não encontrado',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+        return;
+      }
+
+      _isRequestingHealthPermissions.value = true;
+      
+      Get.snackbar(
+        'Teste',
+        'Iniciando teste de integração...',
+        backgroundColor: Colors.blue,
+        colorText: Colors.white,
+      );
+      
+      // Executa todos os testes
+      await _healthDataTestService.runAllTests(_patient.value!.id!);
+      
+      Get.snackbar(
+        'Sucesso',
+        'Teste de integração concluído! Verifique os logs.',
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+      
+    } catch (e) {
+      print('Erro no teste de integração: $e');
+      Get.snackbar(
+        'Erro',
+        'Falha no teste: $e',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    } finally {
+      _isRequestingHealthPermissions.value = false;
+    }
   }
 
   // Desconecta do Samsung Health (placeholder)

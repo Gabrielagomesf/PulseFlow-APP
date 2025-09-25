@@ -651,39 +651,60 @@ class ProfileScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Dados Sincronizados',
+            'Sincronização de Dados',
             style: AppTheme.bodyLarge.copyWith(
               color: const Color(0xFF059669),
               fontWeight: FontWeight.w600,
             ),
           ),
           
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           
+          Text(
+            'Sincronize seus dados de saúde do Apple Health',
+            style: AppTheme.bodySmall.copyWith(
+              color: const Color(0xFF64748B),
+            ),
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Botões de ação
           Row(
             children: [
               Expanded(
-                child: _buildHealthDataItem(
-                  icon: Icons.favorite,
-                  label: 'Frequência Cardíaca',
-                  value: '${controller.heartRate.toInt()} bpm',
-                  color: Colors.red,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    controller.syncHealthData();
+                  },
+                  icon: const Icon(Icons.sync, size: 18),
+                  label: const Text('Sincronizar'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF059669),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
                 ),
               ),
+              const SizedBox(width: 12),
               Expanded(
-                child: _buildHealthDataItem(
-                  icon: Icons.bedtime,
-                  label: 'Qualidade do Sono',
-                  value: '${controller.sleepQuality.toInt()}%',
-                  color: Colors.blue,
-                ),
-              ),
-              Expanded(
-                child: _buildHealthDataItem(
-                  icon: Icons.directions_walk,
-                  label: 'Passos Diários',
-                  value: '${controller.dailySteps}',
-                  color: Colors.green,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    controller.testHealthDataIntegration();
+                  },
+                  icon: const Icon(Icons.bug_report, size: 18),
+                  label: const Text('Testar'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF6B7280),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -693,46 +714,6 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHealthDataItem({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Icon(
-            icon,
-            color: color,
-            size: 16,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          value,
-          style: AppTheme.bodySmall.copyWith(
-            color: const Color(0xFF1E293B),
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: AppTheme.bodySmall.copyWith(
-            color: const Color(0xFF64748B),
-            fontSize: 10,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
 
   Widget _buildTextField({
     required TextEditingController controller,

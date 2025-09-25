@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -24,6 +26,25 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSBiometricUsageDescription</key>
+	<string>Este app usa biometria para autenticação segura.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Este app usa Face ID para autenticação biométrica segura.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Este app precisa acessar seus dados de saúde para fornecer insights personalizados sobre sua frequência cardíaca, sono e atividade física.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Este app pode salvar dados de saúde para manter um registro completo do seu bem-estar.</string>
+	<key>NSUserNotificationUsageDescription</key>
+	<string>Este app precisa de notificações para enviar lembretes de medicamentos e consultas médicas.</string>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+		<string>background-processing</string>
+		<string>bluetooth-central</string>
+		<string>audio</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -41,24 +62,5 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
-	<key>UIApplicationSupportsIndirectInputEvents</key>
-	<true/>
-	
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>remote-notification</string>
-		<string>background-processing</string>
-	</array>
-	
-	<key>NSUserNotificationUsageDescription</key>
-	<string>Este app precisa de notificações para enviar lembretes de medicamentos e consultas médicas.</string>
-	
-	<key>NSFaceIDUsageDescription</key>
-	<string>Este app usa Face ID para autenticação biométrica segura.</string>
-	
-	<key>NSBiometricUsageDescription</key>
-	<string>Este app usa biometria para autenticação segura.</string>
 </dict>
 </plist>

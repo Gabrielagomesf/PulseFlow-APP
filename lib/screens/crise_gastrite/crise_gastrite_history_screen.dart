@@ -129,10 +129,10 @@ class _CriseGastriteHistoryScreenState extends State<CriseGastriteHistoryScreen>
       ),
       floatingActionButton: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
+          gradient: const LinearGradient(
             colors: [
-              const Color(0xFF1E3A8A),
-              const Color(0xFF3B82F6),
+              Color(0xFF1E3A8A),
+              Color(0xFF3B82F6),
             ],
           ),
           borderRadius: BorderRadius.circular(16),
@@ -184,16 +184,16 @@ class _CriseGastriteHistoryScreenState extends State<CriseGastriteHistoryScreen>
       elevation: 0,
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                const Color(0xFF0F172A),
-                const Color(0xFF1E293B),
-                const Color(0xFF334155),
+                Color(0xFF0F172A),
+                Color(0xFF1E293B),
+                Color(0xFF334155),
               ],
-              stops: const [0.0, 0.6, 1.0],
+              stops: [0.0, 0.6, 1.0],
             ),
           ),
           child: Container(
@@ -325,13 +325,13 @@ class _CriseGastriteHistoryScreenState extends State<CriseGastriteHistoryScreen>
       width: double.infinity,
       padding: EdgeInsets.all(isTablet ? 32 : 24),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFF1E3A8A),
-            const Color(0xFF3B82F6),
-            const Color(0xFF60A5FA),
+            Color(0xFF1E3A8A),
+            Color(0xFF3B82F6),
+            Color(0xFF60A5FA),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
@@ -404,10 +404,10 @@ class _CriseGastriteHistoryScreenState extends State<CriseGastriteHistoryScreen>
                   width: 60,
                   height: 60,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
+                    gradient: const LinearGradient(
                       colors: [
-                        const Color(0xFF1E3A8A),
-                        const Color(0xFF3B82F6),
+                        Color(0xFF1E3A8A),
+                        Color(0xFF3B82F6),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(30),
@@ -517,10 +517,10 @@ class _CriseGastriteHistoryScreenState extends State<CriseGastriteHistoryScreen>
                 const SizedBox(height: 32),
                 Container(
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
+                    gradient: const LinearGradient(
                       colors: [
-                        const Color(0xFF1E3A8A),
-                        const Color(0xFF3B82F6),
+                        Color(0xFF1E3A8A),
+                        Color(0xFF3B82F6),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(16),
@@ -581,10 +581,10 @@ class _CriseGastriteHistoryScreenState extends State<CriseGastriteHistoryScreen>
                   width: 100,
                   height: 100,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
+                    gradient: const LinearGradient(
                       colors: [
-                        const Color(0xFF1E3A8A),
-                        const Color(0xFF3B82F6),
+                        Color(0xFF1E3A8A),
+                        Color(0xFF3B82F6),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(50),
@@ -622,10 +622,10 @@ class _CriseGastriteHistoryScreenState extends State<CriseGastriteHistoryScreen>
                 const SizedBox(height: 40),
                 Container(
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
+                    gradient: const LinearGradient(
                       colors: [
-                        const Color(0xFF1E3A8A),
-                        const Color(0xFF3B82F6),
+                        Color(0xFF1E3A8A),
+                        Color(0xFF3B82F6),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(20),
@@ -677,12 +677,12 @@ class _CriseGastriteHistoryScreenState extends State<CriseGastriteHistoryScreen>
     return Container(
       margin: const EdgeInsets.only(bottom: 4),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
             Colors.white,
-            const Color(0xFFFAFBFC),
+            Color(0xFFFAFBFC),
           ],
         ),
         borderRadius: BorderRadius.circular(24),
@@ -799,10 +799,10 @@ class _CriseGastriteHistoryScreenState extends State<CriseGastriteHistoryScreen>
                               color: const Color(0xFF1E3A8A).withOpacity(0.1),
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: Icon(
+                            child: const Icon(
                               Icons.health_and_safety_rounded,
                               size: 18,
-                              color: const Color(0xFF1E3A8A),
+                              color: Color(0xFF1E3A8A),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -842,10 +842,10 @@ class _CriseGastriteHistoryScreenState extends State<CriseGastriteHistoryScreen>
                               color: const Color(0xFF10B981).withOpacity(0.1),
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: Icon(
+                            child: const Icon(
                               Icons.medication_rounded,
                               size: 18,
-                              color: const Color(0xFF10B981),
+                              color: Color(0xFF10B981),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -895,10 +895,10 @@ class _CriseGastriteHistoryScreenState extends State<CriseGastriteHistoryScreen>
                       children: [
                         Row(
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.note_alt_rounded,
                               size: 16,
-                              color: const Color(0xFF64748B),
+                              color: Color(0xFF64748B),
                             ),
                             const SizedBox(width: 8),
                             Text(
@@ -957,7 +957,7 @@ class _CriseGastriteHistoryScreenState extends State<CriseGastriteHistoryScreen>
                             ),
                           ),
                           const SizedBox(width: 4),
-                          Icon(
+                          const Icon(
                             Icons.arrow_forward_ios_rounded,
                             size: 12,
                             color: Colors.white,

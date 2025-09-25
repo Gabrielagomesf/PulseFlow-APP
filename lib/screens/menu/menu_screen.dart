@@ -36,6 +36,13 @@ class MenuScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Seção Dados de Saúde
+                    _buildSectionHeader('Dados de Saúde'),
+                    const SizedBox(height: 16),
+                    _buildHealthDataSection(),
+                    
+                    const SizedBox(height: 32),
+                    
                     // Seção Registros de Saúde
                     _buildSectionHeader('Registros de Saúde'),
                     const SizedBox(height: 16),
@@ -385,6 +392,172 @@ class MenuScreen extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  // Seção de dados de saúde
+  Widget _buildHealthDataSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF059669).withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFF059669).withOpacity(0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.favorite,
+                color: const Color(0xFF059669),
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Dados Sincronizados',
+                style: AppTheme.bodyLarge.copyWith(
+                  color: const Color(0xFF059669),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Grid de dados de saúde
+          Row(
+            children: [
+              Expanded(
+                child: _buildHealthDataCard(
+                  icon: Icons.favorite,
+                  label: 'Frequência Cardíaca',
+                  value: '72 bpm',
+                  color: Colors.red,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildHealthDataCard(
+                  icon: Icons.bedtime,
+                  label: 'Qualidade do Sono',
+                  value: '85%',
+                  color: Colors.blue,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildHealthDataCard(
+                  icon: Icons.directions_walk,
+                  label: 'Passos Diários',
+                  value: '8500',
+                  color: Colors.green,
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Botões de ação
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Get.toNamed('/health-history');
+                  },
+                  icon: const Icon(Icons.analytics, size: 18),
+                  label: const Text('Ver Histórico'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF059669),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Get.toNamed('/profile');
+                  },
+                  icon: const Icon(Icons.sync, size: 18),
+                  label: const Text('Sincronizar'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF6B7280),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Card de dados de saúde
+  Widget _buildHealthDataCard({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+        ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Icon(
+              icon,
+              color: Colors.white,
+              size: 16,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: AppTheme.bodySmall.copyWith(
+              color: const Color(0xFF1E293B),
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: AppTheme.bodySmall.copyWith(
+              color: const Color(0xFF64748B),
+              fontSize: 10,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }

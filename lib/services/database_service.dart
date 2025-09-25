@@ -7,6 +7,7 @@ import '../models/pressao_arterial.dart';
 import '../models/evento_clinico.dart';
 import '../models/crise_gastrite.dart';
 import '../models/menstruacao.dart';
+import '../models/health_data.dart';
 import '../config/database_config.dart';
 
 class DatabaseService {
@@ -1061,6 +1062,281 @@ class DatabaseService {
       
       return CriseGastrite.fromJson(doc);
       
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // ========== HEALTH DATA METHODS ==========
+
+  // Obter coleção genérica
+  Future<DbCollection> getCollection(String collectionName) async {
+    await _ensureConnection();
+    return _db!.collection(collectionName);
+  }
+
+  // Obter dados de saúde por paciente
+  Future<List<HealthData>> getHealthDataByPatientId(String patientId) async {
+    try {
+      await _ensureConnection();
+      
+      final collections = ['batimentos', 'passos', 'insonias'];
+      final allData = <Map<String, dynamic>>[];
+      
+      for (final collectionName in collections) {
+        final collection = _db!.collection(collectionName);
+        
+        // Tentativa 1: pacienteId como ObjectId
+        try {
+          final objId = ObjectId.parse(patientId);
+          final list = await collection.find(where.eq('pacienteId', objId)).toList();
+          allData.addAll(list.map((e) => Map<String, dynamic>.from(e)));
+        } catch (_) {}
+        
+        // Tentativa 2: pacienteId como String
+        final list2 = await collection.find(where.eq('pacienteId', patientId)).toList();
+        allData.addAll(list2.map((e) => Map<String, dynamic>.from(e)));
+      }
+      
+      // Normalizar e remover duplicados
+      final normalized = allData.map((doc) {
+        final data = Map<String, dynamic>.from(doc);
+        data['_id'] = data['_id'].toString();
+        if (data['pacienteId'] != null) {
+          data['pacienteId'] = data['pacienteId'].toString();
+        }
+        return data;
+      }).toList();
+      
+      final seen = <String>{};
+      final unique = <Map<String, dynamic>>[];
+      for (final m in normalized) {
+        final idStr = m['_id'].toString();
+        if (!seen.contains(idStr)) {
+          seen.add(idStr);
+          unique.add(m);
+        }
+      }
+      
+      return unique.map((m) => HealthData.fromMap(m)).toList();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Obter dados de saúde por tipo
+  Future<List<HealthData>> getHealthDataByType(String patientId, String dataType) async {
+    try {
+      await _ensureConnection();
+      
+      String collectionName;
+      switch (dataType.toLowerCase()) {
+        case 'heartrate':
+        case 'batimentos':
+          collectionName = 'batimentos';
+          break;
+        case 'steps':
+        case 'passos':
+          collectionName = 'passos';
+          break;
+        case 'sleep':
+        case 'insonias':
+          collectionName = 'insonias';
+          break;
+        default:
+          throw 'Tipo de dados não suportado: $dataType';
+      }
+      
+      final collection = _db!.collection(collectionName);
+      
+      final results = <Map<String, dynamic>>[];
+      
+      // Tentativa 1: pacienteId como ObjectId
+      try {
+        final objId = ObjectId.parse(patientId);
+        final list = await collection.find(where.eq('pacienteId', objId)).toList();
+        results.addAll(list.map((e) => Map<String, dynamic>.from(e)));
+      } catch (_) {}
+      
+      // Tentativa 2: pacienteId como String
+      final list2 = await collection.find(where.eq('pacienteId', patientId)).toList();
+      results.addAll(list2.map((e) => Map<String, dynamic>.from(e)));
+      
+      // Normalizar e remover duplicados
+      final normalized = results.map((doc) {
+        final data = Map<String, dynamic>.from(doc);
+        data['_id'] = data['_id'].toString();
+        if (data['pacienteId'] != null) {
+          data['pacienteId'] = data['pacienteId'].toString();
+        }
+        return data;
+      }).toList();
+      
+      final seen = <String>{};
+      final unique = <Map<String, dynamic>>[];
+      for (final m in normalized) {
+        final idStr = m['_id'].toString();
+        if (!seen.contains(idStr)) {
+          seen.add(idStr);
+          unique.add(m);
+        }
+      }
+      
+      return unique.map((m) => HealthData.fromMap(m)).toList();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Obter dados de saúde por período
+  Future<List<HealthData>> getHealthDataByPeriod(String patientId, DateTime startDate, DateTime endDate) async {
+    try {
+      await _ensureConnection();
+      
+      final collections = ['batimentos', 'passos', 'insonias'];
+      final allData = <Map<String, dynamic>>[];
+      
+      for (final collectionName in collections) {
+        final collection = _db!.collection(collectionName);
+        
+        final results = <Map<String, dynamic>>[];
+        
+        // Tentativa 1: pacienteId como ObjectId
+        try {
+          final objId = ObjectId.parse(patientId);
+          final list = await collection.find(
+            where.eq('pacienteId', objId)
+                .gte('data', startDate.toIso8601String())
+                .lte('data', endDate.toIso8601String())
+          ).toList();
+          results.addAll(list.map((e) => Map<String, dynamic>.from(e)));
+        } catch (_) {}
+        
+        // Tentativa 2: pacienteId como String
+        final list2 = await collection.find(
+          where.eq('pacienteId', patientId)
+              .gte('data', startDate.toIso8601String())
+              .lte('data', endDate.toIso8601String())
+        ).toList();
+        results.addAll(list2.map((e) => Map<String, dynamic>.from(e)));
+        
+        allData.addAll(results);
+      }
+      
+      // Normalizar e remover duplicados
+      final normalized = allData.map((doc) {
+        final data = Map<String, dynamic>.from(doc);
+        data['_id'] = data['_id'].toString();
+        if (data['pacienteId'] != null) {
+          data['pacienteId'] = data['pacienteId'].toString();
+        }
+        return data;
+      }).toList();
+      
+      final seen = <String>{};
+      final unique = <Map<String, dynamic>>[];
+      for (final m in normalized) {
+        final idStr = m['_id'].toString();
+        if (!seen.contains(idStr)) {
+          seen.add(idStr);
+          unique.add(m);
+        }
+      }
+      
+      return unique.map((m) => HealthData.fromMap(m)).toList();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Criar múltiplos dados de saúde
+  Future<void> createMultipleHealthData(List<HealthData> healthDataList) async {
+    try {
+      await _ensureConnection();
+      
+      // Agrupar por tipo de dados
+      final groupedData = <String, List<Map<String, dynamic>>>{};
+      
+      for (final healthData in healthDataList) {
+        final tipo = healthData.dataType.toLowerCase();
+        if (!groupedData.containsKey(tipo)) {
+          groupedData[tipo] = [];
+        }
+        groupedData[tipo]!.add(healthData.toMap());
+      }
+      
+      // Inserir em cada coleção
+      for (final entry in groupedData.entries) {
+        String collectionName;
+        switch (entry.key) {
+          case 'heartrate':
+          case 'batimentos':
+            collectionName = 'batimentos';
+            break;
+          case 'steps':
+          case 'passos':
+            collectionName = 'passos';
+            break;
+          case 'sleep':
+          case 'insonias':
+            collectionName = 'insonias';
+            break;
+          default:
+            collectionName = 'batimentos';
+        }
+        
+        final collection = _db!.collection(collectionName);
+        
+        // Preparar dados para inserção
+        final dataToInsert = entry.value.map((data) {
+          final newData = Map<String, dynamic>.from(data);
+          newData.remove('_id');
+          
+          // Converter pacienteId para ObjectId se possível
+          try {
+            newData['pacienteId'] = ObjectId.parse(data['patientId'].toString());
+          } catch (_) {
+            newData['pacienteId'] = data['patientId'].toString();
+          }
+          
+          newData['createdAt'] = DateTime.now().toIso8601String();
+          newData['updatedAt'] = DateTime.now().toIso8601String();
+          
+          return newData;
+        }).toList();
+        
+        await collection.insertAll(dataToInsert);
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Deletar dados de saúde
+  Future<void> deleteHealthData(String healthDataId) async {
+    try {
+      await _ensureConnection();
+      
+      final collections = ['batimentos', 'passos', 'insonias'];
+      bool deleted = false;
+      
+      for (final collectionName in collections) {
+        final collection = _db!.collection(collectionName);
+        
+        try {
+          final result = await collection.remove(where.eq('_id', ObjectId.parse(healthDataId)));
+          if (result['ok'] == 1 && result['n'] > 0) {
+            deleted = true;
+            break;
+          }
+        } catch (_) {
+          // Continuar para próxima coleção
+        }
+      }
+      
+      if (!deleted) {
+        throw 'Dados de saúde não encontrados';
+      }
     } catch (e) {
       rethrow;
     }

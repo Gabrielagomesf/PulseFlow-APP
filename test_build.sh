@@ -15,3 +15,4 @@ echo "📱 Testando build para iOS..."
 flutter build ios --no-codesign
 
 echo "✅ Build testado com sucesso!"
+

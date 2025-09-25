@@ -103,3 +103,4 @@ class HealthData {
         source.hashCode;
   }
 }
+

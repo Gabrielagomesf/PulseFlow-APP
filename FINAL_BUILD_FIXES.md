@@ -147,3 +147,4 @@ flutter run
 - Padrão consistente implementado
 - Funcionalidades de saúde funcionando
 - Pronto para deploy no dispositivo
+

@@ -140,3 +140,4 @@ flutter run
 - API do mongo_dart atualizada
 - Funcionalidades de saúde implementadas
 - Pronto para teste no dispositivo
+

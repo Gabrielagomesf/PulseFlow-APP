@@ -143,3 +143,4 @@ flutter run
 **Teste de Coleção Insonia:** ✅ Implementado
 
 **Próximo:** Execute o app e verifique os logs para identificar a causa específica! 🎉
+

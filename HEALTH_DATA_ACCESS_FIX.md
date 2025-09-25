@@ -143,3 +143,4 @@ O sistema agora acessa o banco de dados corretamente através de métodos públi
 2. **Teste a integração** com Apple Health
 3. **Verifique os logs** para confirmar funcionamento
 4. **Confirme salvamento** nas coleções corretas
+

@@ -134,3 +134,4 @@ flutter run
 - Pronto para produção
 
 **O PulseFlow agora tem um sistema completo de dados de saúde integrado com o HealthKit da Apple!** 🎉
+

@@ -22,7 +22,7 @@ class _CriseGastriteFormScreenState extends State<CriseGastriteFormScreen> {
   final _observacoesController = TextEditingController();
 
   DateTime _selectedDate = DateTime.now();
-  int _intensidadeDor = 5;
+  int _intensidadeDor = 0;
   bool _alivioMedicacao = false;
   bool _isLoading = false;
 
@@ -105,6 +105,8 @@ class _CriseGastriteFormScreenState extends State<CriseGastriteFormScreen> {
 
   String _getIntensidadeLabel(int intensidade) {
     switch (intensidade) {
+      case 0:
+        return 'Sem Dor';
       case 1:
       case 2:
         return 'Dor Leve';
@@ -118,14 +120,16 @@ class _CriseGastriteFormScreenState extends State<CriseGastriteFormScreen> {
       case 8:
         return 'Dor Intensa';
       case 9:
-      case 10:
         return 'Dor Muito Intensa';
+      case 10:
+        return 'Dor Insuportável';
       default:
-        return 'Dor Moderada';
+        return 'Sem Dor';
     }
   }
 
   Color _getIntensidadeColor(int intensidade) {
+    if (intensidade == 0) return Colors.green;
     if (intensidade <= 3) return Colors.green;
     if (intensidade <= 6) return Colors.orange;
     return Colors.red;
@@ -160,25 +164,13 @@ class _CriseGastriteFormScreenState extends State<CriseGastriteFormScreen> {
 
       if (widget.criseGastrite == null) {
         await DatabaseService().createCriseGastrite(crise);
-        Get.snackbar(
-          'Sucesso',
-          'Crise de gastrite registrada com sucesso!',
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.TOP,
-        );
       } else {
         await DatabaseService().updateCriseGastrite(crise);
-        Get.snackbar(
-          'Sucesso',
-          'Crise de gastrite atualizada com sucesso!',
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.TOP,
-        );
       }
 
-      Get.back();
+      // Mostrar confirmação e limpar campos
+      _showSuccessAlert();
+      _clearForm();
     } catch (e) {
       Get.snackbar(
         'Erro',
@@ -197,476 +189,576 @@ class _CriseGastriteFormScreenState extends State<CriseGastriteFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFF1F1F1),
       appBar: AppBar(
-        title: Text(
-          widget.criseGastrite == null ? 'Nova Crise de Gastrite' : 'Editar Crise',
-          style: AppTheme.titleMedium.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        backgroundColor: const Color(0xFF1E3A8A),
-        foregroundColor: Colors.white,
+        backgroundColor: const Color(0xFF00324A),
         elevation: 0,
+        title: Text(
+          widget.criseGastrite == null ? 'Registro de Crise de Gastrite' : 'Editar Crise',
+          style: const TextStyle(
+            color: Colors.white, 
+            fontWeight: FontWeight.w600
+          )
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Get.back(),
+        ),
         centerTitle: true,
       ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      const Color(0xFF1E3A8A),
-                      const Color(0xFF3B82F6),
-                    ],
+      body: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              children: [
+                // Card principal com formulário
+                Card(
+                  color: const Color(0xFFFFFFFF),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)
                   ),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF1E3A8A).withOpacity(0.3),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Icon(
-                        Icons.medical_services_rounded,
-                        color: Colors.white,
-                        size: 32,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Registro de Crise de Gastrite',
-                      style: AppTheme.titleLarge.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Registre os detalhes da sua crise para acompanhamento médico',
-                      style: AppTheme.bodyMedium.copyWith(
-                        color: Colors.white.withOpacity(0.9),
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Data da Crise
-              _buildInfoCard(
-                icon: Icons.calendar_today_rounded,
-                title: 'Data da Crise',
-                child: InkWell(
-                  onTap: _selectDate,
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                    ),
-                    child: Row(
+                  elevation: 0,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.calendar_month_rounded,
-                          color: const Color(0xFF1E3A8A),
-                          size: 20,
-                        ),
-                        const SizedBox(width: 12),
                         Text(
-                          '${_selectedDate.day.toString().padLeft(2, '0')}/${_selectedDate.month.toString().padLeft(2, '0')}/${_selectedDate.year}',
-                          style: AppTheme.bodyMedium.copyWith(
-                            color: const Color(0xFF1E293B),
+                          widget.criseGastrite == null ? 'Nova crise de gastrite' : 'Editar crise',
+                          style: const TextStyle(
+                            fontSize: 20,
                             fontWeight: FontWeight.w600,
+                            color: Color(0xFF00324A),
                           ),
                         ),
-                        const Spacer(),
-                        Icon(
-                          Icons.arrow_forward_ios_rounded,
-                          color: const Color(0xFF64748B),
-                          size: 16,
+                        const SizedBox(height: 16),
+                        
+                        // Data da Crise
+                        _buildModernTextField(
+                          label: 'Data da Crise',
+                          value: '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+                          icon: Icons.calendar_today,
+                          onTap: _selectDate,
                         ),
+                        const SizedBox(height: 12),
+
+                        // Intensidade da Dor
+                        _buildIntensidadeField(),
+                        const SizedBox(height: 12),
+
+                        // Sintomas
+                        _buildModernTextFormField(
+                          controller: _sintomasController,
+                          label: 'Sintomas Relatados',
+                          hint: 'Descreva os sintomas',
+                          icon: Icons.health_and_safety,
+                          isRequired: true,
+                          maxLines: 3,
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Alimentos Ingeridos
+                        _buildModernTextFormField(
+                          controller: _alimentosController,
+                          label: 'Alimentos Ingeridos',
+                          hint: 'Descreva os alimentos consumidos',
+                          icon: Icons.restaurant,
+                          isRequired: true,
+                          maxLines: 2,
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Medicação
+                        _buildModernTextFormField(
+                          controller: _medicacaoController,
+                          label: 'Medicação Usada',
+                          hint: 'Nome da medicação',
+                          icon: Icons.medication,
+                          isRequired: true,
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Alívio após Medicação
+                        _buildAlivioField(),
+                        const SizedBox(height: 12),
+
+                        // Observações Adicionais
+                        _buildModernTextFormField(
+                          controller: _observacoesController,
+                          label: 'Observações Adicionais',
+                          hint: 'Observações adicionais (opcional)',
+                          icon: Icons.note_alt,
+                          maxLines: 4,
+                        ),
+                        const SizedBox(height: 20),
+                        
+                        // Botões de ação
+                        _buildActionButtons(),
                       ],
                     ),
                   ),
                 ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Intensidade da Dor
-              _buildInfoCard(
-                icon: Icons.monitor_heart_rounded,
-                title: 'Intensidade da Dor',
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                                                      Icon(
-                              Icons.favorite_rounded,
-                              color: _getIntensidadeColor(_intensidadeDor),
-                              size: 20,
-                            ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              '${_getIntensidadeLabel(_intensidadeDor)} (${_intensidadeDor}/10)',
-                              style: AppTheme.bodyMedium.copyWith(
-                                color: _getIntensidadeColor(_intensidadeDor),
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      SliderTheme(
-                        data: SliderTheme.of(context).copyWith(
-                          activeTrackColor: _getIntensidadeColor(_intensidadeDor),
-                          inactiveTrackColor: _getIntensidadeColor(_intensidadeDor).withOpacity(0.3),
-                          thumbColor: _getIntensidadeColor(_intensidadeDor),
-                          overlayColor: _getIntensidadeColor(_intensidadeDor).withOpacity(0.2),
-                          trackHeight: 6,
-                        ),
-                        child: Slider(
-                          value: _intensidadeDor.toDouble(),
-                          min: 1,
-                          max: 10,
-                          divisions: 9,
-                          onChanged: (value) {
-                            setState(() {
-                              _intensidadeDor = value.round();
-                            });
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Sintomas
-              _buildInfoCard(
-                icon: Icons.health_and_safety_rounded,
-                title: 'Sintomas Relatados',
-                child: Column(
-                  children: [
-                    TextFormField(
-                      controller: _sintomasController,
-                      decoration: AppTheme.textFieldDecoration('Descreva os sintomas'),
-                      maxLines: 3,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Por favor, descreva os sintomas';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: _sintomasComuns.map((sintoma) {
-                        final isSelected = _sintomasController.text.contains(sintoma);
-                        return FilterChip(
-                          label: Text(sintoma),
-                          selected: isSelected,
-                          onSelected: (selected) {
-                            setState(() {
-                              if (selected) {
-                                _sintomasController.text = _sintomasController.text.isEmpty
-                                    ? sintoma
-                                    : '${_sintomasController.text}, $sintoma';
-                              } else {
-                                _sintomasController.text = _sintomasController.text
-                                    .replaceAll(sintoma, '')
-                                    .replaceAll(', ,', ',')
-                                    .replaceAll(RegExp(r'^,\s*'), '')
-                                    .replaceAll(RegExp(r',\s*$'), '');
-                              }
-                            });
-                          },
-                          selectedColor: const Color(0xFF1E3A8A).withOpacity(0.2),
-                          checkmarkColor: const Color(0xFF1E3A8A),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Alimentos Ingeridos
-              _buildInfoCard(
-                icon: Icons.restaurant_rounded,
-                title: 'Alimentos Ingeridos',
-                child: TextFormField(
-                  controller: _alimentosController,
-                  decoration: AppTheme.textFieldDecoration('Descreva os alimentos consumidos'),
-                  maxLines: 2,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Por favor, descreva os alimentos ingeridos';
-                    }
-                    return null;
-                  },
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Medicação
-              _buildInfoCard(
-                icon: Icons.medication_rounded,
-                title: 'Medicação Usada',
-                child: Column(
-                  children: [
-                    TextFormField(
-                      controller: _medicacaoController,
-                      decoration: AppTheme.textFieldDecoration('Nome da medicação'),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Por favor, informe a medicação usada';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: _medicacoesComuns.map((medicacao) {
-                        return ActionChip(
-                          label: Text(medicacao),
-                          onPressed: () {
-                            setState(() {
-                              _medicacaoController.text = medicacao;
-                            });
-                          },
-                          backgroundColor: const Color(0xFFF1F5F9),
-                          labelStyle: AppTheme.bodySmall.copyWith(
-                            color: const Color(0xFF1E3A8A),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Alívio após Medicação
-              _buildInfoCard(
-                icon: Icons.healing_rounded,
-                title: 'Alívio após Medicação',
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.health_and_safety_rounded,
-                            color: const Color(0xFF1E3A8A),
-                            size: 18,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Houve alívio após tomar a medicação?',
-                              style: AppTheme.bodyMedium.copyWith(
-                                color: const Color(0xFF1E293B),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Não',
-                            style: AppTheme.bodySmall.copyWith(
-                              color: _alivioMedicacao ? const Color(0xFF64748B) : const Color(0xFF1E293B),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Switch(
-                            value: _alivioMedicacao,
-                            onChanged: (value) {
-                              setState(() {
-                                _alivioMedicacao = value;
-                              });
-                            },
-                            activeColor: const Color(0xFF1E3A8A),
-                          ),
-                          const SizedBox(width: 16),
-                          Text(
-                            'Sim',
-                            style: AppTheme.bodySmall.copyWith(
-                              color: _alivioMedicacao ? const Color(0xFF1E293B) : const Color(0xFF64748B),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Observações Adicionais
-              _buildInfoCard(
-                icon: Icons.note_alt_rounded,
-                title: 'Observações Adicionais',
-                child: TextFormField(
-                  controller: _observacoesController,
-                  decoration: AppTheme.textFieldDecoration('Observações adicionais (opcional)'),
-                  maxLines: 4,
-                ),
-              ),
-
-              const SizedBox(height: 32),
-
-              // Botão Salvar
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _saveCrise,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E3A8A),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 4,
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : Text(
-                          widget.criseGastrite == null ? 'Registrar Crise' : 'Atualizar Crise',
-                          style: AppTheme.titleMedium.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildInfoCard({
-    required IconData icon,
-    required String title,
-    required Widget child,
-  }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E3A8A).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  icon,
-                  color: const Color(0xFF1E3A8A),
-                  size: 18,
-                ),
+  Widget _buildActionButtons() {
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton(
+            onPressed: _isLoading ? null : _clearForm,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.grey.shade300,
+              foregroundColor: Colors.black,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  title,
-                  style: AppTheme.titleSmall.copyWith(
-                    color: const Color(0xFF1E293B),
-                    fontWeight: FontWeight.w700,
+            ),
+            child: const Text(
+              'Limpar',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: _isLoading ? null : _saveCrise,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF00324A),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: _isLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : Text(
+                    widget.criseGastrite == null ? 'Salvar' : 'Atualizar',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showSuccessAlert() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header com ícone
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF00324A),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(50),
+                        ),
+                        child: const Icon(
+                          Icons.check_circle,
+                          color: Colors.white,
+                          size: 40,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Sucesso!',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // Conteúdo
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      Text(
+                        widget.criseGastrite == null 
+                            ? 'Crise de gastrite registrada com sucesso!'
+                            : 'Crise de gastrite atualizada com sucesso!',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Color(0xFF374151),
+                          height: 1.5,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            Get.back();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF00324A),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: const Text(
+                            'OK',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _clearForm() {
+    setState(() {
+      _sintomasController.clear();
+      _alimentosController.clear();
+      _medicacaoController.clear();
+      _observacoesController.clear();
+      _intensidadeDor = 0;
+      _alivioMedicacao = false;
+      _selectedDate = DateTime.now();
+    });
+  }
+
+  Widget _buildAlivioField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Alívio após Medicação',
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF00324A),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF9FAFB),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.healing_rounded,
+                    color: const Color(0xFF00324A),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Houve alívio após tomar a medicação?',
+                      style: const TextStyle(
+                        color: Color(0xFF1E293B),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Não',
+                    style: TextStyle(
+                      color: _alivioMedicacao ? const Color(0xFF64748B) : const Color(0xFF1E293B),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Switch(
+                    value: _alivioMedicacao,
+                    onChanged: (value) {
+                      setState(() {
+                        _alivioMedicacao = value;
+                      });
+                    },
+                    activeColor: const Color(0xFF00324A),
+                  ),
+                  const SizedBox(width: 16),
+                  Text(
+                    'Sim',
+                    style: TextStyle(
+                      color: _alivioMedicacao ? const Color(0xFF1E293B) : const Color(0xFF64748B),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildModernTextField({
+    required String label,
+    required String value,
+    required IconData icon,
+    VoidCallback? onTap,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF00324A),
+          ),
+        ),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF9FAFB),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
+            child: Row(
+              children: [
+                Icon(icon, size: 20, color: const Color(0xFF00324A)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    value,
+                    style: const TextStyle(
+                      color: Colors.black,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildIntensidadeField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Intensidade da Dor',
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF00324A),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF9FAFB),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.favorite_rounded,
+                    color: _getIntensidadeColor(_intensidadeDor),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      '${_getIntensidadeLabel(_intensidadeDor)} (${_intensidadeDor}/10)',
+                      style: TextStyle(
+                        color: _getIntensidadeColor(_intensidadeDor),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              SliderTheme(
+                data: SliderTheme.of(context).copyWith(
+                  activeTrackColor: _getIntensidadeColor(_intensidadeDor),
+                  inactiveTrackColor: _getIntensidadeColor(_intensidadeDor).withOpacity(0.3),
+                  thumbColor: _getIntensidadeColor(_intensidadeDor),
+                  overlayColor: _getIntensidadeColor(_intensidadeDor).withOpacity(0.2),
+                  trackHeight: 6,
+                ),
+                child: Slider(
+                  value: _intensidadeDor.toDouble(),
+                  min: 0,
+                  max: 10,
+                  divisions: 10,
+                  onChanged: (value) {
+                    setState(() {
+                      _intensidadeDor = value.round();
+                    });
+                  },
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          child,
-        ],
-      ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildModernTextFormField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    bool isRequired = false,
+    int maxLines = 1,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF00324A),
+              ),
+            ),
+            if (isRequired) ...[
+              const SizedBox(width: 4),
+              const Text(
+                '*',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          maxLines: maxLines,
+          validator: (value) {
+            if (isRequired && (value == null || value.trim().isEmpty)) {
+              return 'Este campo é obrigatório';
+            }
+            return null;
+          },
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: const TextStyle(
+              color: Color(0xFF9CA3AF),
+            ),
+            prefixIcon: Icon(icon, color: const Color(0xFF00324A)),
+            filled: true,
+            fillColor: const Color(0xFFF9FAFB),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFF00324A), width: 2),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.red.shade300),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -1227,7 +1227,7 @@ class HomeScreen extends StatelessWidget {
         title: 'Eventos Clínicos',
         subtitle: 'Consultas e exames',
         color: Colors.blue,
-        onTap: () => Get.toNamed('/evento-clinico'),
+        onTap: () => Get.toNamed('/evento-clinico-form'),
       ));
     }
     
@@ -1478,7 +1478,7 @@ class HomeScreen extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _buildNavItem(Icons.home, 'Início', true, () {}),
-          _buildNavItem(Icons.grid_view, 'Relatórios', false, () {
+          _buildNavItem(Icons.grid_view, 'Históricos', false, () {
             Get.toNamed('/medical-records');
           }),
           _buildNavItem(Icons.add, 'Registro', false, () {

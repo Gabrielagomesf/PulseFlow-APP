@@ -156,7 +156,7 @@ class MenuScreen extends StatelessWidget {
           _buildNavItem(Icons.home, 'Início', false, () {
             Get.offAllNamed('/home');
           }),
-          _buildNavItem(Icons.grid_view, 'Relatórios', false, () {
+          _buildNavItem(Icons.grid_view, 'Históricos', false, () {
             Get.toNamed('/medical-records');
           }),
           _buildNavItem(Icons.add, 'Registro', true, () {}),

@@ -83,95 +83,289 @@ class _CriseGastriteHistoryScreenState extends State<CriseGastriteHistoryScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final isTablet = constraints.maxWidth > 600;
-            final isPhone = constraints.maxWidth < 400;
-            
-            return CustomScrollView(
-              slivers: [
-                _buildSliverAppBar(isTablet),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isTablet ? 32 : (isPhone ? 16 : 24),
-                      vertical: 16,
-                    ),
-                    child: Column(
-                      children: [
-                        FadeTransition(
-                          opacity: _fadeAnimation,
-                          child: SlideTransition(
-                            position: _slideAnimation,
-                            child: _buildHeroSection(isTablet),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        
-                        if (_isLoading)
-                          _buildLoadingState()
-                        else if (_hasError)
-                          _buildErrorState()
-                        else if (_crises.isEmpty)
-                          _buildEmptyState()
-                        else
-                          _buildCrisesList(isTablet, isPhone),
-                      ],
-                    ),
-                  ),
+      backgroundColor: const Color(0xFF00324A),
+      body: Column(
+        children: [
+          // Header moderno com gradiente
+          _buildModernHeader(),
+          
+          // Conteúdo
+          Expanded(
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
                 ),
-              ],
-            );
-          },
+              ),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final isTablet = constraints.maxWidth > 600;
+                  final isPhone = constraints.maxWidth < 400;
+                  
+                  return SingleChildScrollView(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isTablet ? 32 : (isPhone ? 16 : 24),
+                        vertical: 24,
+                      ),
+                      child: Column(
+                        children: [
+                          // Contador e ações
+                          _buildCounterSection(),
+                          const SizedBox(height: 24),
+                          
+                          if (_isLoading)
+                            _buildLoadingState()
+                          else if (_hasError)
+                            _buildErrorState()
+                          else if (_crises.isEmpty)
+                            _buildEmptyState()
+                          else
+                            _buildCrisesList(isTablet, isPhone),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => Get.toNamed(Routes.CRISE_GASTRITE_FORM),
+        backgroundColor: const Color(0xFF00324A),
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text(
+          'Nova Crise',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
-      floatingActionButton: Container(
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [
-              Color(0xFF1E3A8A),
-              Color(0xFF3B82F6),
+    );
+  }
+
+  Widget _buildModernHeader() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 12,
+        left: 16,
+        right: 16,
+        bottom: 20,
+      ),
+      decoration: const BoxDecoration(
+        color: Color(0xFF00324A),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+      ),
+      child: Column(
+        children: [
+          // Linha com botão voltar e título
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
+                onPressed: () => Get.back(),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Histórico Crise Gastrite',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ),
             ],
           ),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF1E3A8A).withOpacity(0.4),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
+          
+          // Campos de filtro
+          const SizedBox(height: 18),
+          _buildFilterSection(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterSection() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          // Header dos filtros
+          Row(
+            children: [
+              Icon(
+                Icons.tune_rounded,
+                color: Colors.white.withOpacity(0.8),
+                size: 16,
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'Filtros',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 12),
+          
+          // Filtros em linha única
+          Row(
+            children: [
+              Expanded(
+                child: _buildFilterDropdown(
+                  hint: 'Intensidade',
+                  icon: Icons.favorite_rounded,
+                  onTap: () {
+                    Get.snackbar(
+                      'Filtro',
+                      'Filtro por intensidade em desenvolvimento',
+                      snackPosition: SnackPosition.BOTTOM,
+                      backgroundColor: Colors.white,
+                      colorText: const Color(0xFF1E293B),
+                      margin: const EdgeInsets.all(16),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildFilterDropdown(
+                  hint: 'Período',
+                  icon: Icons.date_range,
+                  onTap: () {
+                    Get.snackbar(
+                      'Filtro',
+                      'Filtro por período em desenvolvimento',
+                      snackPosition: SnackPosition.BOTTOM,
+                      backgroundColor: Colors.white,
+                      colorText: const Color(0xFF1E293B),
+                      margin: const EdgeInsets.all(16),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterDropdown({
+    required String hint,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 36,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.white.withOpacity(0.1),
+              Colors.white.withOpacity(0.05),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.2),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Icon(
+                icon,
+                color: Colors.white.withOpacity(0.7),
+                size: 12,
+              ),
             ),
-            BoxShadow(
-              color: const Color(0xFF1E3A8A).withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                hint,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: Colors.white.withOpacity(0.7),
+              size: 16,
             ),
           ],
         ),
-        child: FloatingActionButton.extended(
-          onPressed: () => Get.toNamed(Routes.CRISE_GASTRITE_FORM),
-          backgroundColor: Colors.transparent,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          icon: Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(Icons.add_rounded, size: 20),
-          ),
-          label: Text(
-            'Nova Crise',
-            style: AppTheme.titleMedium.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.3,
+      ),
+    );
+  }
+
+  Widget _buildCounterSection() {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            '${_crises.length} registro${_crises.length != 1 ? 's' : ''} encontrado${_crises.length != 1 ? 's' : ''}',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF1E293B),
             ),
           ),
         ),
-      ),
+        const SizedBox(width: 12),
+        IconButton(
+          onPressed: _loadCrises,
+          icon: const Icon(Icons.refresh_rounded),
+          color: const Color(0xFF00324A),
+          style: IconButton.styleFrom(
+            backgroundColor: const Color(0xFF00324A).withOpacity(0.1),
+            padding: const EdgeInsets.all(8),
+            minimumSize: const Size(36, 36),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

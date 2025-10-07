@@ -38,6 +38,7 @@ dependencies:
   permission_handler: ^11.2.0
   flutter_blue_plus: ^1.32.11
   health: ^13.1.4
+  table_calendar: ^3.0.9
 
 dev_dependencies:
   flutter_test:

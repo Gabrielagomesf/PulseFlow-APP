@@ -6,6 +6,7 @@ import '../../services/auth_service.dart';
 import '../../services/database_service.dart';
 import '../../theme/app_theme.dart';
 import '../../routes/app_routes.dart';
+import '../../widgets/menstruacao_calendar.dart';
 
 class MenstruacaoHistoryScreen extends StatefulWidget {
   const MenstruacaoHistoryScreen({Key? key}) : super(key: key);
@@ -20,6 +21,7 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
   bool _isLoading = true;
   bool _hasError = false;
   String _errorMessage = '';
+  bool _showCalendar = true; // Controla se mostra calendário ou lista
 
   late AnimationController _fadeController;
   late AnimationController _slideController;
@@ -84,72 +86,143 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final isTablet = constraints.maxWidth > 600;
-            final isPhone = constraints.maxWidth < 400;
-            
-            return CustomScrollView(
-              slivers: [
-                _buildSliverAppBar(isTablet),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isTablet ? 32 : (isPhone ? 16 : 24),
-                      vertical: 16,
-                    ),
-                    child: Column(
+      backgroundColor: const Color(0xFFF1F1F1),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF00324A),
+          elevation: 0,
+        title: const Text(
+          'Histórico de Ciclos',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Get.back(),
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(
+              _showCalendar ? Icons.list_rounded : Icons.calendar_month_rounded,
+              color: Colors.white,
+            ),
+            onPressed: () => setState(() => _showCalendar = !_showCalendar),
+          ),
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+            onPressed: _loadMenstruacoes,
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // Header com estatísticas
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: const BoxDecoration(
+              color: Color(0xFF00324A),
+                ),
+                child: Column(
+                  children: [
+                    Row(
                       children: [
-                        FadeTransition(
-                          opacity: _fadeAnimation,
-                          child: SlideTransition(
-                            position: _slideAnimation,
-                            child: _buildHeroSection(isTablet),
+                        Container(
+                      padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.favorite_rounded,
+                            color: Colors.white,
+                            size: 24,
                           ),
                         ),
-                        const SizedBox(height: 24),
-                        
-                        if (_isLoading)
-                          _buildLoadingState()
-                        else if (_hasError)
-                          _buildErrorState()
-                        else if (_menstruacoes.isEmpty)
-                          _buildEmptyState()
-                        else
-                          _buildMenstruacoesList(isTablet, isPhone),
+                    const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                            'Ciclos Registrados',
+                                style: AppTheme.titleMedium.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                          const SizedBox(height: 4),
+                              Text(
+                            '${_menstruacoes.length} ciclos acompanhados',
+                            style: AppTheme.bodyMedium.copyWith(
+                                  color: Colors.white.withOpacity(0.9),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Text(
+                            '${_menstruacoes.length}',
+                        style: AppTheme.titleMedium.copyWith(
+                              color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            );
-          },
-        ),
+              ),
+          
+          // Conteúdo principal
+          Expanded(
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: _isLoading
+                    ? _buildLoadingState()
+                    : _hasError
+                        ? _buildErrorState()
+                        : _menstruacoes.isEmpty
+                            ? _buildEmptyState()
+                            : _showCalendar
+                                ? _buildCalendarView()
+                                : _buildMenstruacoesList(),
+              ),
+            ),
+          ),
+        ],
       ),
       floatingActionButton: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              const Color(0xFF1E3A8A),
-              const Color(0xFF3B82F6),
-            ],
-          ),
+          color: const Color(0xFF00324A),
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
+        boxShadow: [
+          BoxShadow(
+              color: const Color(0xFF00324A).withOpacity(0.4),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
             BoxShadow(
-              color: const Color(0xFF1E3A8A).withOpacity(0.4),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-            BoxShadow(
-              color: const Color(0xFF1E3A8A).withOpacity(0.2),
+              color: const Color(0xFF00324A).withOpacity(0.2),
               blurRadius: 8,
               offset: const Offset(0, 4),
-            ),
-          ],
-        ),
+          ),
+        ],
+      ),
         child: FloatingActionButton.extended(
           onPressed: () => Get.toNamed(Routes.MENSTRUACAO_FORM),
           backgroundColor: Colors.transparent,
@@ -171,213 +244,12 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
               letterSpacing: -0.3,
             ),
           ),
-        ),
+            ),
       ),
     );
   }
 
-  Widget _buildSliverAppBar(bool isTablet) {
-    return SliverAppBar(
-      expandedHeight: isTablet ? 140 : 120,
-      floating: false,
-      pinned: true,
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                const Color(0xFF1E3A8A),
-                const Color(0xFF3B82F6),
-                const Color(0xFF60A5FA),
-              ],
-              stops: const [0.0, 0.6, 1.0],
-            ),
-          ),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.transparent,
-                  Colors.black.withOpacity(0.15),
-                ],
-              ),
-            ),
-            child: SafeArea(
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: isTablet ? 32 : 24,
-                  vertical: 24,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.favorite_rounded,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'Histórico de Ciclos',
-                                style: AppTheme.titleMedium.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: isTablet ? 20 : 18,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Acompanhe seus ciclos',
-                                style: AppTheme.bodySmall.copyWith(
-                                  color: Colors.white.withOpacity(0.9),
-                                  fontSize: isTablet ? 12 : 11,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '${_menstruacoes.length}',
-                            style: AppTheme.bodySmall.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 10,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-      leading: IconButton(
-        icon: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.3),
-            ),
-          ),
-          child: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white, size: 20),
-        ),
-        onPressed: () => Get.back(),
-      ),
-      actions: [
-        IconButton(
-          icon: Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.3),
-              ),
-            ),
-            child: const Icon(Icons.refresh_rounded, color: Colors.white, size: 20),
-          ),
-          onPressed: _loadMenstruacoes,
-        ),
-      ],
-    );
-  }
 
-  Widget _buildHeroSection(bool isTablet) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(isTablet ? 32 : 24),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFF1E3A8A),
-            const Color(0xFF3B82F6),
-            const Color(0xFF60A5FA),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF1E3A8A).withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Icon(
-              Icons.favorite_rounded,
-              color: Colors.white,
-              size: 32,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Ciclos Menstruais',
-            style: AppTheme.titleLarge.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Acompanhe o histórico dos seus ciclos menstruais',
-            style: AppTheme.bodyMedium.copyWith(
-              color: Colors.white.withOpacity(0.9),
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildLoadingState() {
     return Container(
@@ -661,66 +533,53 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
     );
   }
 
-  Widget _buildMenstruacoesList(bool isTablet, bool isPhone) {
-    return Column(
-      children: [
-        for (int i = 0; i < _menstruacoes.length; i++) ...[
-          _buildMenstruacaoCard(_menstruacoes[i], i, isTablet, isPhone),
-          if (i < _menstruacoes.length - 1) const SizedBox(height: 16),
-        ],
-      ],
+
+  Widget _buildCalendarView() {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: SlideTransition(
+        position: _slideAnimation,
+        child: MenstruacaoCalendar(
+          menstruacoes: _menstruacoes,
+          onDaySelected: (day) => _showDayDetails(day),
+        ),
+      ),
     );
   }
 
-  Widget _buildMenstruacaoCard(Menstruacao menstruacao, int index, bool isTablet, bool isPhone) {
+  Widget _buildMenstruacoesList() {
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      child: Column(
+      children: [
+        for (int i = 0; i < _menstruacoes.length; i++) ...[
+            _buildMenstruacaoCard(_menstruacoes[i], i),
+          if (i < _menstruacoes.length - 1) const SizedBox(height: 16),
+        ],
+      ],
+      ),
+    );
+  }
+
+  Widget _buildMenstruacaoCard(Menstruacao menstruacao, int index) {
     final statusColor = _getStatusColor(menstruacao.status);
     
-    return Container(
-      margin: const EdgeInsets.only(bottom: 4),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white,
-            const Color(0xFFFAFBFC),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: const Color(0xFFE2E8F0),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 20,
-            offset: const Offset(0, 6),
-            spreadRadius: 0,
-          ),
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-            spreadRadius: 0,
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
+    return Card(
+      color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 0,
         child: InkWell(
-          borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(16),
           onTap: () => _showMenstruacaoDetails(menstruacao),
-          child: Container(
-            padding: EdgeInsets.all(isTablet ? 28 : 24),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Header com status e data
                 Row(
                   children: [
-                    Expanded(
-                      child: Container(
+                  Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: statusColor.withOpacity(0.1),
@@ -738,42 +597,35 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
                               color: statusColor,
                             ),
                             const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
+                        Text(
                                 menstruacao.status,
                                 style: AppTheme.bodySmall.copyWith(
                                   color: statusColor,
                                   fontWeight: FontWeight.w600,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
+                  const Spacer(),
                     Text(
                       _formatDate(menstruacao.dataInicio),
                       style: AppTheme.bodySmall.copyWith(
-                        color: const Color(0xFF64748B),
+                      color: const Color(0xFF00324A),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
                 
-                const SizedBox(height: 20),
+              const SizedBox(height: 16),
                 
                 // Título
                 Text(
                   'Ciclo Menstrual',
-                  style: AppTheme.titleLarge.copyWith(
-                    color: const Color(0xFF0F172A),
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
-                    fontSize: isTablet ? 20 : 18,
+                style: AppTheme.titleMedium.copyWith(
+                  color: const Color(0xFF00324A),
+                  fontWeight: FontWeight.w700,
                   ),
                 ),
                 
@@ -783,10 +635,10 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(16),
+                  color: const Color(0xFFE3F2FD).withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: const Color(0xFFE2E8F0),
+                    color: const Color(0xFF64B5F6).withOpacity(0.2),
                     ),
                   ),
                   child: Column(
@@ -797,13 +649,13 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF1E3A8A).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(10),
+                            color: const Color(0xFF00324A).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
                             ),
-                            child: Icon(
+                          child: const Icon(
                               Icons.calendar_today_rounded,
-                              size: 18,
-                              color: const Color(0xFF1E3A8A),
+                            size: 16,
+                            color: Color(0xFF00324A),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -814,7 +666,7 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
                                 Text(
                                   'Período',
                                   style: AppTheme.bodySmall.copyWith(
-                                    color: const Color(0xFF64748B),
+                                  color: const Color(0xFF00324A),
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -822,7 +674,7 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
                                 Text(
                                   '${DateFormat('dd/MM').format(menstruacao.dataInicio)} - ${DateFormat('dd/MM').format(menstruacao.dataFim)}',
                                   style: AppTheme.bodyMedium.copyWith(
-                                    color: const Color(0xFF1E293B),
+                                  color: const Color(0xFF00324A),
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
@@ -840,13 +692,13 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF472B6).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(10),
+                            color: const Color(0xFF64B5F6).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
                             ),
-                            child: Icon(
+                          child: const Icon(
                               Icons.schedule_rounded,
-                              size: 18,
-                              color: const Color(0xFFF472B6),
+                            size: 16,
+                            color: Color(0xFF64B5F6),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -857,7 +709,7 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
                                 Text(
                                   'Duração',
                                   style: AppTheme.bodySmall.copyWith(
-                                    color: const Color(0xFF64748B),
+                                  color: const Color(0xFF00324A),
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -865,7 +717,7 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
                                 Text(
                                   '${menstruacao.duracaoEmDias} dias',
                                   style: AppTheme.bodyMedium.copyWith(
-                                    color: const Color(0xFF1E293B),
+                                  color: const Color(0xFF00324A),
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
@@ -878,7 +730,7 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
                   ),
                 ),
                 
-                const SizedBox(height: 20),
+              const SizedBox(height: 16),
                 
                 // Footer com data e ação
                 Row(
@@ -886,16 +738,16 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
                     Text(
                       DateFormat('dd/MM/yyyy').format(menstruacao.dataInicio),
                       style: AppTheme.bodySmall.copyWith(
-                        color: const Color(0xFF64748B),
+                      color: const Color(0xFF00324A).withOpacity(0.7),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     const Spacer(),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1E3A8A),
-                        borderRadius: BorderRadius.circular(12),
+                      color: const Color(0xFF00324A),
+                      borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -908,9 +760,9 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
                             ),
                           ),
                           const SizedBox(width: 4),
-                          Icon(
+                        const Icon(
                             Icons.arrow_forward_ios_rounded,
-                            size: 12,
+                          size: 10,
                             color: Colors.white,
                           ),
                         ],
@@ -919,7 +771,6 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
                   ],
                 ),
               ],
-            ),
           ),
         ),
       ),
@@ -976,87 +827,232 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
     );
   }
 
+  void _showDayDetails(DateTime day) {
+    try {
+      final menstruacao = _menstruacoes.firstWhere(
+        (m) => day.isAfter(m.dataInicio.subtract(const Duration(days: 1))) &&
+               day.isBefore(m.dataFim.add(const Duration(days: 1))),
+      );
+
+      // Sempre mostrar detalhes do dia específico
+      final dayKey = DateFormat('yyyy-MM-dd').format(day);
+      DiaMenstruacao? dia = menstruacao.diasPorData != null 
+          ? menstruacao.diasPorData![dayKey]
+          : null;
+      
+      // Se não há dados específicos, criar dados padrão baseados na posição no ciclo
+      if (dia == null) {
+        dia = _createDefaultDayData(day, menstruacao);
+      }
+      
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => _buildDayDetailsModal(day, dia, menstruacao),
+      );
+    } catch (e) {
+      // Se não encontrar menstruação para o dia, não faz nada
+      print('Nenhuma menstruação encontrada para o dia: $day');
+    }
+  }
+
   Widget _buildMenstruacaoDetailsModal(Menstruacao menstruacao) {
     return Container(
-      height: MediaQuery.of(context).size.height * 0.9,
+      height: MediaQuery.of(context).size.height * 0.85,
       decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         children: [
+          // Handle
           Container(
+            margin: const EdgeInsets.only(top: 12),
             width: 40,
             height: 4,
-            margin: const EdgeInsets.symmetric(vertical: 12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFE2E8F0),
-              borderRadius: BorderRadius.circular(2),
+            decoration: const BoxDecoration(
+              color: Color(0xFFE5E7EB),
+              borderRadius: BorderRadius.all(Radius.circular(2)),
             ),
           ),
+          
+          // Header
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+                    color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+            ),
+                  child: const Icon(
+                    Icons.favorite_rounded,
+                    size: 24,
+                    color: Color(0xFF1E3A8A),
+          ),
+                ),
+                const SizedBox(width: 16),
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                      const Text(
                     'Detalhes do Ciclo',
-                    style: AppTheme.titleLarge.copyWith(
-                      color: const Color(0xFF1E293B),
+                        style: TextStyle(
+                          color: Color(0xFF1F2937),
+                          fontSize: 22,
                       fontWeight: FontWeight.w800,
-                    ),
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Ciclo Menstrual',
+                        style: const TextStyle(
+                          color: Color(0xFF1E3A8A),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 24),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close_rounded),
+                  color: const Color(0xFF64748B),
+                ),
+              ],
+            ),
+          ),
+          
+          // Content
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Informações básicas
+                  _buildDetailSection(
+                    title: 'Informações do Ciclo',
+                    icon: Icons.info_rounded,
+                    children: [
+                      _buildDetailRow('Data de Início', DateFormat('dd/MM/yyyy às HH:mm').format(menstruacao.dataInicio)),
+                      _buildDetailRow('Data de Fim', DateFormat('dd/MM/yyyy às HH:mm').format(menstruacao.dataFim)),
+                      _buildDetailRow('Duração Total', '${menstruacao.duracaoEmDias} dias'),
+                      _buildDetailRow('Status', menstruacao.status),
+                    ],
+                  ),
                   
-                  // Informações detalhadas
-                  _buildDetailCard(
-                    icon: Icons.play_circle_outline_rounded,
-                    title: 'Data de Início',
-                    value: DateFormat('dd/MM/yyyy').format(menstruacao.dataInicio),
-                  ),
-                  
-                  _buildDetailCard(
-                    icon: Icons.stop_circle_outlined,
-                    title: 'Data de Fim',
-                    value: DateFormat('dd/MM/yyyy').format(menstruacao.dataFim),
-                  ),
-                  
-                  _buildDetailCard(
-                    icon: Icons.schedule_rounded,
-                    title: 'Duração do Ciclo',
-                    value: '${menstruacao.duracaoEmDias} dias',
-                  ),
-                  
-                  _buildDetailCard(
-                    icon: Icons.info_outline_rounded,
-                    title: 'Status',
-                    value: menstruacao.status,
-                    valueColor: _getStatusColor(menstruacao.status),
-                  ),
-                  
-                  _buildDetailCard(
-                    icon: Icons.calendar_today_rounded,
-                    title: 'Período Completo',
-                    value: '${DateFormat('dd/MM/yyyy').format(menstruacao.dataInicio)} - ${DateFormat('dd/MM/yyyy').format(menstruacao.dataFim)}',
-                  ),
+                  const SizedBox(height: 20),
                   
                   // Dados por dia
                   if (menstruacao.diasPorData != null && menstruacao.diasPorData!.isNotEmpty) ...[
-                    const SizedBox(height: 24),
-                    Text(
-                      'Dados por Dia',
-                      style: AppTheme.titleMedium.copyWith(
-                        color: const Color(0xFF1E293B),
-                        fontWeight: FontWeight.w700,
-                      ),
+                    _buildDetailSection(
+                      title: 'Dados Diários',
+                      icon: Icons.calendar_view_day_rounded,
+                      children: [
+                        ...menstruacao.diasPorData!.entries.map((entry) {
+                          final dia = entry.value;
+                          final data = DateTime.parse(entry.key);
+                          final isFirstDay = data == menstruacao.dataInicio;
+                          final isLastDay = data == menstruacao.dataFim;
+                          
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      DateFormat('dd/MM/yyyy - EEEE', 'pt_BR').format(data),
+                                      style: const TextStyle(
+                                        color: Color(0xFF1F2937),
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                  if (isFirstDay)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF10B981).withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Text(
+                                        'Início',
+                                        style: TextStyle(
+                                          color: Color(0xFF10B981),
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  if (isLastDay && !isFirstDay)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFEF4444).withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Text(
+                                        'Fim',
+                                        style: TextStyle(
+                                          color: Color(0xFFEF4444),
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _buildDayDetailRow(
+                                      icon: Icons.water_drop_rounded,
+                                      title: 'Fluxo',
+                                      value: dia.fluxo,
+                                      valueColor: _getFluxoColor(dia.fluxo),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: _buildDayDetailRow(
+                                      icon: Icons.health_and_safety_rounded,
+                                      title: 'Cólica',
+                                      value: dia.teveColica ? 'Sim' : 'Não',
+                                      valueColor: dia.teveColica ? const Color(0xFFEF4444) : const Color(0xFF10B981),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              _buildDayDetailRow(
+                                icon: Icons.mood_rounded,
+                                title: 'Humor',
+                                value: dia.humor,
+                                valueColor: _getHumorColor(dia.humor),
+                              ),
+                              if (entry != menstruacao.diasPorData!.entries.last) ...[
+                                const SizedBox(height: 16),
+                                Container(
+                                  height: 1,
+                                  color: const Color(0xFFE2E8F0),
+                                ),
+                                const SizedBox(height: 16),
+                              ],
+                            ],
+                          );
+                        }).toList(),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                    ...menstruacao.diasPorData!.entries.map((entry) {
-                      final data = DateTime.parse(entry.key);
-                      final dia = entry.value;
-                      return _buildDiaDetailCard(data, dia);
-                    }).toList(),
                   ],
                 ],
               ),
@@ -1067,32 +1063,174 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
     );
   }
 
-  Widget _buildDetailCard({
-    required IconData icon,
+  Widget _buildDetailSection({
     required String title,
-    required String value,
-    Color? valueColor,
+    required IconData icon,
+    required List<Widget> children,
   }) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (title.isNotEmpty) ...[
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: const Color(0xFF1E3A8A),
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                    Text(
+                  title,
+                  style: const TextStyle(
+                    color: Color(0xFF1F2937),
+                    fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                    letterSpacing: -0.3,
+                      ),
+                ),
+              ],
+                    ),
+                    const SizedBox(height: 16),
+          ],
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 140,
+            child: Text(
+              '$label:',
+              style: const TextStyle(
+                fontSize: 15,
+                color: Color(0xFF64748B),
+                fontWeight: FontWeight.w500,
+                letterSpacing: 0.1,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 15,
+                color: Color(0xFF1F2937),
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.1,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDayDetailRow({
+    required IconData icon,
+    required String title,
+    required String value,
+    required Color valueColor,
+  }) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 16,
+          color: valueColor,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFF64748B),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: valueColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+
+
+
+
+  Widget _buildCycleSummary(Menstruacao menstruacao) {
+    final statusColor = _getStatusColor(menstruacao.status);
+    
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF00324A),
+            const Color(0xFF00324A).withOpacity(0.8),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF00324A).withOpacity(0.2),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFEC4899).withOpacity(0.1),
+                  color: Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              icon,
-              color: const Color(0xFFEC4899),
+                child: const Icon(
+                  Icons.calendar_month_rounded,
+                  color: Colors.white,
               size: 24,
             ),
           ),
@@ -1102,21 +1240,447 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                      'Resumo do Ciclo',
+                      style: AppTheme.titleMedium.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${DateFormat('dd/MM/yyyy').format(menstruacao.dataInicio)} - ${DateFormat('dd/MM/yyyy').format(menstruacao.dataFim)}',
+                      style: AppTheme.bodyMedium.copyWith(
+                        color: Colors.white.withOpacity(0.9),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  menstruacao.status,
                   style: AppTheme.bodySmall.copyWith(
-                    color: const Color(0xFF64748B),
+                    color: Colors.white,
                     fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 20),
+          
+          Row(
+            children: [
+              Expanded(
+                child: _buildSummaryItem(
+                  icon: Icons.schedule_rounded,
+                  label: 'Duração',
+                  value: '${menstruacao.duracaoEmDias} dias',
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildSummaryItem(
+                  icon: Icons.trending_up_rounded,
+                  label: 'Dados',
+                  value: '${menstruacao.diasPorData?.length ?? 0} dias',
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryItem({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            icon,
+            color: Colors.white,
+            size: 20,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: AppTheme.bodySmall.copyWith(
+              color: Colors.white.withOpacity(0.8),
+              fontWeight: FontWeight.w500,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: AppTheme.bodyMedium.copyWith(
-                    color: valueColor ?? const Color(0xFF1E293B),
+            style: AppTheme.titleMedium.copyWith(
+              color: Colors.white,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
               ],
+            ),
+    );
+  }
+
+  Widget _buildCycleDetails(Menstruacao menstruacao) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Informações Detalhadas',
+          style: AppTheme.titleMedium.copyWith(
+            color: const Color(0xFF00324A),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 16),
+        
+        _buildModernDetailCard(
+          icon: Icons.play_circle_outline_rounded,
+          title: 'Data de Início',
+          value: DateFormat('dd/MM/yyyy').format(menstruacao.dataInicio),
+          color: const Color(0xFF10B981),
+        ),
+        
+        _buildModernDetailCard(
+          icon: Icons.stop_circle_outlined,
+          title: 'Data de Fim',
+          value: DateFormat('dd/MM/yyyy').format(menstruacao.dataFim),
+          color: const Color(0xFFEF4444),
+        ),
+        
+        _buildModernDetailCard(
+          icon: Icons.schedule_rounded,
+          title: 'Duração Total',
+          value: '${menstruacao.duracaoEmDias} dias',
+          color: const Color(0xFF3B82F6),
+        ),
+        
+        _buildModernDetailCard(
+          icon: Icons.info_outline_rounded,
+          title: 'Status Atual',
+          value: menstruacao.status,
+          color: _getStatusColor(menstruacao.status),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildModernDetailCard({
+    required IconData icon,
+    required String title,
+    required String value,
+    required Color color,
+    String? subtitle,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+            padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: color.withOpacity(0.2),
+                    width: 1,
+                  ),
+                ),
+                child: Icon(
+              icon,
+                  color: color,
+                  size: 22,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+              Text(
+                  title,
+                style: AppTheme.bodyMedium.copyWith(
+                    color: const Color(0xFF64748B),
+                        fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                      style: AppTheme.titleMedium.copyWith(
+                        color: const Color(0xFF00324A),
+                  fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: AppTheme.bodySmall.copyWith(
+                          color: const Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+
+
+  Widget _buildDayInfoItem({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+                child: Column(
+                      children: [
+                        Icon(
+            icon,
+            color: color,
+                          size: 16,
+                        ),
+          const SizedBox(height: 6),
+                        Text(
+            label,
+                          style: AppTheme.bodySmall.copyWith(
+              color: const Color(0xFF00324A).withOpacity(0.7),
+              fontWeight: FontWeight.w500,
+                          ),
+                        ),
+          const SizedBox(height: 2),
+                    Text(
+            value,
+                      style: AppTheme.bodySmall.copyWith(
+              color: color,
+                        fontWeight: FontWeight.w700,
+                      ),
+            textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+    );
+  }
+
+  Color _getFluxoColor(String fluxo) {
+    switch (fluxo) {
+      case 'Leve':
+        return const Color(0xFF10B981);
+      case 'Moderado':
+        return const Color(0xFFF59E0B);
+      case 'Intenso':
+        return const Color(0xFFEF4444);
+      default:
+        return const Color(0xFF00324A);
+    }
+  }
+
+
+  Widget _buildDayDetailsModal(DateTime day, DiaMenstruacao? dia, Menstruacao menstruacao) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.85,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        children: [
+          // Handle
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: const BoxDecoration(
+              color: Color(0xFFE5E7EB),
+              borderRadius: BorderRadius.all(Radius.circular(2)),
+            ),
+          ),
+          
+          // Header
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Icon(
+                    Icons.calendar_today_rounded,
+                    size: 24,
+                    color: Color(0xFF1E3A8A),
+                  ),
+                ),
+                const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                      const Text(
+                        'Detalhes do Dia',
+                        style: TextStyle(
+                          color: Color(0xFF1F2937),
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                        Text(
+                        DateFormat('dd/MM/yyyy - EEEE', 'pt_BR').format(day),
+                        style: const TextStyle(
+                          color: Color(0xFF1E3A8A),
+                          fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close_rounded),
+                  color: const Color(0xFF64748B),
+                    ),
+                  ],
+                ),
+              ),
+              
+          // Content
+              Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                  // Informações do dia
+                  _buildDetailSection(
+                    title: 'Dados do Dia',
+                    icon: Icons.water_drop_rounded,
+                      children: [
+                      if (dia != null) ...[
+                        _buildDetailRow('Fluxo', dia.fluxo),
+                        _buildDetailRow('Cólica', dia.teveColica ? 'Sim' : 'Não'),
+                        _buildDetailRow('Humor', dia.humor),
+                      ] else ...[
+                        _buildDetailRow('Status', 'Sem dados específicos'),
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: const Color(0xFFE2E8F0),
+                            ),
+                          ),
+                          child: Row(
+                      children: [
+                        Icon(
+                                Icons.info_outline_rounded,
+                            color: const Color(0xFF64748B),
+                                size: 20,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Este dia faz parte do ciclo menstrual, mas não possui dados detalhados registrados.',
+                                  style: const TextStyle(
+                                    color: Color(0xFF64748B),
+                                    fontSize: 14,
+                                  ),
+                          ),
+                        ),
+                      ],
+                    ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 20),
+                  
+                  // Informações do ciclo
+                  _buildDetailSection(
+                    title: 'Informações do Ciclo',
+                    icon: Icons.info_rounded,
+                    children: [
+                      _buildDetailRow('Data de Início', DateFormat('dd/MM/yyyy às HH:mm').format(menstruacao.dataInicio)),
+                      _buildDetailRow('Data de Fim', DateFormat('dd/MM/yyyy às HH:mm').format(menstruacao.dataFim)),
+                      _buildDetailRow('Duração Total', '${menstruacao.duracaoEmDias} dias'),
+                      _buildDetailRow('Status do Ciclo', menstruacao.status),
+                      
+                      const SizedBox(height: 16),
+                      
+                      // Posição do dia no ciclo
+                      _buildDetailRow('Posição no Ciclo', _getDayPositionInCycle(day, menstruacao)),
+                      _buildDetailRow('Dias Restantes', _getRemainingDays(day, menstruacao)),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 20),
+                  
+                  // Estatísticas do ciclo
+                  _buildDetailSection(
+                    title: 'Estatísticas',
+                    icon: Icons.analytics_rounded,
+                    children: [
+                      _buildDetailRow('Total de Dias', '${menstruacao.duracaoEmDias} dias'),
+                      _buildDetailRow('Dias com Dados', menstruacao.diasPorData != null ? '${menstruacao.diasPorData!.length} dias' : '0 dias'),
+                      _buildDetailRow('Progresso', '${_getCycleProgress(day, menstruacao)}%'),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -1124,155 +1688,97 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
     );
   }
 
-  Widget _buildDiaDetailCard(DateTime data, DiaMenstruacao dia) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header do dia
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEC4899).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.calendar_today_rounded,
-                  color: const Color(0xFFEC4899),
-                  size: 16,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                DateFormat('dd/MM/yyyy').format(data),
-                style: AppTheme.bodyMedium.copyWith(
-                  color: const Color(0xFF1E293B),
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 12),
-          
-          // Informações do dia
-          Row(
-            children: [
-              // Fluxo
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.water_drop_rounded,
-                          color: const Color(0xFF1E3A8A),
-                          size: 16,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Fluxo',
-                          style: AppTheme.bodySmall.copyWith(
-                            color: const Color(0xFF64748B),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      dia.fluxo,
-                      style: AppTheme.bodySmall.copyWith(
-                        color: const Color(0xFF1E293B),
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              
-              // Cólica
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.health_and_safety_rounded,
-                          color: const Color(0xFF1E3A8A),
-                          size: 16,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Cólica',
-                          style: AppTheme.bodySmall.copyWith(
-                            color: const Color(0xFF64748B),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      dia.teveColica ? 'Sim' : 'Não',
-                      style: AppTheme.bodySmall.copyWith(
-                        color: dia.teveColica ? Colors.red : Colors.green,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              
-              // Humor
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.mood_rounded,
-                          color: const Color(0xFF1E3A8A),
-                          size: 16,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Humor',
-                          style: AppTheme.bodySmall.copyWith(
-                            color: const Color(0xFF64748B),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      dia.humor,
-                      style: AppTheme.bodySmall.copyWith(
-                        color: const Color(0xFF1E293B),
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+
+
+  Color _getHumorColor(String humor) {
+    switch (humor.toLowerCase()) {
+      case 'feliz':
+        return const Color(0xFF10B981);
+      case 'triste':
+        return const Color(0xFF3B82F6);
+      case 'ansioso':
+        return const Color(0xFFF59E0B);
+      case 'raiva':
+        return const Color(0xFFEF4444);
+      case 'cansado':
+        return const Color(0xFF64748B);
+      default:
+        return const Color(0xFF1E293B);
+    }
+  }
+
+  String _getDayPositionInCycle(DateTime day, Menstruacao menstruacao) {
+    final dayDifference = day.difference(menstruacao.dataInicio).inDays + 1;
+    if (dayDifference == 1) {
+      return '1º dia (Início)';
+    } else if (day == menstruacao.dataFim) {
+      return '$dayDifferenceº dia (Fim)';
+    } else {
+      return '$dayDifferenceº dia';
+    }
+  }
+
+  String _getRemainingDays(DateTime day, Menstruacao menstruacao) {
+    if (day.isBefore(menstruacao.dataInicio)) {
+      final daysUntilStart = menstruacao.dataInicio.difference(day).inDays;
+      return 'Faltam $daysUntilStart dias para iniciar';
+    } else if (day.isAfter(menstruacao.dataFim)) {
+      return 'Ciclo finalizado';
+    } else {
+      final remainingDays = menstruacao.dataFim.difference(day).inDays;
+      return remainingDays > 0 ? '$remainingDays dias restantes' : 'Último dia';
+    }
+  }
+
+  int _getCycleProgress(DateTime day, Menstruacao menstruacao) {
+    if (day.isBefore(menstruacao.dataInicio)) {
+      return 0;
+    } else if (day.isAfter(menstruacao.dataFim)) {
+      return 100;
+    } else {
+      final totalDays = menstruacao.duracaoEmDias;
+      final currentDay = day.difference(menstruacao.dataInicio).inDays + 1;
+      return ((currentDay / totalDays) * 100).round();
+    }
+  }
+
+
+  DiaMenstruacao _createDefaultDayData(DateTime day, Menstruacao menstruacao) {
+    final dayPosition = day.difference(menstruacao.dataInicio).inDays + 1;
+    final isFirstDay = day == menstruacao.dataInicio;
+    final isLastDay = day == menstruacao.dataFim;
+    
+    // Determinar fluxo baseado na posição no ciclo
+    String fluxo;
+    if (isFirstDay) {
+      fluxo = 'Intenso'; // Primeiro dia geralmente tem fluxo mais intenso
+    } else if (isLastDay) {
+      fluxo = 'Leve'; // Último dia geralmente tem fluxo mais leve
+    } else if (dayPosition <= 2) {
+      fluxo = 'Intenso'; // Primeiros dias mais intensos
+    } else if (dayPosition <= 4) {
+      fluxo = 'Moderado'; // Dias intermediários moderados
+    } else {
+      fluxo = 'Leve'; // Últimos dias mais leves
+    }
+    
+    // Determinar cólica baseado na posição (mais comum no início)
+    bool teveColica = isFirstDay || dayPosition <= 2;
+    
+    // Humor padrão baseado na posição
+    String humor;
+    if (isFirstDay || isLastDay) {
+      humor = 'Cansado'; // Início e fim podem ser mais cansativos
+    } else {
+      humor = 'Normal'; // Dias intermediários mais normais
+    }
+    
+    return DiaMenstruacao(
+      fluxo: fluxo,
+      teveColica: teveColica,
+      humor: humor,
     );
   }
 }
+
+

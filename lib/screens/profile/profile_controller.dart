@@ -82,11 +82,31 @@ class ProfileController extends GetxController {
       if (hasPermissions) {
         await _loadHealthData();
       } else {
-        // Se não tem permissões, tenta carregar dados do banco
-        await _loadHealthDataFromDatabase();
+        // Se permissões são null (nunca solicitadas), solicita automaticamente
+        print('🔐 Permissões não concedidas. Solicitando automaticamente...');
+        final granted = await _healthService.requestPermissions();
+        
+        if (granted) {
+          _healthDataAccessGranted.value = true;
+          await _loadHealthData();
+          
+          Get.snackbar(
+            'Sucesso',
+            'Acesso aos dados de saúde do Apple Health concedido!',
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+            duration: const Duration(seconds: 3),
+          );
+        } else {
+          // Se não tem permissões, tenta carregar dados do banco
+          print('⚠️ Permissões negadas. Carregando dados do banco...');
+          await _loadHealthDataFromDatabase();
+        }
       }
     } catch (e) {
       print('Erro ao verificar permissões do HealthKit: $e');
+      // Tenta carregar do banco em caso de erro
+      await _loadHealthDataFromDatabase();
     }
   }
 

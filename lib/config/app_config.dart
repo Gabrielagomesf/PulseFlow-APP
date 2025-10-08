@@ -52,5 +52,18 @@ class AppConfig {
     }
   }
 
+  // URL base da API do backend web
+  static String get apiBaseUrl {
+    try {
+      final url = dotenv.env['API_BASE_URL'];
+      if (url != null && url.isNotEmpty) {
+        return url;
+      }
+    } catch (e) {
+      // Fallback para desenvolvimento local
+    }
+    return 'http://localhost:65432';
+  }
+
 
 } 

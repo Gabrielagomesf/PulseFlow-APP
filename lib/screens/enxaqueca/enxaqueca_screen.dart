@@ -38,6 +38,13 @@ String calcularMaiorIntensidade(List<Enxaqueca> data) {
   return maior.toString();
 }
 
+String calcularMenorIntensidade(List<Enxaqueca> data) {
+  if (data.isEmpty) return '0';
+  final valores = data.map((e) => int.tryParse(e.intensidade) ?? 0).toList();
+  final menor = valores.reduce((a, b) => a < b ? a : b);
+  return menor.toString();
+}
+
 double calcularFatorIntensidade(String intensidade) {
   final valor = int.tryParse(intensidade) ?? 0;
   return valor / 10.0;
@@ -80,15 +87,16 @@ class EnxaquecaScreen extends StatelessWidget {
 
   final TextEditingController intensidadeController = TextEditingController();
   final TextEditingController duracaoController = TextEditingController();
-  final Rx<DateTime?> dataSelecionada = Rx<DateTime?>(null);
+  final Rx<DateTime?> dataSelecionada = Rx<DateTime?>(DateTime.now());
   final RxBool mostrarGrafico = false.obs; // Reverting to false
+  final RxInt intensidadeSelecionada = 0.obs;
 
   @override
   Widget build(BuildContext context) {
     controller.carregarRegistros(pacienteId);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F1F1),
+      backgroundColor: const Color(0xFF00324A),
       appBar: AppBar(
         backgroundColor: const Color(0xFF00324A),
         elevation: 0,
@@ -105,9 +113,17 @@ class EnxaquecaScreen extends StatelessWidget {
         ),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Obx(() {
+      body: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Obx(() {
           // debug: EnxaquecaScreen building with mostrarGrafico.value
           return Column(
             children: [
@@ -130,29 +146,82 @@ class EnxaquecaScreen extends StatelessWidget {
                               style: TextStyle(color: Color(0xFF00324A), fontSize: 16, fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(height: 16),
-                        Row(
+                        // Intensidade em uma linha (100% largura)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: TextField(
-                                controller: intensidadeController,
-                                decoration: const InputDecoration(
-                                  labelText: "Intensidade (1-10)",
-                                  hintText: "Ex: 7",
-                                ),
+                            const Text(
+                              'Intensidade da Dor',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF00324A),
                               ),
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: TextField(
-                                controller: duracaoController,
-                                decoration: const InputDecoration(
-                                  labelText: "Duração (horas)",
-                                  hintText: "Ex: 2",
+                            const SizedBox(height: 8),
+                            Obx(() {
+                              final valor = intensidadeSelecionada.value;
+                              return Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF9FAFB),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: const Color(0xFFE5E7EB)),
                                 ),
-                                keyboardType: TextInputType.number,
-                              ),
-                            ),
+                                child: Column(
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.favorite_rounded,
+                                          color: getCorIntensidade(valor.toString()),
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Text(
+                                            '${classificarIntensidade(valor.toString())} ($valor/10)',
+                                            style: TextStyle(
+                                              color: getCorIntensidade(valor.toString()),
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    SliderTheme(
+                                      data: SliderTheme.of(context).copyWith(
+                                        activeTrackColor: getCorIntensidade(valor.toString()),
+                                        inactiveTrackColor: getCorIntensidade(valor.toString()).withOpacity(0.3),
+                                        thumbColor: getCorIntensidade(valor.toString()),
+                                        overlayColor: getCorIntensidade(valor.toString()).withOpacity(0.2),
+                                        trackHeight: 6,
+                                      ),
+                                      child: Slider(
+                                        value: valor.toDouble(),
+                                        min: 0,
+                                        max: 10,
+                                        divisions: 10,
+                                        onChanged: (v) => intensidadeSelecionada.value = v.round(),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }),
                           ],
+                        ),
+                        const SizedBox(height: 16),
+                        // Duração (100% largura)
+                        TextField(
+                          controller: duracaoController,
+                          decoration: const InputDecoration(
+                            labelText: "Duração (horas)",
+                            hintText: "Ex: 2",
+                          ),
+                          keyboardType: TextInputType.number,
                         ),
                         const SizedBox(height: 16),
                         Obx(() {
@@ -228,13 +297,13 @@ class EnxaquecaScreen extends StatelessWidget {
                                   }
                                   await controller.adicionarRegistro(
                                     pacienteId: pacienteId,
-                                    intensidade: intensidadeController.text,
+                                    intensidade: intensidadeSelecionada.value.toString(),
                                     duracao: int.tryParse(duracaoController.text) ?? 0,
                                     data: dataSelecionada.value!,
                                   );
 
-                                  intensidadeController.clear();
                                   duracaoController.clear();
+                                  intensidadeSelecionada.value = 0;
                                   dataSelecionada.value = null;
                                   Get.snackbar('Sucesso', 'Registro de enxaqueca salvo com sucesso');
                                 },
@@ -369,7 +438,8 @@ class EnxaquecaScreen extends StatelessWidget {
               ],
             ],
           );
-        }),
+          }),
+        ),
       ),
     );
   }
@@ -578,8 +648,8 @@ class _MigraineAnalysisSection extends StatelessWidget {
           decoration: BoxDecoration(color: const Color(0xFFFFFFFF), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF00324A).withOpacity(0.15))),
               child: Row(
                 children: [
-                  Expanded(child: Column(children: const [Text('Média', style: TextStyle(color: Color(0xFF00324A), fontSize: 12))])),
-                  Expanded(child: Column(children: [const Text('Intensidade', style: TextStyle(color: Color(0xFF00324A), fontSize: 12)), Text(calcularMediaIntensidade(data), style: const TextStyle(color: Color(0xFF00324A), fontSize: 20, fontWeight: FontWeight.w600))])),
+                  Expanded(child: Column(children: [const Text('Menor', style: TextStyle(color: Color(0xFF00324A), fontSize: 12)), Text(calcularMenorIntensidade(data), style: const TextStyle(color: Color(0xFF00324A), fontSize: 20, fontWeight: FontWeight.w600))])),
+                  Expanded(child: Column(children: [const Text('Média', style: TextStyle(color: Color(0xFF00324A), fontSize: 12)), Text(calcularMediaIntensidade(data), style: const TextStyle(color: Color(0xFF00324A), fontSize: 20, fontWeight: FontWeight.w600))])),
                   Expanded(child: Column(children: [const Text('Maior', style: TextStyle(color: Color(0xFF00324A), fontSize: 12)), Text(calcularMaiorIntensidade(data), style: const TextStyle(color: Color(0xFF00324A), fontSize: 20, fontWeight: FontWeight.w600))])),
                 ],
               ),

@@ -26,5 +26,8 @@ abstract class Routes {
   static const PULSE_KEY = '/pulse-key';
   static const SMARTWATCH = '/smartwatch';
   static const HEALTH_HISTORY = '/health-history';
+  static const EXAME_UPLOAD = '/exame-upload';
+  static const EXAME_LIST = '/exame-list';
+  static const HORMONAL = '/hormonal';
 
 } 

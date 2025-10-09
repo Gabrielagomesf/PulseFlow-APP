@@ -25,6 +25,9 @@ import '../screens/profile/profile_controller.dart';
 import '../screens/pulse_key/pulse_key_screen.dart';
 import '../screens/smartwatch/smartwatch_screen.dart';
 import '../screens/health_history/health_history_screen.dart';
+import '../screens/exame/exame_upload_screen.dart';
+import '../screens/exame/exame_list_screen.dart';
+import '../screens/hormonal/hormonal_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../services/auth_service.dart';
 
@@ -173,6 +176,24 @@ class AppPages {
     GetPage(
       name: Routes.HEALTH_HISTORY,
       page: () => const HealthHistoryScreen(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.EXAME_UPLOAD,
+      page: () => const ExameUploadScreen(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.EXAME_LIST,
+      page: () => const ExameListScreen(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.HORMONAL,
+      page: () {
+        final pacienteId = Get.find<PacienteController>().pacienteId.value;
+        return HormonalScreen(pacienteId: pacienteId);
+      },
       transition: Transition.rightToLeft,
     ),
   ];

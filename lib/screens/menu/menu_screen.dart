@@ -6,6 +6,8 @@ import '../diabetes/diabetes_screen.dart';
 import '../login/paciente_controller.dart';
 import '../../routes/app_routes.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/common/bp_menu_icon.dart';
+import '../../widgets/common/hormonal_icon.dart';
 
 class MenuScreen extends StatelessWidget {
   const MenuScreen({Key? key}) : super(key: key);
@@ -226,6 +228,15 @@ class MenuScreen extends StatelessWidget {
       childAspectRatio: 1.1,
       children: [
         _buildMenuButton(
+          icon: Icons.attach_file,
+          title: 'Exames\n(Anexos)',
+          color: const Color(0xFF00324A),
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            Get.toNamed(Routes.EXAME_UPLOAD);
+          },
+        ),
+        _buildMenuButton(
           icon: Icons.psychology,
           title: 'Enxaqueca',
           color: const Color(0xFF00324A),
@@ -247,8 +258,8 @@ class MenuScreen extends StatelessWidget {
             ));
           },
         ),
-        _buildMenuButton(
-          icon: Icons.monitor_heart,
+        _buildMenuButtonCustomIcon(
+          icon: const BpMenuIcon(size: 40, color: Colors.white),
           title: 'Pressão\nArterial',
           color: const Color(0xFF00324A),
           onPressed: () {
@@ -272,6 +283,15 @@ class MenuScreen extends StatelessWidget {
           onPressed: () {
             HapticFeedback.lightImpact();
             Get.toNamed(Routes.EVENTO_CLINICO_FORM);
+          },
+        ),
+        _buildMenuButtonCustomIcon(
+          icon: const HormonalIcon(size: 40, color: Colors.white),
+          title: 'Hormonal',
+          color: const Color(0xFF00324A),
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            Get.toNamed(Routes.HORMONAL);
           },
         ),
         _buildMenuButton(
@@ -377,6 +397,59 @@ class MenuScreen extends StatelessWidget {
                     size: 40,
                     color: Colors.white,
                   ),
+                  const SizedBox(height: 8),
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuButtonCustomIcon({
+    required Widget icon,
+    required String title,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return Semantics(
+      button: true,
+      label: title,
+      hint: 'Toque para acessar $title',
+      child: Container(
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 3,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: onPressed,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  icon,
                   const SizedBox(height: 8),
                   Text(
                     title,

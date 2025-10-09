@@ -13,7 +13,7 @@ class PressaoScreen extends StatelessWidget {
   PressaoScreen({super.key, required this.pacienteId});
 
   final TextEditingController pressaoController = TextEditingController();
-  final Rx<DateTime?> dataSelecionada = Rx<DateTime?>(null);
+  final Rx<DateTime?> dataSelecionada = Rx<DateTime?>(DateTime.now());
   final RxBool mostrarGrafico = false.obs;
 
   @override
@@ -21,11 +21,11 @@ class PressaoScreen extends StatelessWidget {
     controller.carregarRegistros(pacienteId);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F1F1),
+      backgroundColor: const Color(0xFF00324A),
       appBar: AppBar(
         backgroundColor: const Color(0xFF00324A),
         elevation: 0,
-        title: const Text('Registro de Pressão Arterial', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+        title: const Text('Registro de Pressão', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
@@ -38,9 +38,17 @@ class PressaoScreen extends StatelessWidget {
         ),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Obx(() {
+      body: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Obx(() {
           return Column(
             children: [
               if (!mostrarGrafico.value) ...[
@@ -213,7 +221,8 @@ class PressaoScreen extends StatelessWidget {
               ],
             ],
           );
-        }),
+          }),
+        ),
       ),
     );
   }
@@ -280,8 +289,16 @@ class _GraficoPressao extends StatelessWidget {
           Row(children: [Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Registro de Pressão Arterial', overflow: TextOverflow.ellipsis, maxLines: 1, style: TextStyle(color: Color(0xFF00324A), fontSize: 18, fontWeight: FontWeight.w600)), const SizedBox(height: 4), Text(mes, style: const TextStyle(color: Color(0xFF00324A), fontSize: 14))])), IconButton(onPressed: onClose, icon: const Icon(Icons.close, color: Color(0xFF00324A), size: 20))]),
           const SizedBox(height: 20),
           if (data.isEmpty) ...[
-            const SizedBox(height: 12),
-            const Center(child: Text('Sem dados neste mês', style: TextStyle(color: Color(0xFF00324A))))
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Column(
+                children: const [
+                  Icon(Icons.insights_outlined, size: 48, color: Color(0xFF00324A)),
+                  SizedBox(height: 8),
+                  Text('Sem dados neste mês', style: TextStyle(color: Color(0xFF00324A), fontSize: 14)),
+                ],
+              ),
+            ),
           ] else ...[
             SizedBox(
               height: 320,
@@ -349,15 +366,23 @@ class _PressaoAnalysisSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final data = registros.toList()..sort((a, b) => a.data.compareTo(b.data));
-    String mediaSis() {
-      if (data.isEmpty) return '0';
-      final v = data.map((e) => e.sistolica).reduce((a, b) => a + b) / data.length;
-      return v.toStringAsFixed(0);
+    String mediaPair() {
+      if (data.isEmpty) return '0/0';
+      final mSis = data.map((e) => e.sistolica).reduce((a, b) => a + b) / data.length;
+      final mDia = data.map((e) => e.diastolica).reduce((a, b) => a + b) / data.length;
+      return '${mSis.toStringAsFixed(0)}/${mDia.toStringAsFixed(0)}';
     }
-    String mediaDia() {
-      if (data.isEmpty) return '0';
-      final v = data.map((e) => e.diastolica).reduce((a, b) => a + b) / data.length;
-      return v.toStringAsFixed(0);
+    String menorPair() {
+      if (data.isEmpty) return '0/0';
+      final minSis = data.map((e) => e.sistolica).reduce((a, b) => a < b ? a : b);
+      final minDia = data.map((e) => e.diastolica).reduce((a, b) => a < b ? a : b);
+      return '${minSis.toStringAsFixed(0)}/${minDia.toStringAsFixed(0)}';
+    }
+    String maiorPair() {
+      if (data.isEmpty) return '0/0';
+      final maxSis = data.map((e) => e.sistolica).reduce((a, b) => a > b ? a : b);
+      final maxDia = data.map((e) => e.diastolica).reduce((a, b) => a > b ? a : b);
+      return '${maxSis.toStringAsFixed(0)}/${maxDia.toStringAsFixed(0)}';
     }
 
     return Column(children: [
@@ -365,9 +390,11 @@ class _PressaoAnalysisSection extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(color: const Color(0xFFFFFFFF), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFF00324A).withOpacity(0.15))),
         child: Row(children: [
-          Expanded(child: Column(children: const [Text('Média', style: TextStyle(color: Color(0xFF00324A), fontSize: 12))])),
-          Expanded(child: Column(children: [const Text('Sistólica', style: TextStyle(color: Color(0xFF00324A), fontSize: 12)), Text(mediaSis(), style: const TextStyle(color: Color(0xFF00324A), fontSize: 20, fontWeight: FontWeight.w600))])),
-          Expanded(child: Column(children: [const Text('Diastólica', style: TextStyle(color: Color(0xFF00324A), fontSize: 12)), Text(mediaDia(), style: const TextStyle(color: Color(0xFF00324A), fontSize: 20, fontWeight: FontWeight.w600))])),
+          Expanded(child: Column(children: [const Text('Menor', style: TextStyle(color: Color(0xFF00324A), fontSize: 12)), Text(menorPair(), style: const TextStyle(color: Color(0xFF00324A), fontSize: 20, fontWeight: FontWeight.w600))]))
+          ,
+          Expanded(child: Column(children: [const Text('Média', style: TextStyle(color: Color(0xFF00324A), fontSize: 12)), Text(mediaPair(), style: const TextStyle(color: Color(0xFF00324A), fontSize: 20, fontWeight: FontWeight.w600))]))
+          ,
+          Expanded(child: Column(children: [const Text('Maior', style: TextStyle(color: Color(0xFF00324A), fontSize: 12)), Text(maiorPair(), style: const TextStyle(color: Color(0xFF00324A), fontSize: 20, fontWeight: FontWeight.w600))]))
         ]),
       ),
     ]);

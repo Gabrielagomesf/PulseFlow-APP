@@ -38,6 +38,12 @@ String calcularMaiorGlicemia(List<Diabetes> data) {
   return maior.toStringAsFixed(0);
 }
 
+String calcularMenorGlicemiaValor(List<Diabetes> data) {
+  if (data.isEmpty) return '0';
+  final menor = data.map((e) => e.glicemia).reduce((a, b) => a < b ? a : b);
+  return menor.toStringAsFixed(0);
+}
+
 Color getCorGlicemia(double glicemia) {
   if (glicemia < 70) {
     return Colors.blue; // Hipoglicemia
@@ -71,7 +77,7 @@ class DiabetesScreen extends StatelessWidget {
   DiabetesScreen({super.key, required this.pacienteId});
 
   final TextEditingController glicemiaController = TextEditingController();
-  final Rx<DateTime?> dataSelecionada = Rx<DateTime?>(null);
+  final Rx<DateTime?> dataSelecionada = Rx<DateTime?>(DateTime.now());
   final RxBool mostrarGrafico = false.obs; // Reverting to false
 
   @override
@@ -79,7 +85,7 @@ class DiabetesScreen extends StatelessWidget {
     controller.carregarRegistros(pacienteId);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F1F1),
+      backgroundColor: const Color(0xFF00324A),
       appBar: AppBar(
         backgroundColor: const Color(0xFF00324A),
         elevation: 0,
@@ -96,9 +102,17 @@ class DiabetesScreen extends StatelessWidget {
         ),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Obx(() {
+      body: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Obx(() {
           // debugPrint('mostrarGrafico.value: ${mostrarGrafico.value}'); // Keep for debugging if needed elsewhere
           return Column(
             children: [
@@ -260,7 +274,8 @@ class DiabetesScreen extends StatelessWidget {
               ],
             ],
           );
-        }),
+          }),
+        ),
       ),
     );
   }
@@ -293,42 +308,24 @@ class _DiabetesAnalysisSection extends StatelessWidget {
                   Expanded(
                     child: Column(
                       children: [
-                        const Text(
-                          'Total',
-                        style: TextStyle(color: Color(0xFF00324A), fontSize: 12),
-                        ),
-                        Text(
-                          '${data.length}',
-                        style: const TextStyle(color: Color(0xFF00324A), fontSize: 20, fontWeight: FontWeight.bold),
-                        ),
+                        const Text('Menor', style: TextStyle(color: Color(0xFF00324A), fontSize: 12)),
+                        Text(calcularMenorGlicemiaValor(data), style: const TextStyle(color: Color(0xFF00324A), fontSize: 20, fontWeight: FontWeight.w600)),
                       ],
                     ),
                   ),
                   Expanded(
                     child: Column(
                       children: [
-                        const Text(
-                          'Média',
-                        style: TextStyle(color: Color(0xFF00324A), fontSize: 12),
-                        ),
-                        Text(
-                          '${calcularMediaGlicemia(data)}',
-                        style: const TextStyle(color: Color(0xFF00324A), fontSize: 20, fontWeight: FontWeight.w600),
-                        ),
+                        const Text('Média', style: TextStyle(color: Color(0xFF00324A), fontSize: 12)),
+                        Text('${calcularMediaGlicemia(data)}', style: const TextStyle(color: Color(0xFF00324A), fontSize: 20, fontWeight: FontWeight.w600)),
                       ],
                     ),
                   ),
                   Expanded(
                     child: Column(
                       children: [
-                        const Text(
-                          'Maior',
-                        style: TextStyle(color: Color(0xFF00324A), fontSize: 12),
-                        ),
-                        Text(
-                          '${calcularMaiorGlicemia(data)}',
-                        style: const TextStyle(color: Color(0xFF00324A), fontSize: 20, fontWeight: FontWeight.w600),
-                        ),
+                        const Text('Maior', style: TextStyle(color: Color(0xFF00324A), fontSize: 12)),
+                        Text('${calcularMaiorGlicemia(data)}', style: const TextStyle(color: Color(0xFF00324A), fontSize: 20, fontWeight: FontWeight.w600)),
                       ],
                     ),
                   ),

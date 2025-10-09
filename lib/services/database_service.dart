@@ -7,6 +7,7 @@ import '../models/pressao_arterial.dart';
 import '../models/evento_clinico.dart';
 import '../models/crise_gastrite.dart';
 import '../models/menstruacao.dart';
+import '../models/exame.dart';
 import '../models/health_data.dart';
 import '../config/database_config.dart';
 
@@ -272,6 +273,180 @@ class DatabaseService {
         normalized['paciente'] = normalized['paciente'].toString();
       }
       return EventoClinico.fromMap(normalized);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // =================== EXAMES ===================
+  Future<Exame> createExame(Exame exame) async {
+    try {
+      await _ensureConnection();
+      final collection = _db!.collection(DatabaseConfig.examesCollection);
+
+      final data = exame.toMap();
+      data.remove('_id');
+
+      // Converter paciente para ObjectId se possível
+      try {
+        data['paciente'] = ObjectId.parse(exame.paciente);
+      } catch (_) {
+        data['paciente'] = exame.paciente;
+      }
+
+      final result = await collection.insert(data);
+
+      Map<String, dynamic>? created;
+      if (result['_id'] != null) {
+        created = await collection.findOne(where.id(result['_id']));
+      }
+      created ??= await collection.findOne(where
+          .eq('paciente', data['paciente'])
+          .eq('nome', data['nome'])
+          .eq('categoria', data['categoria'])
+          .eq('data', data['data'])
+          .eq('filePath', data['filePath']));
+
+      if (created == null) throw 'Erro ao criar exame';
+
+      final normalized = Map<String, dynamic>.from(created);
+      normalized['_id'] = normalized['_id'].toString();
+      if (normalized['paciente'] != null) {
+        normalized['paciente'] = normalized['paciente'].toString();
+      }
+      return Exame.fromMap(normalized);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<List<Exame>> getExamesByPaciente(String pacienteId) async {
+    try {
+      await _ensureConnection();
+      final collection = _db!.collection(DatabaseConfig.examesCollection);
+
+      final results = <Map<String, dynamic>>[];
+      try {
+        final objId = ObjectId.parse(pacienteId);
+        final list = await collection.find(where.eq('paciente', objId)).toList();
+        results.addAll(list.map((e) => Map<String, dynamic>.from(e)));
+      } catch (_) {}
+
+      final list2 = await collection.find(where.eq('paciente', pacienteId)).toList();
+      results.addAll(list2.map((e) => Map<String, dynamic>.from(e)));
+
+      final normalized = results.map((doc) {
+        final data = Map<String, dynamic>.from(doc);
+        data['_id'] = data['_id'].toString();
+        if (data['paciente'] != null) {
+          data['paciente'] = data['paciente'].toString();
+        }
+        return data;
+      }).toList();
+
+      normalized.sort((a, b) {
+        try {
+          final da = DateTime.parse(a['data'].toString());
+          final db = DateTime.parse(b['data'].toString());
+          return db.compareTo(da);
+        } catch (_) {
+          return 0;
+        }
+      });
+
+      return normalized.map((m) => Exame.fromMap(m)).toList();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> deleteExame(String exameId) async {
+    try {
+      await _ensureConnection();
+      final collection = _db!.collection(DatabaseConfig.examesCollection);
+      bool deleted = false;
+
+      // Tenta por ObjectId
+      try {
+        final r1 = await collection.remove(where.eq('_id', ObjectId.parse(exameId)));
+        if (r1['ok'] == 1 && (r1['n'] ?? 0) > 0) {
+          deleted = true;
+        }
+      } catch (_) {}
+
+      // Fallback: tenta por string
+      if (!deleted) {
+        final r2 = await collection.remove(where.eq('_id', exameId));
+        if (r2['ok'] == 1 && (r2['n'] ?? 0) > 0) {
+          deleted = true;
+        } else if (r2['ok'] != 1 && r2['errmsg'] != null) {
+          throw 'Falha ao deletar exame: ${r2['errmsg']}';
+        }
+      }
+
+      if (!deleted) {
+        throw 'Exame não encontrado';
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> deleteExameByObject(Exame exame) async {
+    try {
+      await _ensureConnection();
+      final collection = _db!.collection(DatabaseConfig.examesCollection);
+
+      bool deleted = false;
+
+      // 1) Se tiver ID, tenta deletar pelo _id (ObjectId e String)
+      if (exame.id != null && exame.id!.isNotEmpty) {
+        try {
+          final r1 = await collection.remove(where.eq('_id', ObjectId.parse(exame.id!)));
+          if (r1['ok'] == 1 && (r1['n'] ?? 0) > 0) {
+            deleted = true;
+          }
+        } catch (_) {}
+        if (!deleted) {
+          final r2 = await collection.remove(where.eq('_id', exame.id));
+          if (r2['ok'] == 1 && (r2['n'] ?? 0) > 0) {
+            deleted = true;
+          }
+        }
+      }
+
+      // 2) Fallback: deletar por combinação de campos
+      if (!deleted) {
+        // Tentativa com paciente como ObjectId
+        try {
+          final r3 = await collection.remove(where
+              .eq('paciente', ObjectId.parse(exame.paciente))
+              .eq('filePath', exame.filePath)
+              .eq('nome', exame.nome)
+              .eq('categoria', exame.categoria)
+              .eq('data', exame.data.toIso8601String()));
+          if (r3['ok'] == 1 && (r3['n'] ?? 0) > 0) {
+            deleted = true;
+          }
+        } catch (_) {}
+
+        // Tentativa com paciente como String
+        if (!deleted) {
+          final r4 = await collection.remove(where
+              .eq('paciente', exame.paciente)
+              .eq('filePath', exame.filePath)
+              .eq('nome', exame.nome)
+              .eq('categoria', exame.categoria)
+              .eq('data', exame.data.toIso8601String()));
+          if (r4['ok'] == 1 && (r4['n'] ?? 0) > 0) {
+            deleted = true;
+          }
+        }
+      }
+
+      if (!deleted) {
+        throw 'Exame não encontrado';
+      }
     } catch (e) {
       rethrow;
     }

@@ -20,6 +20,7 @@ class DatabaseConfig {
  static const String enxaquecasCollection = 'enxaquecas';
   static const String diabetesCollection = 'diabetes';
   static const String eventosClinicosCollection = 'eventoclinicos';
+  static const String examesCollection = 'exames';
   
 
   static const Map<String, dynamic> connectionOptions = {

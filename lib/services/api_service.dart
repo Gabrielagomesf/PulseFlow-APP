@@ -23,6 +23,8 @@ class ApiService {
     required DateTime expiresAt,
   }) async {
     try {
+      final url = '$baseUrl/api/access-code/gerar';
+      
       final requestBody = {
         'patientId': patientId,
         'accessCode': accessCode,
@@ -30,16 +32,16 @@ class ApiService {
       };
 
       final response = await http.post(
-        Uri.parse('$baseUrl/api/access-code/gerar'),
+        Uri.parse(url),
         headers: _defaultHeaders,
         body: jsonEncode(requestBody),
-      );
+      ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         return data;
       } else {
-        throw Exception('Erro ao enviar código de acesso: ${response.statusCode}');
+        throw Exception('Erro ao enviar código de acesso: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
       throw Exception('Erro de conexão: $e');
@@ -77,6 +79,38 @@ class ApiService {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/api/access-code/test'),
+        headers: _defaultHeaders,
+      ).timeout(const Duration(seconds: 5));
+
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Buscar solicitações de acesso pendentes
+  Future<List<Map<String, dynamic>>> buscarSolicitacoesPendentes(String patientId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/access-code/solicitacoes/$patientId'),
+        headers: _defaultHeaders,
+      ).timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return List<Map<String, dynamic>>.from(data['solicitacoes'] ?? []);
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // Marcar solicitação como visualizada
+  Future<bool> marcarSolicitacaoVisualizada(String solicitacaoId) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/api/access-code/solicitacoes/$solicitacaoId/visualizar'),
         headers: _defaultHeaders,
       ).timeout(const Duration(seconds: 5));
 

@@ -853,7 +853,6 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
       );
     } catch (e) {
       // Se não encontrar menstruação para o dia, não faz nada
-      print('Nenhuma menstruação encontrada para o dia: $day');
     }
   }
 

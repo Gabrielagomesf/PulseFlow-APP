@@ -1603,7 +1603,6 @@ class HomeScreen extends StatelessWidget {
           },
         );
       } catch (e) {
-        print('Erro ao decodificar base64: $e');
         return const Icon(
           Icons.person,
           color: Colors.white,

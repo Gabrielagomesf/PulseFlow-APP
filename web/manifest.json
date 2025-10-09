@@ -1,13 +1,14 @@
 {
-    "name": "paciente_app",
-    "short_name": "paciente_app",
+    "name": "PulseFlow",
+    "short_name": "PulseFlow",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#hexcode",
-    "theme_color": "#hexcode",
-    "description": "A new Flutter project.",
+    "background_color": "#1E88E5",
+    "theme_color": "#1E88E5",
+    "description": "Sistema de Saúde PulseFlow",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
+    "gcm_sender_id": "103953800507",
     "icons": [
         {
             "src": "icons/Icon-192.png",

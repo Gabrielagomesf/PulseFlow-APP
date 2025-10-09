@@ -92,7 +92,6 @@ class HomeController extends GetxController {
       _updateFavoriteItems();
       
     } catch (e) {
-      print('Erro ao carregar dados disponíveis: $e');
     }
   }
 

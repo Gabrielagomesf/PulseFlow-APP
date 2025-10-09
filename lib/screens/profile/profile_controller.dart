@@ -83,7 +83,6 @@ class ProfileController extends GetxController {
         await _loadHealthData();
       } else {
         // Se permissões são null (nunca solicitadas), solicita automaticamente
-        print('🔐 Permissões não concedidas. Solicitando automaticamente...');
         final granted = await _healthService.requestPermissions();
         
         if (granted) {
@@ -99,12 +98,10 @@ class ProfileController extends GetxController {
           );
         } else {
           // Se não tem permissões, tenta carregar dados do banco
-          print('⚠️ Permissões negadas. Carregando dados do banco...');
           await _loadHealthDataFromDatabase();
         }
       }
     } catch (e) {
-      print('Erro ao verificar permissões do HealthKit: $e');
       // Tenta carregar do banco em caso de erro
       await _loadHealthDataFromDatabase();
     }
@@ -115,7 +112,6 @@ class ProfileController extends GetxController {
     try {
       if (_patient.value == null) return;
       
-      print('📊 Carregando dados de saúde do banco de dados...');
       
       // Busca dados dos últimos 7 dias
       final healthData = await _healthDataService.getHealthDataLastDays(_patient.value!.id!, 7);
@@ -138,13 +134,10 @@ class ProfileController extends GetxController {
           _dailySteps.value = stepsData.first.value.round();
         }
         
-        print('✅ Dados de saúde carregados do banco: FC=${_heartRate.value}, Sono=${_sleepQuality.value}, Passos=${_dailySteps.value}');
       } else {
-        print('ℹ️ Nenhum dado de saúde encontrado no banco de dados');
       }
       
     } catch (e) {
-      print('❌ Erro ao carregar dados do banco: $e');
     }
   }
 
@@ -169,7 +162,6 @@ class ProfileController extends GetxController {
         emergencyPhoneController.text = currentUser.emergencyPhone ?? '';
       }
     } catch (e) {
-      print('Erro ao carregar dados do paciente: $e');
       Get.snackbar(
         'Erro',
         'Não foi possível carregar os dados do paciente',
@@ -202,7 +194,6 @@ class ProfileController extends GetxController {
         await _saveProfilePhoto(image.path);
       }
     } catch (e) {
-      print('Erro ao selecionar foto: $e');
       Get.snackbar(
         'Erro',
         'Não foi possível selecionar a foto',
@@ -227,7 +218,6 @@ class ProfileController extends GetxController {
         await _saveProfilePhoto(image.path);
       }
     } catch (e) {
-      print('Erro ao tirar foto: $e');
       Get.snackbar(
         'Erro',
         'Não foi possível tirar a foto',
@@ -295,7 +285,6 @@ class ProfileController extends GetxController {
         colorText: Colors.white,
       );
     } catch (e) {
-      print('Erro ao converter foto para base64: $e');
       Get.snackbar(
         'Erro',
         'Erro ao processar a foto',
@@ -313,7 +302,6 @@ class ProfileController extends GetxController {
       final base64String = base64Encode(bytes);
       return 'data:image/jpeg;base64,$base64String';
     } catch (e) {
-      print('Erro ao converter imagem para base64: $e');
       rethrow;
     }
   }
@@ -321,11 +309,8 @@ class ProfileController extends GetxController {
   // Atualiza a foto no banco de dados em background
   Future<void> _updatePhotoInBackground(String patientId, String photoBase64) async {
     try {
-      print('Atualizando foto no banco de dados em background...');
       await _databaseService.updatePatientField(patientId, 'profilePhoto', photoBase64);
-      print('Foto atualizada no banco de dados com sucesso!');
     } catch (e) {
-      print('Erro ao atualizar foto no banco de dados (não crítico): $e');
       // Não mostra erro para o usuário pois a foto já foi atualizada localmente
     }
   }
@@ -417,7 +402,6 @@ class ProfileController extends GetxController {
   // Atualiza o banco de dados em background
   Future<void> _updateDatabaseInBackground(String patientId, Patient updatedPatient) async {
     try {
-      print('Atualizando banco de dados em background...');
       
       // Atualiza campos individuais
       await _databaseService.updatePatientField(patientId, 'name', updatedPatient.name);
@@ -432,9 +416,7 @@ class ProfileController extends GetxController {
         await _databaseService.updatePatientField(patientId, 'profilePhoto', updatedPatient.profilePhoto);
       }
       
-      print('Banco de dados atualizado com sucesso!');
     } catch (e) {
-      print('Erro ao atualizar banco de dados (não crítico): $e');
       // Não mostra erro para o usuário pois os dados já foram atualizados localmente
     }
   }
@@ -468,7 +450,6 @@ class ProfileController extends GetxController {
         );
       }
     } catch (e) {
-      print('Erro ao solicitar acesso aos dados de saúde: $e');
       Get.snackbar(
         'Erro',
         'Não foi possível solicitar acesso aos dados de saúde',
@@ -485,14 +466,10 @@ class ProfileController extends GetxController {
     try {
       // Verifica se tem permissões
       final hasPermissions = await _healthService.hasPermissions();
-      print('🔐 Verificando permissões no _loadHealthData: $hasPermissions');
       
       if (!hasPermissions) {
-        print('⚠️ Sem permissões do HealthKit - tentando solicitar...');
         final granted = await _healthService.requestPermissions();
-        print('🔐 Resultado da solicitação: $granted');
         if (!granted) {
-          print('❌ Permissões negadas - usando dados simulados');
           // Usa dados simulados mas ainda tenta salvar
         }
       }
@@ -518,26 +495,18 @@ class ProfileController extends GetxController {
         _dailySteps.value = lastSteps.round();
       }
       
-      print('Dados de saúde carregados: FC=${_heartRate.value}, Sono=${_sleepQuality.value}, Passos=${_dailySteps.value}');
       
       // Salva dados no banco de dados
       if (_patient.value != null) {
-        print('💾 Iniciando salvamento no banco de dados...');
-        print('👤 Patient ID: ${_patient.value!.id}');
         try {
           await _healthDataService.saveHealthDataFromHealthKit(_patient.value!.id!);
-          print('✅ Dados de saúde salvos no banco de dados');
         } catch (e) {
-          print('⚠️ Erro ao salvar dados no banco: $e');
-          print('⚠️ Stack trace: ${StackTrace.current}');
           // Não falha o carregamento se não conseguir salvar no banco
         }
       } else {
-        print('❌ Paciente não encontrado - não é possível salvar dados');
       }
       
     } catch (e) {
-      print('Erro ao carregar dados de saúde: $e');
       // Em caso de erro, usa dados simulados
       _heartRate.value = 72.0;
       _sleepQuality.value = 85.0;
@@ -582,7 +551,6 @@ class ProfileController extends GetxController {
         );
       }
     } catch (e) {
-      print('Erro ao verificar status do Apple Health: $e');
       _healthDataAccessGranted.value = false;
     }
   }
@@ -628,7 +596,6 @@ class ProfileController extends GetxController {
       );
       
     } catch (e) {
-      print('Erro ao sincronizar dados: $e');
       Get.snackbar(
         'Erro',
         'Erro ao sincronizar dados de saúde',
@@ -674,7 +641,6 @@ class ProfileController extends GetxController {
       );
       
     } catch (e) {
-      print('Erro no teste de integração: $e');
       Get.snackbar(
         'Erro',
         'Falha no teste: $e',

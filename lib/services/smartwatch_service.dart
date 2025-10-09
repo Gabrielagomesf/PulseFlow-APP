@@ -42,7 +42,6 @@ class SmartwatchService extends GetxService {
   // Verifica permissões necessárias
   Future<bool> checkPermissions() async {
     try {
-      print('🔐 Verificando permissões...');
       
       // Lista de permissões necessárias
       Map<Permission, PermissionStatus> permissions = await [
@@ -57,19 +56,15 @@ class SmartwatchService extends GetxService {
       bool allGranted = permissions.values.every((status) => status == PermissionStatus.granted);
       
       if (!allGranted) {
-        print('❌ Algumas permissões foram negadas:');
         permissions.forEach((permission, status) {
           if (status != PermissionStatus.granted) {
-            print('  - ${permission.toString()}: $status');
           }
         });
         return false;
       }
       
-      print('✅ Todas as permissões concedidas');
       return true;
     } catch (e) {
-      print('❌ Erro ao solicitar permissões: $e');
       return false;
     }
   }
@@ -85,28 +80,23 @@ class SmartwatchService extends GetxService {
         await syncAllData();
       }
     } catch (e) {
-      print('❌ Erro ao inicializar serviço de saúde: $e');
     }
   }
   
   // Sincroniza todos os dados do smartwatch
   Future<void> syncAllData() async {
     if (!_isConnected.value) {
-      print('❌ Smartwatch não conectado');
       return;
     }
     
     try {
-      print('🔄 Sincronizando dados do smartwatch...');
       
       // Gera dados simulados para demonstração
       await _generateSampleData();
       
       _lastSyncTime.value = DateTime.now();
-      print('✅ Sincronização concluída em ${_lastSyncTime.value}');
       
     } catch (e) {
-      print('❌ Erro na sincronização: $e');
     }
   }
   
@@ -171,9 +161,6 @@ class SmartwatchService extends GetxService {
       ));
     }
     
-    print('❤️ Gerados ${_heartRateData.length} pontos de frequência cardíaca');
-    print('😴 Gerados ${_sleepData.length} pontos de dados de sono');
-    print('🏃‍♂️ Gerados ${_activityData.length} pontos de atividade física');
   }
   
   // Força nova sincronização
@@ -184,7 +171,6 @@ class SmartwatchService extends GetxService {
   // Solicita permissões manualmente
   Future<bool> requestPermissions() async {
     try {
-      print('🔐 Solicitando permissões...');
       
       // Lista de permissões necessárias
       Map<Permission, PermissionStatus> permissions = await [
@@ -199,27 +185,22 @@ class SmartwatchService extends GetxService {
       bool allGranted = permissions.values.every((status) => status == PermissionStatus.granted);
       
       if (!allGranted) {
-        print('❌ Algumas permissões foram negadas:');
         permissions.forEach((permission, status) {
           if (status != PermissionStatus.granted) {
-            print('  - ${permission.toString()}: $status');
           }
         });
         
         // Se alguma permissão foi negada permanentemente, abre configurações
         bool hasPermanentlyDenied = permissions.values.any((status) => status == PermissionStatus.permanentlyDenied);
         if (hasPermanentlyDenied) {
-          print('⚠️ Algumas permissões foram negadas permanentemente. Abrindo configurações...');
           await openAppSettings();
         }
         
         return false;
       }
       
-      print('✅ Todas as permissões concedidas');
       return true;
     } catch (e) {
-      print('❌ Erro ao solicitar permissões: $e');
       return false;
     }
   }
@@ -229,12 +210,10 @@ class SmartwatchService extends GetxService {
     try {
       if (_isScanning.value) return;
       
-      print('🔍 Iniciando escaneamento...');
       
       // Primeiro, verifica e solicita permissões
       bool hasPermissions = await requestPermissions();
       if (!hasPermissions) {
-        print('❌ Permissões não concedidas. Não é possível escanear.');
         return;
       }
       
@@ -243,12 +222,10 @@ class SmartwatchService extends GetxService {
       
       // Verifica se o Bluetooth está ligado
       if (await FlutterBluePlus.isOn == false) {
-        print('❌ Bluetooth está desligado');
         _isScanning.value = false;
         return;
       }
       
-      print('🔍 Escaneando dispositivos Bluetooth...');
       
       // Inicia o escaneamento
       FlutterBluePlus.startScan(
@@ -265,7 +242,6 @@ class SmartwatchService extends GetxService {
           if (_isSmartwatchDevice(device)) {
             if (!_availableDevices.any((d) => d.remoteId == device.remoteId)) {
               _availableDevices.add(device);
-              print('📱 Smartwatch encontrado: ${device.platformName} (${device.remoteId})');
             }
           }
         }
@@ -276,12 +252,10 @@ class SmartwatchService extends GetxService {
         if (_isScanning.value) {
           FlutterBluePlus.stopScan();
           _isScanning.value = false;
-          print('✅ Escaneamento concluído. ${_availableDevices.length} dispositivos encontrados');
         }
       });
       
     } catch (e) {
-      print('❌ Erro ao escanear dispositivos: $e');
       _isScanning.value = false;
     }
   }
@@ -318,7 +292,6 @@ class SmartwatchService extends GetxService {
     try {
       if (_isConnecting.value) return false;
       
-      print('🔗 Conectando com ${device.platformName}...');
       _isConnecting.value = true;
       
       // Conecta com o dispositivo
@@ -329,14 +302,12 @@ class SmartwatchService extends GetxService {
         _connectedDevice.value = device;
         _isConnected.value = true;
         
-        print('✅ Conectado com sucesso!');
         
         // Escuta mudanças de conexão
         device.connectionState.listen((state) {
           if (state == BluetoothConnectionState.disconnected) {
             _isConnected.value = false;
             _connectedDevice.value = null;
-            print('❌ Dispositivo desconectado');
           }
         });
         
@@ -346,13 +317,11 @@ class SmartwatchService extends GetxService {
         _isConnecting.value = false;
         return true;
       } else {
-        print('❌ Falha na conexão');
         _isConnecting.value = false;
         return false;
       }
       
     } catch (e) {
-      print('❌ Erro ao conectar: $e');
       _isConnecting.value = false;
       return false;
     }
@@ -365,17 +334,14 @@ class SmartwatchService extends GetxService {
         await _connectedDevice.value!.disconnect();
         _connectedDevice.value = null;
         _isConnected.value = false;
-        print('✅ Desconectado com sucesso');
       }
     } catch (e) {
-      print('❌ Erro ao desconectar: $e');
     }
   }
   
   // Inicia a coleta de dados do dispositivo conectado
   Future<void> _startDataCollection(BluetoothDevice device) async {
     try {
-      print('📊 Iniciando coleta de dados...');
       
       // Descobre serviços do dispositivo
       List<BluetoothService> services = await device.discoverServices();
@@ -395,12 +361,10 @@ class SmartwatchService extends GetxService {
       
       // Se não encontrou serviços específicos, usa dados simulados
       if (_heartRateData.isEmpty && _activityData.isEmpty) {
-        print('⚠️ Serviços específicos não encontrados, usando dados simulados');
         await _generateSampleData();
       }
       
     } catch (e) {
-      print('❌ Erro ao coletar dados: $e');
       // Usa dados simulados como fallback
       await _generateSampleData();
     }
@@ -424,13 +388,11 @@ class SmartwatchService extends GetxService {
                 type: HeartRateType.current,
               ));
               
-              print('❤️ FC recebida: $heartRate bpm');
             }
           });
         }
       }
     } catch (e) {
-      print('❌ Erro ao subscrever serviço de FC: $e');
     }
   }
   
@@ -452,13 +414,11 @@ class SmartwatchService extends GetxService {
                 type: ActivityType.steps,
               ));
               
-              print('🏃‍♂️ Passos recebidos: $steps');
             }
           });
         }
       }
     } catch (e) {
-      print('❌ Erro ao subscrever serviço de atividade: $e');
     }
   }
   

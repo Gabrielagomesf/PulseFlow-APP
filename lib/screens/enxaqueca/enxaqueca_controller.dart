@@ -24,11 +24,8 @@ class EnxaquecaController extends GetxController {
   }
 
   Future<void> carregarRegistros(String pacienteId) async {
-    print('Carregando registros de enxaqueca para paciente: $pacienteId');
     registros.value = await _service.getByPacienteId(pacienteId);
-    print('Registros carregados: ${registros.length}');
     for (final registro in registros) {
-      print('Registro: ${registro.data.day}/${registro.data.month}/${registro.data.year} - Intensidade: ${registro.intensidade}');
     }
     _filtrarRegistros(); // Initial filtering after loading
   }

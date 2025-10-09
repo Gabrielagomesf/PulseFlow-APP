@@ -79,22 +79,32 @@ class _PulseKeyScreenState extends State<PulseKeyScreen> {
       final currentUser = _authService.currentUser;
       
       if (currentUser == null || currentUser.id == null) {
+        Get.snackbar(
+          'Erro',
+          'Usuário não autenticado. Faça login novamente.',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 3),
+        );
         return;
       }
 
+      
       await _apiService.sendAccessCode(
         patientId: currentUser.id!,
         accessCode: code,
         expiresAt: expiresAt,
       );
+      
     } catch (e) {
       Get.snackbar(
         'Erro de Conexão',
-        'Não foi possível sincronizar o código com o servidor. Tente novamente.',
+        'Não foi possível sincronizar o código com o servidor.\nDetalhes: $e',
         backgroundColor: Colors.orange,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 3),
+        duration: const Duration(seconds: 5),
       );
     } finally {
       if (mounted) {

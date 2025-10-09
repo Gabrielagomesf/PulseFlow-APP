@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-// import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'firebase_options.dart';
 import 'theme/app_theme.dart';
 import 'routes/app_pages.dart';
 import 'services/auth_service.dart';
@@ -12,14 +14,25 @@ import 'screens/login/paciente_controller.dart';
 import 'screens/login/login_controller.dart';
 import 'services/enxaqueca_service.dart';
 import 'services/diabetes_service.dart';
-// import 'services/notification_service.dart';
+import 'services/notification_service.dart';
 import 'services/biometric_service.dart';
 import 'services/smartwatch_service.dart';
+import 'services/notifications/firebase_handlers.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // await Firebase.initializeApp();
+  // Inicializar Firebase ANTES de registrar o background handler
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    
+    // Registrar o handler de mensagens em background
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  } catch (e) {
+    // Continuar com notificações locais apenas
+  }
   
   try {
     await dotenv.load(fileName: ".env");
@@ -28,13 +41,10 @@ void main() async {
   }
   
   final dbService = Get.put(DatabaseService());
-  print('DatabaseService inicializado');
-  // Teste de conexão
   try {
     await dbService.testConnection();
-    print('Conexão com banco de dados estabelecida');
   } catch (e) {
-    print('Erro ao conectar com banco de dados: $e');
+    // Erro ao conectar com banco de dados
   }
 
   Get.put(MigrationService());
@@ -46,10 +56,13 @@ void main() async {
   Get.put(LoginController());
   Get.put(EnxaquecaService());
   Get.put(DiabetesService());
-  
-  // Get.put(NotificationService());
   Get.put(BiometricService());
-  // Get.put(SmartwatchService());
+  
+  try {
+    Get.put(NotificationService());
+  } catch (e) {
+    // Erro ao inicializar NotificationService
+  }
 
   // Verifica se precisa migrar senhas antigas
   try {

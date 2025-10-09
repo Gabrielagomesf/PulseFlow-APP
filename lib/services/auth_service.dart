@@ -8,6 +8,7 @@ import '../config/app_config.dart';
 import 'database_service.dart';
 import 'encryption_service.dart';
 import 'biometric_service.dart';
+import 'notification_service.dart';
 import 'package:mongo_dart/mongo_dart.dart' show ObjectId;
 import 'dart:math';
 import 'package:mailer/mailer.dart';
@@ -267,15 +268,18 @@ class AuthService extends GetxController {
     
     // Se o usuário for admin, valida diretamente sem verificar código 2FA
     if (patient.isAdmin) {
-      // Gera o token JWT e autentica
-      final token = _generateToken(patient);
-      await _storage.write(key: 'auth_token', value: token);
-      _token.value = token;
-      _isAuthenticated.value = true;
-      _currentUser.value = patient;
-      
-      // Retorna o paciente autenticado (redirecionamento será feito no controller)
-      return patient;
+    // Gera o token JWT e autentica
+    final token = _generateToken(patient);
+    await _storage.write(key: 'auth_token', value: token);
+    _token.value = token;
+    _isAuthenticated.value = true;
+    _currentUser.value = patient;
+    
+    // Atualizar FCM Token após login
+    await updateFcmToken();
+    
+    // Retorna o paciente autenticado (redirecionamento será feito no controller)
+    return patient;
     }
     
     // Para usuários não-admin, valida o código 2FA
@@ -288,6 +292,9 @@ class AuthService extends GetxController {
     _token.value = token;
     _isAuthenticated.value = true;
     _currentUser.value = patient;
+    
+    // Atualizar FCM Token após login
+    await updateFcmToken();
     
     // Retorna o paciente autenticado (redirecionamento será feito na tela)
     return patient;
@@ -352,6 +359,9 @@ class AuthService extends GetxController {
       _isAuthenticated.value = true;
       _currentUser.value = patient;
 
+      // Atualizar FCM Token após login
+      await updateFcmToken();
+
       return patient;
     } catch (e) {
       _token.value = '';
@@ -387,6 +397,9 @@ class AuthService extends GetxController {
         maritalStatus: patient.maritalStatus,
         nationality: patient.nationality,
         address: patient.address,
+        height: patient.height, // Incluir altura
+        weight: patient.weight, // Incluir peso
+        profession: patient.profession, // Incluir profissão
         acceptedTerms: patient.acceptedTerms,
         profilePhoto: patient.profilePhoto, // Incluir foto de perfil
         isAdmin: false, // por padrão, usuários não são admin
@@ -440,6 +453,9 @@ class AuthService extends GetxController {
         maritalStatus: patient.maritalStatus,
         nationality: patient.nationality,
         address: patient.address,
+        height: patient.height, // Incluir altura
+        weight: patient.weight, // Incluir peso
+        profession: patient.profession, // Incluir profissão
         acceptedTerms: patient.acceptedTerms,
         profilePhoto: patient.profilePhoto, // Incluir foto de perfil
         isAdmin: true, // usuário admin
@@ -524,6 +540,9 @@ class AuthService extends GetxController {
         maritalStatus: updatedPatient.maritalStatus,
         nationality: updatedPatient.nationality,
         address: updatedPatient.address,
+        height: updatedPatient.height, // Incluir altura
+        weight: updatedPatient.weight, // Incluir peso
+        profession: updatedPatient.profession, // Incluir profissão
         acceptedTerms: updatedPatient.acceptedTerms,
         profilePhoto: updatedPatient.profilePhoto, // Incluir foto de perfil
         isAdmin: updatedPatient.isAdmin, // mantém o status de admin
@@ -699,6 +718,9 @@ class AuthService extends GetxController {
         maritalStatus: patient.maritalStatus,
         nationality: patient.nationality,
         address: patient.address,
+        height: patient.height, // Incluir altura
+        weight: patient.weight, // Incluir peso
+        profession: patient.profession, // Incluir profissão
         acceptedTerms: patient.acceptedTerms,
         profilePhoto: patient.profilePhoto, // Incluir foto de perfil
         isAdmin: true, // torna o usuário admin
@@ -742,6 +764,31 @@ class AuthService extends GetxController {
     }
   }
 
+  // Atualizar FCM Token do usuário
+  Future<void> updateFcmToken() async {
+    try {
+      if (_currentUser.value == null || _currentUser.value!.id == null) {
+        return;
+      }
+
+      // Tentar obter o token do NotificationService
+      try {
+        final notificationService = Get.find<NotificationService>();
+        final fcmToken = await notificationService.getToken();
+        
+        if (fcmToken != null && fcmToken.isNotEmpty) {
+          await _databaseService.updatePatientField(
+            _currentUser.value!.id!,
+            'fcmToken',
+            fcmToken,
+          );
+        }
+      } catch (e) {
+      }
+    } catch (e) {
+    }
+  }
+
   @override
   void onInit() {
     super.onInit();
@@ -773,7 +820,6 @@ class AuthService extends GetxController {
       
       return false;
     } catch (e) {
-      print('Erro no login biométrico: $e');
       return false;
     }
   }
@@ -783,7 +829,6 @@ class AuthService extends GetxController {
       final biometricService = Get.find<BiometricService>();
       await biometricService.enableBiometricLogin(email, password);
     } catch (e) {
-      print('Erro ao habilitar login biométrico: $e');
     }
   }
   
@@ -792,7 +837,6 @@ class AuthService extends GetxController {
       final biometricService = Get.find<BiometricService>();
       await biometricService.disableBiometricLogin();
     } catch (e) {
-      print('Erro ao desabilitar login biométrico: $e');
     }
   }
   

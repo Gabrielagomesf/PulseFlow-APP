@@ -34,13 +34,14 @@ dependencies:
   open_filex: ^4.5.0
   google_fonts: ^6.2.1
   url_launcher: ^6.3.0
-  # firebase_core: ^2.24.2
-  # firebase_messaging: ^14.7.10
-  # flutter_local_notifications: ^17.2.3
+  firebase_core: ^2.24.2
+  firebase_messaging: ^14.7.10
+  flutter_local_notifications: ^17.2.3
   local_auth: ^2.2.0
   permission_handler: ^11.2.0
   flutter_blue_plus: ^1.32.11
   health: ^13.1.4
+  table_calendar: ^3.0.9
 
 dev_dependencies:
   flutter_test:

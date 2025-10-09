@@ -15,7 +15,7 @@ class ProfessionalRegistrationScreen extends StatefulWidget {
 }
 
 class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistrationScreen> with TickerProviderStateMixin {
-  final controller = Get.put(RegistrationController());
+  late final RegistrationController controller;
   final RxBool isCepLoading = false.obs;
   final RxString cepError = ''.obs;
   
@@ -27,6 +27,14 @@ class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistratio
   @override
   void initState() {
     super.initState();
+    // Deletar instância antiga se existir e criar nova
+    try {
+      Get.delete<RegistrationController>();
+    } catch (e) {
+      // Ignorar se não existir
+    }
+    controller = Get.put(RegistrationController());
+    
     _fadeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500));
     _slideController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200));
     
@@ -44,6 +52,8 @@ class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistratio
   void dispose() {
     _fadeController.dispose();
     _slideController.dispose();
+    // Deletar controller ao sair da tela
+    Get.delete<RegistrationController>();
     super.dispose();
   }
 
@@ -379,6 +389,34 @@ class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistratio
             onChanged: (String? newValue) { controller.maritalStatus.value = newValue; },
             validator: (v) => controller.validateDropdown(v, 'Estado Civil'),
           )),
+          const SizedBox(height: 16),
+          
+          _buildTextField(
+            context,
+            controller: controller.heightController,
+            label: 'Altura (cm)',
+            icon: Icons.height_outlined,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            validator: controller.validateHeight,
+          ),
+          const SizedBox(height: 16),
+          
+          _buildTextField(
+            context,
+            controller: controller.weightController,
+            label: 'Peso (kg)',
+            icon: Icons.monitor_weight_outlined,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            validator: controller.validateWeight,
+          ),
+          const SizedBox(height: 16),
+          
+          _buildTextField(
+            context,
+            controller: controller.professionController,
+            label: 'Profissão',
+            icon: Icons.work_outline,
+          ),
           const SizedBox(height: 32),
 
           // Address section

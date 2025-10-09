@@ -189,52 +189,83 @@ class _CriseGastriteFormScreenState extends State<CriseGastriteFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F1F1),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF00324A),
-        elevation: 0,
-        title: Text(
-          widget.criseGastrite == null ? 'Registro de Crise de Gastrite' : 'Editar Crise',
-          style: const TextStyle(
-            color: Colors.white, 
-            fontWeight: FontWeight.w600
-          )
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Get.back(),
-        ),
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Column(
-              children: [
-                // Card principal com formulário
-                Card(
-                  color: const Color(0xFFFFFFFF),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)
-                  ),
-                  elevation: 0,
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.criseGastrite == null ? 'Nova crise de gastrite' : 'Editar crise',
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF00324A),
-                          ),
+      backgroundColor: const Color(0xFF00324A),
+      body: Column(
+        children: [
+          // Header azul como outras telas
+          _buildHeader(),
+          
+          // Conteúdo principal
+          Expanded(
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
+                ),
+              ),
+              child: Form(
+                key: _formKey,
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Título da seção
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8F9FA),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color(0xFFE5E7EB)),
                         ),
-                        const SizedBox(height: 16),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF00324A),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.restaurant_menu_rounded,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    widget.criseGastrite == null ? 'Nova Crise de Gastrite' : 'Editar Crise',
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF00324A),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Registre os sintomas e tratamento',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: const Color(0xFF00324A).withOpacity(0.7),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 24),
                         
                         // Data da Crise
                         _buildModernTextField(
@@ -295,16 +326,71 @@ class _CriseGastriteFormScreenState extends State<CriseGastriteFormScreen> {
                         ),
                         const SizedBox(height: 20),
                         
-                        // Botões de ação
-                        _buildActionButtons(),
-                      ],
-                    ),
+                      // Botões de ação
+                      _buildActionButtons(),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 16,
+        left: 16,
+        right: 16,
+        bottom: 20,
+      ),
+      decoration: const BoxDecoration(
+        color: Color(0xFF00324A),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+      ),
+      child: Row(
+        children: [
+          // Botão de voltar
+          IconButton(
+            onPressed: () => Get.back(),
+            icon: const Icon(
+              Icons.arrow_back,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(width: 16),
+          
+          // Título
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.criseGastrite == null ? 'Registro de Crise de Gastrite' : 'Editar Crise',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 20,
+                  ),
+                ),
+                Text(
+                  'Documente sua crise de gastrite',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 14,
                   ),
                 ),
               ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }

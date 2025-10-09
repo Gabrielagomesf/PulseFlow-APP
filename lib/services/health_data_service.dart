@@ -10,53 +10,34 @@ class HealthDataService {
   // Salva dados de saúde do HealthKit no banco de dados
   Future<void> saveHealthDataFromHealthKit(String patientId) async {
     try {
-      print('🚀 === INICIANDO SALVAMENTO DE DADOS DE SAÚDE ===');
-      print('💾 Salvando dados do HealthKit no banco de dados...');
-      print('👤 Patient ID: $patientId');
       
       // Verifica se tem permissões
-      print('🔐 Verificando permissões do HealthKit...');
       final hasPermissions = await _healthService.hasPermissions();
-      print('🔐 Permissões concedidas: $hasPermissions');
       
       if (!hasPermissions) {
-        print('❌ Sem permissões do HealthKit - tentando solicitar...');
         final granted = await _healthService.requestPermissions();
-        print('🔐 Permissões solicitadas: $granted');
         if (!granted) {
-          print('❌ Permissões negadas pelo usuário');
           return;
         }
       }
 
       // Busca dados do HealthKit
-      print('🔍 Buscando dados do HealthKit...');
       final healthData = await _healthService.getAllHealthData();
-      print('📊 Dados recebidos: ${healthData.keys.toList()}');
       
       // Log detalhado de cada tipo de dado
       healthData.forEach((key, value) {
-        print('📈 $key: ${value.length} pontos de dados');
         if (value.isNotEmpty) {
-          print('   Primeiro ponto: ${value.first}');
         }
       });
       
       // Salva dados nas coleções específicas
-      print('💾 Iniciando salvamento nas coleções...');
-      print('💾 Dados disponíveis para salvamento: ${healthData.keys.toList()}');
       
       await _saveHeartRateData(patientId, healthData);
       await _saveStepsData(patientId, healthData);
       await _saveSleepData(patientId, healthData);
       
-      print('✅ Processo de salvamento concluído');
-      print('🚀 === FIM DO SALVAMENTO DE DADOS DE SAÚDE ===');
       
     } catch (e) {
-      print('❌ Erro ao salvar dados de saúde: $e');
-      print('❌ Stack trace: ${StackTrace.current}');
-      print('🚀 === ERRO NO SALVAMENTO DE DADOS DE SAÚDE ===');
       rethrow;
     }
   }
@@ -65,11 +46,9 @@ class HealthDataService {
   Future<void> _saveHeartRateData(String patientId, Map<String, List<dynamic>> healthData) async {
     try {
       if (healthData['heartRate'] == null || healthData['heartRate']!.isEmpty) {
-        print('⚠️ Nenhum dado de frequência cardíaca encontrado');
         return;
       }
 
-      print('💓 Salvando dados de frequência cardíaca...');
       final collection = await _db.getCollection('batimentos');
       final now = DateTime.now();
       
@@ -89,13 +68,10 @@ class HealthDataService {
         };
         
         await collection.insert(data);
-        print('  ✅ Batimento salvo: ${spot.y} bpm em ${date.day}/${date.month}');
       }
       
-      print('✅ Dados de frequência cardíaca salvos na coleção "batimentos"');
       
     } catch (e) {
-      print('❌ Erro ao salvar frequência cardíaca: $e');
     }
   }
 
@@ -103,11 +79,9 @@ class HealthDataService {
   Future<void> _saveStepsData(String patientId, Map<String, List<dynamic>> healthData) async {
     try {
       if (healthData['steps'] == null || healthData['steps']!.isEmpty) {
-        print('⚠️ Nenhum dado de passos encontrado');
         return;
       }
 
-      print('🚶 Salvando dados de passos...');
       final collection = await _db.getCollection('passos');
       final now = DateTime.now();
       
@@ -127,26 +101,18 @@ class HealthDataService {
         };
         
         await collection.insert(data);
-        print('  ✅ Passos salvos: ${spot.y} passos em ${date.day}/${date.month}');
       }
       
-      print('✅ Dados de passos salvos na coleção "passos"');
       
     } catch (e) {
-      print('❌ Erro ao salvar passos: $e');
     }
   }
 
   // Salva dados de sono na coleção 'insonia'
   Future<void> _saveSleepData(String patientId, Map<String, List<dynamic>> healthData) async {
     try {
-      print('😴 Verificando dados de sono...');
-      print('😴 Dados disponíveis: ${healthData.keys.toList()}');
-      print('😴 Dados de sleep: ${healthData['sleep']}');
       
       if (healthData['sleep'] == null || healthData['sleep']!.isEmpty) {
-        print('⚠️ Nenhum dado de sono encontrado no HealthKit');
-        print('⚠️ Tentando dados simulados para teste...');
         
         // Dados simulados para teste
         final collection = await _db.getCollection('insonias');
@@ -163,23 +129,18 @@ class HealthDataService {
           'updatedAt': DateTime.now(),
         };
         
-        print('😴 Inserindo dados de teste na coleção insonia...');
         final result = await collection.insert(testData);
-        print('✅ Dados de teste inseridos: ${result['_id']}');
         return;
       }
 
-      print('😴 Salvando dados de sono do HealthKit...');
       final collection = await _db.getCollection('insonias');
       final now = DateTime.now();
       
-      print('😴 Processando ${healthData['sleep']!.length} pontos de dados de sono...');
       
       for (int i = 0; i < healthData['sleep']!.length; i++) {
         final spot = healthData['sleep']![i];
         final date = now.subtract(Duration(days: (6 - i)));
         
-        print('😴 Processando ponto $i: ${spot.y} horas em ${date.day}/${date.month}');
         
         final data = {
           'pacienteId': patientId,
@@ -192,16 +153,11 @@ class HealthDataService {
           'updatedAt': DateTime.now(),
         };
         
-        print('😴 Inserindo dados: $data');
         final result = await collection.insert(data);
-        print('  ✅ Sono salvo: ${spot.y} horas em ${date.day}/${date.month} - ID: ${result['_id']}');
       }
       
-      print('✅ Dados de sono salvos na coleção "insonia"');
       
     } catch (e) {
-      print('❌ Erro ao salvar dados de sono: $e');
-      print('❌ Stack trace: ${StackTrace.current}');
     }
   }
 
@@ -210,7 +166,6 @@ class HealthDataService {
     try {
       return await _db.getHealthDataByPatientId(patientId);
     } catch (e) {
-      print('❌ Erro ao buscar dados de saúde: $e');
       rethrow;
     }
   }
@@ -220,7 +175,6 @@ class HealthDataService {
     try {
       return await _db.getHealthDataByType(patientId, dataType);
     } catch (e) {
-      print('❌ Erro ao buscar dados de saúde por tipo: $e');
       rethrow;
     }
   }
@@ -234,7 +188,6 @@ class HealthDataService {
     try {
       return await _db.getHealthDataByPeriod(patientId, startDate, endDate);
     } catch (e) {
-      print('❌ Erro ao buscar dados de saúde por período: $e');
       rethrow;
     }
   }
@@ -246,7 +199,6 @@ class HealthDataService {
       final startDate = endDate.subtract(Duration(days: days));
       return await getHealthDataByPeriod(patientId, startDate, endDate);
     } catch (e) {
-      print('❌ Erro ao buscar dados de saúde dos últimos $days dias: $e');
       rethrow;
     }
   }
@@ -260,7 +212,6 @@ class HealthDataService {
       
       return await getHealthDataByPeriod(patientId, startOfDay, endOfDay);
     } catch (e) {
-      print('❌ Erro ao buscar dados de saúde de hoje: $e');
       rethrow;
     }
   }
@@ -275,7 +226,6 @@ class HealthDataService {
       
       return await getHealthDataByPeriod(patientId, startOfDay, endOfWeek);
     } catch (e) {
-      print('❌ Erro ao buscar dados de saúde da semana: $e');
       rethrow;
     }
   }
@@ -289,7 +239,6 @@ class HealthDataService {
       
       return await getHealthDataByPeriod(patientId, startOfMonth, endOfMonth);
     } catch (e) {
-      print('❌ Erro ao buscar dados de saúde do mês: $e');
       rethrow;
     }
   }
@@ -321,7 +270,6 @@ class HealthDataService {
         'latestDate': data.first.date,
       };
     } catch (e) {
-      print('❌ Erro ao calcular estatísticas: $e');
       rethrow;
     }
   }
@@ -329,12 +277,10 @@ class HealthDataService {
   // Sincroniza dados do HealthKit com o banco de dados
   Future<void> syncHealthData(String patientId) async {
     try {
-      print('🔄 Sincronizando dados do HealthKit...');
       
       // Verifica se tem permissões
       final hasPermissions = await _healthService.hasPermissions();
       if (!hasPermissions) {
-        print('❌ Sem permissões do HealthKit');
         return;
       }
 
@@ -441,13 +387,10 @@ class HealthDataService {
       if (newDataList.isNotEmpty) {
         // Salva apenas dados novos
         await _db.createMultipleHealthData(newDataList);
-        print('✅ ${newDataList.length} novos dados de saúde sincronizados');
       } else {
-        print('ℹ️ Nenhum dado novo para sincronizar');
       }
       
     } catch (e) {
-      print('❌ Erro ao sincronizar dados de saúde: $e');
       rethrow;
     }
   }
@@ -456,9 +399,7 @@ class HealthDataService {
   Future<void> deleteHealthData(String healthDataId) async {
     try {
       await _db.deleteHealthData(healthDataId);
-      print('✅ Dados de saúde deletados');
     } catch (e) {
-      print('❌ Erro ao deletar dados de saúde: $e');
       rethrow;
     }
   }

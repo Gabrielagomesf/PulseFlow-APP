@@ -38,7 +38,6 @@ class BiometricService extends GetxService {
         }
       }
     } catch (e) {
-      print('Erro ao verificar disponibilidade biométrica: $e');
       _isAvailable.value = false;
     }
   }
@@ -48,7 +47,6 @@ class BiometricService extends GetxService {
       final String? biometricEnabled = await _secureStorage.read(key: 'biometric_enabled');
       _isEnabled.value = biometricEnabled == 'true';
     } catch (e) {
-      print('Erro ao carregar configurações biométricas: $e');
       _isEnabled.value = false;
     }
   }
@@ -81,7 +79,6 @@ class BiometricService extends GetxService {
       
       return authenticated;
     } catch (e) {
-      print('Erro na autenticação biométrica: $e');
       Get.snackbar(
         'Erro',
         'Falha na autenticação biométrica',
@@ -119,7 +116,6 @@ class BiometricService extends GetxService {
         );
       }
     } catch (e) {
-      print('Erro ao habilitar login biométrico: $e');
       Get.snackbar(
         'Erro',
         'Falha ao habilitar login biométrico',
@@ -154,7 +150,6 @@ class BiometricService extends GetxService {
       
       return null;
     } catch (e) {
-      print('Erro ao obter credenciais biométricas: $e');
       return null;
     }
   }
@@ -181,7 +176,6 @@ class BiometricService extends GetxService {
         );
       }
     } catch (e) {
-      print('Erro ao desabilitar login biométrico: $e');
       Get.snackbar(
         'Erro',
         'Falha ao desabilitar login biométrico',

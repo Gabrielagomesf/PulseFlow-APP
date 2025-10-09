@@ -52,5 +52,16 @@ class AppConfig {
     }
   }
 
-
+  // Pega diretamente do arquivo .env
+  static String get apiBaseUrl {
+    try {
+      final url = dotenv.env['API_BASE_URL'];
+      if (url != null && url.isNotEmpty) {
+        return url;
+      }
+    } catch (e) {
+      // Fallback se não conseguir ler o .env
+    }
+    return 'http://localhost:65432';
+  }
 } 

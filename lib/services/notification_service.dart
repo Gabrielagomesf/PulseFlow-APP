@@ -1,25 +1,51 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'notifications/notification_channels.dart';
+import 'notifications/notification_builders.dart';
+import 'notifications/firebase_handlers.dart';
+import 'notifications/access_request_checker.dart';
 
+/// Serviço principal de notificações
 class NotificationService extends GetxService {
   static NotificationService get instance => Get.find<NotificationService>();
-  
-  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
-  final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
-  
+
+  // Firebase
+  FirebaseMessaging? _firebaseMessaging;
+  bool _firebaseAvailable = false;
   String? _fcmToken;
   String? get fcmToken => _fcmToken;
-  
+
+  // Notificações locais
+  final FlutterLocalNotificationsPlugin _localNotifications =
+      FlutterLocalNotificationsPlugin();
+
+  // Verificador de solicitações de acesso
+  final AccessRequestChecker _accessRequestChecker = AccessRequestChecker();
+
   @override
   Future<void> onInit() async {
     super.onInit();
-    await _initializeLocalNotifications();
-    await _initializeFirebaseMessaging();
+
+    try {
+      await _initializeLocalNotifications();
+    } catch (e) {
+      // Erro ao inicializar notificações locais
+    }
+
+    try {
+      await _initializeFirebaseMessaging();
+    } catch (e) {
+      // Firebase não disponível
+    }
+
+    _accessRequestChecker.startPeriodicCheck();
   }
-  
+
+  /// Inicializar notificações locais
   Future<void> _initializeLocalNotifications() async {
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosSettings = DarwinInitializationSettings(
@@ -27,236 +53,226 @@ class NotificationService extends GetxService {
       requestBadgePermission: true,
       requestSoundPermission: true,
     );
-    
+
     const initSettings = InitializationSettings(
       android: androidSettings,
       iOS: iosSettings,
     );
-    
+
     await _localNotifications.initialize(
       initSettings,
-      onDidReceiveNotificationResponse: _onNotificationTapped,
+      onDidReceiveNotificationResponse: FirebaseHandlers.handleNotificationTap,
     );
-    
+
+    await NotificationChannels.registerAllChannels(_localNotifications);
     await _requestPermissions();
   }
-  
+
+  /// Inicializar Firebase Messaging
   Future<void> _initializeFirebaseMessaging() async {
-    NotificationSettings settings = await _firebaseMessaging.requestPermission(
-      alert: true,
-      announcement: false,
-      badge: true,
-      carPlay: false,
-      criticalAlert: false,
-      provisional: false,
-      sound: true,
-    );
-    
-    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      print('Usuário autorizou notificações');
-    } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
-      print('Usuário autorizou notificações provisórias');
-    } else {
-      print('Usuário recusou ou não autorizou notificações');
-    }
-    
-    _fcmToken = await _firebaseMessaging.getToken();
-    print('FCM Token: $_fcmToken');
-    
-    if (_fcmToken != null) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('fcm_token', _fcmToken!);
-    }
-    FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
-    FirebaseMessaging.onMessageOpenedApp.listen(_handleBackgroundMessage);
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-    
-    RemoteMessage? initialMessage = await _firebaseMessaging.getInitialMessage();
-    if (initialMessage != null) {
-      _handleBackgroundMessage(initialMessage);
+    try {
+      _firebaseMessaging = FirebaseMessaging.instance;
+      _firebaseAvailable = true;
+
+      await _firebaseMessaging!.requestPermission(
+        alert: true,
+        announcement: false,
+        badge: true,
+        carPlay: false,
+        criticalAlert: false,
+        provisional: false,
+        sound: true,
+      );
+
+      _fcmToken = await _firebaseMessaging!.getToken();
+
+      if (_fcmToken != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('fcm_token', _fcmToken!);
+      }
+
+      FirebaseMessaging.onMessage.listen(
+        (message) => FirebaseHandlers.handleForegroundMessage(message, _localNotifications),
+      );
+      
+      FirebaseMessaging.onMessageOpenedApp.listen(FirebaseHandlers.handleBackgroundMessage);
+
+      RemoteMessage? initialMessage = await _firebaseMessaging!.getInitialMessage();
+      if (initialMessage != null) {
+        FirebaseHandlers.handleBackgroundMessage(initialMessage);
+      }
+    } catch (e) {
+      _firebaseAvailable = false;
     }
   }
-  
+
+  /// Solicitar permissões
   Future<void> _requestPermissions() async {
-    await _localNotifications.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>()?.requestNotificationsPermission();
-    
-    await _localNotifications.resolvePlatformSpecificImplementation<
-        IOSFlutterLocalNotificationsPlugin>()?.requestPermissions(
-      alert: true,
-      badge: true,
-      sound: true,
+    await _localNotifications
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.requestNotificationsPermission();
+
+    await _localNotifications
+        .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
+        ?.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+  }
+
+  // ==================== NOTIFICAÇÕES PÚBLICAS ====================
+
+  /// Exibir notificação de solicitação de acesso médico
+  Future<void> showDoctorAccessRequestNotification({
+    required String doctorName,
+    required String specialty,
+  }) async {
+    final notificationDetails = NotificationBuilders.createDoctorAccessNotification(
+      doctorName: doctorName,
+      specialty: specialty,
+    );
+
+    await _localNotifications.show(
+      DateTime.now().millisecondsSinceEpoch.remainder(100000),
+      '🩺 SOLICITAÇÃO DE ACESSO',
+      'Dr(a). $doctorName ${specialty.isNotEmpty ? "($specialty)" : ""} solicitou acesso ao seu prontuário',
+      notificationDetails,
+      payload: 'doctor_access_request|$doctorName|$specialty',
     );
   }
-  
-  void _onNotificationTapped(NotificationResponse response) {
-    print('Notificação tocada: ${response.payload}');
-  }
-  
-  void _handleForegroundMessage(RemoteMessage message) {
-    print('Mensagem recebida em foreground: ${message.notification?.title}');
-    
-    _showLocalNotification(
-      message.notification?.title ?? 'PulseFlow',
-      message.notification?.body ?? 'Nova mensagem',
-      message.data,
-    );
-  }
-  
-  void _handleBackgroundMessage(RemoteMessage message) {
-    print('Mensagem recebida em background: ${message.notification?.title}');
-  }
-  
-  Future<void> _showLocalNotification(
-    String title,
-    String body,
-    Map<String, dynamic> data,
-  ) async {
-    const androidDetails = AndroidNotificationDetails(
-      'pulseflow_channel',
-      'PulseFlow Notifications',
-      channelDescription: 'Canal de notificações do PulseFlow',
-      importance: Importance.high,
-      priority: Priority.high,
-    );
-    
-    const iosDetails = DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    );
-    
-    const notificationDetails = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
-    
+
+  /// Exibir notificação importante
+  Future<void> showImportantNotification({
+    required String title,
+    required String message,
+    Map<String, dynamic>? data,
+  }) async {
     await _localNotifications.show(
       DateTime.now().millisecondsSinceEpoch.remainder(100000),
       title,
-      body,
-      notificationDetails,
-      payload: data.toString(),
+      message,
+      NotificationBuilders.createImportantNotification(),
+      payload: data?.toString(),
     );
   }
-  
-  Future<void> testNotification() async {
-    await _showLocalNotification(
-      'Teste de Notificação',
-      'Esta é uma notificação de teste do PulseFlow!',
-      {'type': 'test'},
-    );
-  }
-  
+
+  /// Agendar lembrete de medicação
   Future<void> scheduleMedicationReminder({
     required int id,
     required String title,
     required String body,
     required DateTime scheduledTime,
   }) async {
-    const androidDetails = AndroidNotificationDetails(
-      'medication_channel',
-      'Lembretes de Medicação',
-      channelDescription: 'Lembretes para tomar medicamentos',
-      importance: Importance.high,
-      priority: Priority.high,
-      icon: '@mipmap/ic_launcher',
-    );
-    
-    const iosDetails = DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    );
-    
-    const notificationDetails = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
-    
     await _localNotifications.zonedSchedule(
       id,
       title,
       body,
       _convertToTZDateTime(scheduledTime),
-      notificationDetails,
+      NotificationBuilders.createMedicationReminder(),
       payload: 'medication_reminder',
       uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: DateTimeComponents.time,
     );
   }
-  
+
+  /// Agendar lembrete de consulta
   Future<void> scheduleAppointmentReminder({
     required int id,
     required String title,
     required String body,
     required DateTime scheduledTime,
   }) async {
-    const androidDetails = AndroidNotificationDetails(
-      'appointment_channel',
-      'Lembretes de Consultas',
-      channelDescription: 'Lembretes para consultas médicas',
-      importance: Importance.high,
-      priority: Priority.high,
-      icon: '@mipmap/ic_launcher',
-    );
-    
-    const iosDetails = DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    );
-    
-    const notificationDetails = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
-    
     await _localNotifications.zonedSchedule(
       id,
       title,
       body,
       _convertToTZDateTime(scheduledTime),
-      notificationDetails,
+      NotificationBuilders.createAppointmentReminder(),
       payload: 'appointment_reminder',
       uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
     );
   }
-  
+
+  // ==================== GERENCIAMENTO ====================
+
+  /// Cancelar notificação específica
   Future<void> cancelNotification(int id) async {
     await _localNotifications.cancel(id);
   }
-  
+
+  /// Cancelar todas as notificações
   Future<void> cancelAllNotifications() async {
     await _localNotifications.cancelAll();
   }
-  
-  Future<void> cancelMedicationReminders() async {
+
+  /// Cancelar lembretes de medicação
+  Future<void> cancelMedicationReminders() async {}
+
+  /// Cancelar lembretes de consultas
+  Future<void> cancelAppointmentReminders() async {}
+
+  // ==================== FIREBASE ====================
+
+  /// Obter token FCM
+  Future<String?> getToken() async {
+    if (!_firebaseAvailable || _firebaseMessaging == null) {
+      return null;
+    }
+    try {
+      return await _firebaseMessaging!.getToken();
+    } catch (e) {
+      return null;
+    }
   }
-  
-  Future<void> cancelAppointmentReminders() async {
+
+  /// Inscrever-se em tópico
+  Future<void> subscribeToTopic(String topic) async {
+    if (_firebaseMessaging == null) return;
+    await _firebaseMessaging!.subscribeToTopic(topic);
   }
-  
+
+  /// Desinscrever-se de tópico
+  Future<void> unsubscribeFromTopic(String topic) async {
+    if (_firebaseMessaging == null) return;
+    await _firebaseMessaging!.unsubscribeFromTopic(topic);
+  }
+
+  // ==================== TESTES ====================
+
+  /// Testar notificação geral
+  Future<void> testNotification() async {
+    await _localNotifications.show(
+      DateTime.now().millisecondsSinceEpoch.remainder(100000),
+      'Teste de Notificação',
+      'Esta é uma notificação de teste do PulseFlow!',
+      NotificationBuilders.createGeneralNotification(),
+      payload: 'test',
+    );
+  }
+
+  /// Testar notificação de acesso médico
+  Future<void> testDoctorAccessNotification() async {
+    await showDoctorAccessRequestNotification(
+      doctorName: 'Dr. João Silva',
+      specialty: 'Cardiologia',
+    );
+  }
+
+  /// Verificar solicitações manualmente
+  Future<void> verificarSolicitacoesManual() async {
+    await _accessRequestChecker.checkManually();
+  }
+
+  // ==================== HELPERS ====================
+
   dynamic _convertToTZDateTime(DateTime dateTime) {
     return dateTime;
   }
-  
-  Future<String?> getToken() async {
-    return await _firebaseMessaging.getToken();
-  }
-  
-  Future<void> subscribeToTopic(String topic) async {
-    await _firebaseMessaging.subscribeToTopic(topic);
-    print('Inscrito no tópico: $topic');
-  }
-  
-  Future<void> unsubscribeFromTopic(String topic) async {
-    await _firebaseMessaging.unsubscribeFromTopic(topic);
-    print('Desinscrito do tópico: $topic');
-  }
-}
 
-@pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  print('Mensagem em background: ${message.notification?.title}');
+  @override
+  void onClose() {
+    _accessRequestChecker.dispose();
+    super.onClose();
+  }
 }

@@ -50,6 +50,9 @@ class RegistrationController extends GetxController with SafeControllerMixin {
   final gender = RxnString();
   final maritalStatus = RxnString();
   final nationalityController = TextEditingController();
+  final heightController = TextEditingController(); // Altura
+  final weightController = TextEditingController(); // Peso
+  final professionController = TextEditingController(); // Profissão
 
   // 3. Contato e Endereço
   final phoneController = TextEditingController();
@@ -67,7 +70,7 @@ class RegistrationController extends GetxController with SafeControllerMixin {
 
   final isLoading = false.obs;
   final selectedDate = Rxn<DateTime>();
-  final formKey = GlobalKey<FormState>();
+  late final GlobalKey<FormState> formKey;
 
   // Listas para dropdowns
   final List<String> genders = [
@@ -290,6 +293,40 @@ class RegistrationController extends GetxController with SafeControllerMixin {
     if (value == null || value.isEmpty) {
       return 'Selecione $fieldName';
     }
+    return null;
+  }
+
+  String? validateHeight(String? value) {
+    if (value == null || value.isEmpty) {
+      return null; // Campo opcional
+    }
+    
+    final height = double.tryParse(value.replaceAll(',', '.'));
+    if (height == null) {
+      return 'Altura inválida';
+    }
+    
+    if (height < 50 || height > 250) {
+      return 'Altura deve estar entre 50 e 250 cm';
+    }
+    
+    return null;
+  }
+
+  String? validateWeight(String? value) {
+    if (value == null || value.isEmpty) {
+      return null; // Campo opcional
+    }
+    
+    final weight = double.tryParse(value.replaceAll(',', '.'));
+    if (weight == null) {
+      return 'Peso inválido';
+    }
+    
+    if (weight < 20 || weight > 300) {
+      return 'Peso deve estar entre 20 e 300 kg';
+    }
+    
     return null;
   }
 
@@ -522,6 +559,20 @@ class RegistrationController extends GetxController with SafeControllerMixin {
         maritalStatus: maritalStatus.value!,
         nationality: nationalityController.text.trim(),
         address: '${streetController.text.trim()}, ${numberController.text.trim()} - ${neighborhoodController.text.trim()}, ${cityController.text.trim()} - ${state.value}',
+        height: (() {
+          final text = heightController.text.trim();
+          if (text.isEmpty) return null;
+          return double.tryParse(text.replaceAll(',', '.'));
+        })(), // Incluir altura se preenchida
+        weight: (() {
+          final text = weightController.text.trim();
+          if (text.isEmpty) return null;
+          return double.tryParse(text.replaceAll(',', '.'));
+        })(), // Incluir peso se preenchido
+        profession: (() {
+          final text = professionController.text.trim();
+          return text.isEmpty ? null : text;
+        })(), // Incluir profissão se preenchida
         acceptedTerms: acceptTerms.value,
         profilePhoto: profilePhotoBase64.value, // Incluir foto de perfil se existir
       );
@@ -567,6 +618,9 @@ class RegistrationController extends GetxController with SafeControllerMixin {
   @override
   void onInit() {
     super.onInit();
+    // Inicializar o formKey
+    formKey = GlobalKey<FormState>();
+    
     // Adicionar todos os controllers ao gerenciamento seguro
     addControllers([
       nameController,
@@ -577,6 +631,9 @@ class RegistrationController extends GetxController with SafeControllerMixin {
       rgController,
       birthDateController,
       nationalityController,
+      heightController,
+      weightController,
+      professionController,
       phoneController,
       secondaryPhoneController,
       cepController,

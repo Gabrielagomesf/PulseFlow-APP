@@ -105,7 +105,6 @@ class BiometricLoginButton extends StatelessWidget {
       }
       
     } catch (e) {
-      print('Erro no login biométrico: $e');
       Get.snackbar(
         'Erro',
         'Falha na autenticação biométrica',

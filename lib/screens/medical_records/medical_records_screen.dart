@@ -47,56 +47,281 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
   Widget build(BuildContext context) {
     final controller = Get.put(MedicalRecordsController());
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: SafeArea(
+      backgroundColor: const Color(0xFF00324A),
+      body: Column(
+        children: [
+          // Header moderno com gradiente
+          _buildModernHeader(),
+          
+          // Conteúdo
+          Expanded(
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
+                ),
+              ),
         child: LayoutBuilder(
           builder: (context, constraints) {
             final isTablet = constraints.maxWidth > 600;
             final isPhone = constraints.maxWidth < 400;
             
-            return CustomScrollView(
-              slivers: [
-                _buildSliverAppBar(isTablet),
-                SliverToBoxAdapter(
+                  return SingleChildScrollView(
                   child: Padding(
                     padding: EdgeInsets.symmetric(
                       horizontal: isTablet ? 32 : (isPhone ? 16 : 24),
-                      vertical: 16,
+                        vertical: 24,
                     ),
                     child: Column(
                       children: [
-                        FadeTransition(
-                          opacity: _fadeAnimation,
-                          child: SlideTransition(
-                            position: _slideAnimation,
-                            child: _buildHeroSection(isTablet),
-                          ),
-                        ),
+                          // Contador e ações
+                          _buildCounterSection(controller),
                         const SizedBox(height: 24),
                         
-                        // Seção de filtros sempre visível
-                        _buildFiltersSection(),
-                        const SizedBox(height: 24),
-                        
-                        Obx(() {
-                          if (controller.isLoading.value) {
-                            return _buildLoadingState();
-                          }
-                          final list = controller.notes;
-                          if (list.isEmpty) {
-                            return _buildEmptyState();
-                          }
-                          return _buildRecordsList(list, isTablet, isPhone);
-                        }),
+                          Obx(() {
+                            if (controller.isLoading.value) {
+                              return _buildLoadingState();
+                            }
+                            
+                            final list = controller.notes;
+                            if (list.isEmpty) {
+                              return _buildEmptyState();
+                            }
+                            
+                            return _buildRecordsList(list, isTablet, isPhone);
+                          }),
                       ],
+                      ),
+                    ),
+                  );
+                },
                     ),
                   ),
                 ),
               ],
-            );
-          },
+      ),
+    );
+  }
+
+  Widget _buildModernHeader() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 12,
+        left: 16,
+        right: 16,
+        bottom: 20,
+      ),
+      decoration: const BoxDecoration(
+        color: Color(0xFF00324A),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
         ),
       ),
+      child: Column(
+        children: [
+          // Linha com botão voltar e título
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
+                onPressed: () => Get.back(),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Histórico de Registros',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          
+          // Campos de filtro
+          const SizedBox(height: 18),
+          _buildFilterSection(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterSection() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          // Header dos filtros
+          Row(
+            children: [
+              Icon(
+                Icons.tune_rounded,
+                color: Colors.white.withOpacity(0.8),
+                size: 16,
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'Filtros',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 12),
+          
+          // Filtros em linha única
+          Row(
+            children: [
+              Expanded(
+                child: _buildEnhancedDropdown(
+                  hint: 'Especialidade',
+                  icon: Icons.category_outlined,
+                  onTap: () {
+                    Get.snackbar(
+                      'Filtro',
+                      'Filtro por especialidade em desenvolvimento',
+                      snackPosition: SnackPosition.BOTTOM,
+                      backgroundColor: Colors.white,
+                      colorText: const Color(0xFF1E293B),
+                      margin: const EdgeInsets.all(16),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildEnhancedDropdown(
+                  hint: 'Médico',
+                  icon: Icons.person_search,
+                  onTap: () {
+                    Get.snackbar(
+                      'Filtro',
+                      'Busca por médico em desenvolvimento',
+                      snackPosition: SnackPosition.BOTTOM,
+                      backgroundColor: Colors.white,
+                      colorText: const Color(0xFF1E293B),
+                      margin: const EdgeInsets.all(16),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEnhancedDropdown({
+    required String hint,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 36,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.white.withOpacity(0.1),
+              Colors.white.withOpacity(0.05),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.2),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Icon(
+                icon,
+                color: Colors.white.withOpacity(0.7),
+                size: 12,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                hint,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: Colors.white.withOpacity(0.7),
+              size: 16,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCounterSection(MedicalRecordsController controller) {
+    return Row(
+      children: [
+        Expanded(
+          child: Obx(() => Text(
+            '${controller.notes.length} registro${controller.notes.length != 1 ? 's' : ''} encontrado${controller.notes.length != 1 ? 's' : ''}',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF1E293B),
+            ),
+          )),
+        ),
+        const SizedBox(width: 12),
+        IconButton(
+          onPressed: () => controller.loadNotes(),
+          icon: const Icon(Icons.refresh_rounded),
+          color: const Color(0xFF00324A),
+          style: IconButton.styleFrom(
+            backgroundColor: const Color(0xFF00324A).withOpacity(0.1),
+            padding: const EdgeInsets.all(8),
+            minimumSize: const Size(36, 36),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -691,6 +916,78 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
                 const SizedBox(height: 12),
                 Text(
                   'Você ainda não possui registros clínicos.\nEntre em contato com seu médico para obter seus registros.',
+                  style: AppTheme.bodyMedium.copyWith(
+                    color: const Color(0xFF64748B),
+                    height: 1.6,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNoResultsState() {
+    return Container(
+      padding: const EdgeInsets.all(60),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFFF59E0B).withOpacity(0.1),
+                  const Color(0xFFFBBF24).withOpacity(0.05),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: const Color(0xFFF59E0B).withOpacity(0.2),
+              ),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [
+                        Color(0xFFF59E0B),
+                        Color(0xFFFBBF24),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(50),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFF59E0B).withOpacity(0.3),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.search_off_rounded,
+                    size: 50,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                Text(
+                  'Nenhum resultado encontrado',
+                  style: AppTheme.titleLarge.copyWith(
+                    color: const Color(0xFF1E293B),
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Não há registros que correspondam aos filtros selecionados.\nTente ajustar os filtros para ver mais resultados.',
                   style: AppTheme.bodyMedium.copyWith(
                     color: const Color(0xFF64748B),
                     height: 1.6,

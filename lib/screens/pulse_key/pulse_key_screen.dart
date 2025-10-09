@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../theme/app_theme.dart';
+import '../../services/api_service.dart';
+import '../../services/auth_service.dart';
 
 class PulseKeyScreen extends StatefulWidget {
   const PulseKeyScreen({super.key});
@@ -12,11 +15,14 @@ class PulseKeyScreen extends StatefulWidget {
 }
 
 class _PulseKeyScreenState extends State<PulseKeyScreen> {
-  String _currentCode = '123456';
+  String _currentCode = '';
   int _timeRemaining = 120; // 2 minutos em segundos
   bool _isActive = true;
   DateTime? _lastCodeGeneration;
   Timer? _timer;
+  final ApiService _apiService = ApiService();
+  final AuthService _authService = Get.find<AuthService>();
+  bool _isSendingCode = false;
 
   @override
   void initState() {
@@ -25,16 +31,17 @@ class _PulseKeyScreenState extends State<PulseKeyScreen> {
     _startTimer();
   }
 
-  void _initializeCode() {
-    // Gera código baseado no timestamp atual para manter consistência
+  void _initializeCode() async {
     final now = DateTime.now();
-    final timestamp = now.millisecondsSinceEpoch;
-    _currentCode = (100000 + (timestamp % 900000)).toString();
-    _lastCodeGeneration = now;
+    final random = Random();
+    final newCode = (100000 + random.nextInt(900000)).toString();
+    final expiresAt = now.add(const Duration(minutes: 2));
     
-    // Calcula tempo restante baseado no timestamp
-    final secondsSinceGeneration = (now.millisecondsSinceEpoch - timestamp) ~/ 1000;
-    _timeRemaining = 120 - (secondsSinceGeneration % 120);
+    _currentCode = newCode;
+    _lastCodeGeneration = now;
+    _timeRemaining = 120;
+
+    await _sendCodeToBackend(newCode, expiresAt);
   }
 
   void _startTimer() {
@@ -51,13 +58,61 @@ class _PulseKeyScreenState extends State<PulseKeyScreen> {
     });
   }
 
-  void _generateNewCode() {
+  void _generateNewCode() async {
     final now = DateTime.now();
-    final timestamp = now.millisecondsSinceEpoch;
+    final random = Random();
+    final newCode = (100000 + random.nextInt(900000)).toString();
+    final expiresAt = now.add(const Duration(minutes: 2));
+    
     setState(() {
-      _currentCode = (100000 + (timestamp % 900000)).toString();
+      _currentCode = newCode;
       _lastCodeGeneration = now;
+      _isSendingCode = true;
     });
+
+    // Enviar código para o backend
+    await _sendCodeToBackend(newCode, expiresAt);
+  }
+
+  Future<void> _sendCodeToBackend(String code, DateTime expiresAt) async {
+    try {
+      final currentUser = _authService.currentUser;
+      
+      if (currentUser == null || currentUser.id == null) {
+        Get.snackbar(
+          'Erro',
+          'Usuário não autenticado. Faça login novamente.',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 3),
+        );
+        return;
+      }
+
+      
+      await _apiService.sendAccessCode(
+        patientId: currentUser.id!,
+        accessCode: code,
+        expiresAt: expiresAt,
+      );
+      
+    } catch (e) {
+      Get.snackbar(
+        'Erro de Conexão',
+        'Não foi possível sincronizar o código com o servidor.\nDetalhes: $e',
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 5),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSendingCode = false;
+        });
+      }
+    }
   }
 
   void _copyCode() {
@@ -166,15 +221,31 @@ class _PulseKeyScreenState extends State<PulseKeyScreen> {
       child: Column(
         children: [
           // Código principal
-          Text(
-            _currentCode,
-            style: AppTheme.headlineSmall.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 48,
-              letterSpacing: 8,
-              fontFamily: 'monospace',
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                _currentCode,
+                style: AppTheme.headlineSmall.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 48,
+                  letterSpacing: 8,
+                  fontFamily: 'monospace',
+                ),
+              ),
+              if (_isSendingCode) ...[
+                const SizedBox(width: 16),
+                const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+              ],
+            ],
           ),
           
           const SizedBox(height: 16),

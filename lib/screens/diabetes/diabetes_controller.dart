@@ -24,11 +24,8 @@ class DiabetesController extends GetxController {
   }
 
   Future<void> carregarRegistros(String pacienteId) async {
-    print('Carregando registros de diabetes para paciente: $pacienteId');
     registros.value = await _service.getByPacienteId(pacienteId);
-    print('Registros carregados: ${registros.length}');
     for (final registro in registros) {
-      print('Registro: ${registro.data.day}/${registro.data.month}/${registro.data.year} - Glicemia: ${registro.glicemia}');
     }
     _filtrarRegistros(); // Initial filtering after loading
   }

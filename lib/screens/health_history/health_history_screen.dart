@@ -34,33 +34,25 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
       _isLoading.value = true;
       _healthData.clear(); // Limpa dados anteriores
       
-      print('🔄 Iniciando carregamento de dados de saúde...');
-      print('🎯 Tipo selecionado: ${_selectedDataType.value}');
       
       final currentUser = _authService.currentUser;
       if (currentUser == null) {
-        print('❌ Usuário não encontrado');
         return;
       }
       
-      print('👤 Usuário: ${currentUser.id}');
       
       // Busca dados das coleções específicas
       await _loadCollectionData('batimentos', 'heartRate');
       await _loadCollectionData('passos', 'steps');
       await _loadCollectionData('insonias', 'sleep');
       
-      print('📊 Total de dados carregados: ${_healthData.length}');
       
       // Se não há dados, cria dados de teste
       if (_healthData.isEmpty) {
-        print('⚠️ Nenhum dado encontrado, criando dados de teste...');
         _createTestData();
       }
       
-      print('📊 Dados por tipo:');
       _healthData.forEach((data) {
-        print('  - ${data['dataType']}: ${data['value']} (Semana ${data['weekNumber'] + 1})');
       });
       
       // Calcula estatísticas
@@ -72,7 +64,6 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
       _isLoading.value = false;
       
     } catch (e) {
-      print('❌ Erro ao carregar dados de saúde: $e');
       Get.snackbar(
         'Erro',
         'Erro ao carregar dados de saúde: $e',
@@ -86,13 +77,11 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
 
   Future<void> _loadCollectionData(String collectionName, String dataType) async {
     try {
-      print('🔍 Carregando dados da coleção: $collectionName');
       
       final collection = await _db.getCollection(collectionName);
       final endDate = DateTime.now();
       final startDate = endDate.subtract(Duration(days: _selectedPeriod.value));
       
-      print('📅 Período: ${startDate.day}/${startDate.month} até ${endDate.day}/${endDate.month}');
       
       final data = await collection.find({
         'pacienteId': _authService.currentUser!.id!,
@@ -102,11 +91,9 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
         }
       }).toList();
       
-      print('📊 Dados brutos encontrados: ${data.length}');
       
       // Agrupa dados por semana
       final weeklyData = _groupDataByWeek(data);
-      print('📊 Dados agrupados por semana: ${weeklyData.length}');
       
       for (final weekData in weeklyData) {
         _healthData.add({
@@ -120,9 +107,7 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
         });
       }
       
-      print('✅ Dados da coleção $collectionName processados');
     } catch (e) {
-      print('❌ Erro ao carregar dados da coleção $collectionName: $e');
     }
   }
 
@@ -177,7 +162,6 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
   }
 
   void _createTestData() {
-    print('🧪 Criando dados de teste...');
     
     final now = DateTime.now();
     
@@ -223,7 +207,6 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
       });
     }
     
-    print('✅ Dados de teste criados: ${_healthData.length} registros');
   }
 
   void _calculateStats() {
@@ -253,11 +236,6 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
             'max': nonZeroValues.reduce((a, b) => a > b ? a : b),
           };
           
-          print('📊 Estatísticas para $type:');
-          print('  - Dados válidos: ${nonZeroValues.length}');
-          print('  - Média: ${_stats[type]!['avg']?.toStringAsFixed(2)}');
-          print('  - Mínimo: ${_stats[type]!['min']?.toStringAsFixed(2)}');
-          print('  - Máximo: ${_stats[type]!['max']?.toStringAsFixed(2)}');
         }
       }
     });
@@ -673,10 +651,7 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
     // Apenas dados válidos (hasData = true)
     final validData = filteredData.where((data) => data['hasData'] == true).toList();
     
-    print('📊 Dados filtrados para gráfico: ${filteredData.length}');
-    print('📊 Dados válidos para gráfico: ${validData.length}');
     validData.forEach((data) {
-      print('  - ${data['dataType']}: ${data['value']} (Semana ${data['weekNumber'] + 1})');
     });
 
     if (validData.isEmpty) {
@@ -819,7 +794,6 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
                       spots: validData.asMap().entries.map((entry) {
                         final data = entry.value;
                         final value = (data['value'] as num).toDouble();
-                        print('📊 Ponto ${entry.key}: ${value}');
                         return FlSpot(entry.key.toDouble(), value);
                       }).toList(),
                       isCurved: true,

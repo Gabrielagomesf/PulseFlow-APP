@@ -136,52 +136,30 @@ class _EventoClinicoFormScreenState extends State<EventoClinicoFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F1F1),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF00324A),
-        elevation: 0,
-        title: const Text(
-          'Registro de Evento Clínico', 
-          style: TextStyle(
-            color: Colors.white, 
-            fontWeight: FontWeight.w600
-          )
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Get.back(),
-        ),
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(12),
-                    child: Form(
-                      key: _formKey,
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Column(
-              children: [
-                // Card principal com formulário
-                Card(
-                  color: const Color(0xFFFFFFFF),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)
-                  ),
-                  elevation: 0,
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                        const Text(
-                          'Novo evento clínico',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF00324A),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
+      backgroundColor: const Color(0xFF00324A),
+      body: Column(
+        children: [
+          // Header azul como outras telas
+          _buildHeader(),
+          
+          // Conteúdo principal
+          Expanded(
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
+                ),
+              ),
+              child: Form(
+                key: _formKey,
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                         
                         // Campos principais
                         _buildTextField(
@@ -239,18 +217,74 @@ class _EventoClinicoFormScreenState extends State<EventoClinicoFormScreen> {
                         ),
                         const SizedBox(height: 20),
                         
-                        // Botões de ação
-                        _buildActionButtons(),
-                      ],
-                    ),
-                    ),
+                      // Botões de ação
+                      _buildActionButtons(),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
+        ],
+      ),
       bottomNavigationBar: _buildBottomNavigation(),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 16,
+        left: 16,
+        right: 16,
+        bottom: 20,
+      ),
+      decoration: const BoxDecoration(
+        color: Color(0xFF00324A),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+      ),
+      child: Row(
+        children: [
+          // Botão de voltar
+          IconButton(
+            onPressed: () => Get.back(),
+            icon: const Icon(
+              Icons.arrow_back,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(width: 16),
+          
+          // Título
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Registro de Evento Clínico',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 20,
+                  ),
+                ),
+                Text(
+                  'Documente seu evento médico',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+        ],
+      ),
     );
   }
 

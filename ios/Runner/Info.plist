@@ -36,6 +36,20 @@
 	<string>Este app pode salvar dados de saúde para manter um registro completo do seu bem-estar.</string>
 	<key>NSUserNotificationUsageDescription</key>
 	<string>Este app precisa de notificações para enviar lembretes de medicamentos e consultas médicas.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Este aplicativo precisa acessar a câmera para capturar fotos de documentos e exames médicos.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Este aplicativo precisa acessar suas fotos para anexar imagens de exames e documentos médicos.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Este aplicativo precisa salvar fotos na galeria.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Este aplicativo usa Bluetooth para conectar com dispositivos de saúde e wearables.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Este aplicativo precisa acessar a rede local para conectar com dispositivos de saúde.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_services._dns-sd._udp</string>
+	</array>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>

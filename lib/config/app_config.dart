@@ -1,16 +1,36 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AppConfig {
+  // CONFIGURAÇÕES CENTRALIZADAS DO PULSEFLOW
+  
+  // PORTA DO SERVIDOR BACKEND (API)
+  static const String DEFAULT_BACKEND_PORT = '65432';
+  static const String DEFAULT_FRONTEND_PORT = '3000';
+  static const String DEFAULT_MONGODB_PORT = '27017';
+  
+  // URL BASE DA API
+  static String get apiBaseUrl {
+    try {
+      final url = dotenv.env['API_BASE_URL'];
+      if (url != null && url.isNotEmpty) {
+        return url;
+      }
+    } catch (e) {
+      // Fallback se não conseguir ler o .env
+    }
+    return 'http://localhost:$DEFAULT_BACKEND_PORT';
+  }
+  
   // Configurações do Banco de Dados MongoDB
   static String get mongodbUri {
     try {
       final uri = dotenv.env['MONGODB_URI'];
       if (uri == null || uri.isEmpty) {
-        return 'mongodb://localhost:27017/paciente_app';
+        return 'mongodb://localhost:$DEFAULT_MONGODB_PORT/paciente_app';
       }
       return uri;
     } catch (e) {
-      return 'mongodb://localhost:27017/paciente_app';
+      return 'mongodb://localhost:$DEFAULT_MONGODB_PORT/paciente_app';
     }
   }
 
@@ -27,7 +47,7 @@ class AppConfig {
     }
   }
 
-  // Configurações de E-mail (Gmail)
+  // Configurações de E-mail
   static String get emailUser {
     try {
       final user = dotenv.env['EMAIL_USER'];
@@ -50,18 +70,5 @@ class AppConfig {
     } catch (e) {
       return '';
     }
-  }
-
-  // Pega diretamente do arquivo .env
-  static String get apiBaseUrl {
-    try {
-      final url = dotenv.env['API_BASE_URL'];
-      if (url != null && url.isNotEmpty) {
-        return url;
-      }
-    } catch (e) {
-      // Fallback se não conseguir ler o .env
-    }
-    return 'http://localhost:65432';
   }
 } 

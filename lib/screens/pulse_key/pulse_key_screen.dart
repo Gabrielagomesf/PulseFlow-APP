@@ -135,6 +135,10 @@ class _PulseKeyScreenState extends State<PulseKeyScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenHeight < 700;
+    
     return Scaffold(
       backgroundColor: const Color(0xFF00324A),
       body: SafeArea(
@@ -146,26 +150,32 @@ class _PulseKeyScreenState extends State<PulseKeyScreen> {
             // Conteúdo principal
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
+                padding: EdgeInsets.symmetric(
+                  horizontal: screenWidth * 0.05,
+                  vertical: isSmallScreen ? 16 : 24,
+                ),
                 child: Column(
                   children: [
                     // Código principal
-                    _buildCodeSection(),
+                    _buildCodeSection(isSmallScreen),
                     
-                    const SizedBox(height: 32),
+                    SizedBox(height: isSmallScreen ? 20 : 32),
                     
                     // Timer
                     _buildTimer(),
                     
-                    const SizedBox(height: 40),
+                    SizedBox(height: isSmallScreen ? 20 : 24),
                     
                     // Informações resumidas
-                    _buildInfoSection(),
+                    _buildInfoSection(isSmallScreen),
                     
-                    const SizedBox(height: 24),
+                    SizedBox(height: isSmallScreen ? 16 : 24),
                     
                     // Instruções resumidas
-                    _buildInstructionsSection(),
+                    _buildInstructionsSection(isSmallScreen),
+                    
+                    // Espaço extra para garantir que o botão seja visível
+                    SizedBox(height: isSmallScreen ? 20 : 40),
                   ],
                 ),
               ),
@@ -206,10 +216,10 @@ class _PulseKeyScreenState extends State<PulseKeyScreen> {
     );
   }
 
-  Widget _buildCodeSection() {
+  Widget _buildCodeSection(bool isSmallScreen) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(40),
+      padding: EdgeInsets.all(isSmallScreen ? 24 : 40),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
@@ -224,22 +234,25 @@ class _PulseKeyScreenState extends State<PulseKeyScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                _currentCode,
-                style: AppTheme.headlineSmall.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 48,
-                  letterSpacing: 8,
-                  fontFamily: 'monospace',
+              Flexible(
+                child: Text(
+                  _currentCode,
+                  style: AppTheme.headlineSmall.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: isSmallScreen ? 36 : 48,
+                    letterSpacing: isSmallScreen ? 6 : 8,
+                    fontFamily: 'monospace',
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               ),
               if (_isSendingCode) ...[
                 const SizedBox(width: 16),
-                const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
+                SizedBox(
+                  width: isSmallScreen ? 16 : 20,
+                  height: isSmallScreen ? 16 : 20,
+                  child: const CircularProgressIndicator(
                     strokeWidth: 2,
                     valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   ),
@@ -248,13 +261,16 @@ class _PulseKeyScreenState extends State<PulseKeyScreen> {
             ],
           ),
           
-          const SizedBox(height: 16),
+          SizedBox(height: isSmallScreen ? 12 : 16),
           
           // Botão copiar
           GestureDetector(
             onTap: () => _copyCode(),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              padding: EdgeInsets.symmetric(
+                horizontal: isSmallScreen ? 20 : 24, 
+                vertical: isSmallScreen ? 10 : 12,
+              ),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(25),
@@ -265,17 +281,18 @@ class _PulseKeyScreenState extends State<PulseKeyScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.copy,
                     color: Colors.white,
-                    size: 18,
+                    size: isSmallScreen ? 16 : 18,
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: isSmallScreen ? 6 : 8),
                   Text(
                     'Copiar',
                     style: AppTheme.bodyMedium.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
+                      fontSize: isSmallScreen ? 14 : 16,
                     ),
                   ),
                 ],
@@ -322,10 +339,10 @@ class _PulseKeyScreenState extends State<PulseKeyScreen> {
     );
   }
 
-  Widget _buildInfoSection() {
+  Widget _buildInfoSection(bool isSmallScreen) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.08),
         borderRadius: BorderRadius.circular(16),
@@ -341,48 +358,51 @@ class _PulseKeyScreenState extends State<PulseKeyScreen> {
               Icon(
                 Icons.info_outline,
                 color: Colors.white.withOpacity(0.8),
-                size: 20,
+                size: isSmallScreen ? 18 : 20,
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: isSmallScreen ? 6 : 8),
               Text(
                 'Informações',
                 style: AppTheme.titleMedium.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
+                  fontSize: isSmallScreen ? 16 : 18,
                 ),
               ),
             ],
           ),
           
-          const SizedBox(height: 16),
+          SizedBox(height: isSmallScreen ? 12 : 16),
           
           _buildInfoItem(
             Icons.timer,
             'Válido por 2 minutos',
             'Código expira automaticamente',
+            isSmallScreen,
           ),
           
-          const SizedBox(height: 12),
+          SizedBox(height: isSmallScreen ? 8 : 12),
           
           _buildInfoItem(
             Icons.security,
             'Acesso seguro',
             'Logs de acesso registrados',
+            isSmallScreen,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildInfoItem(IconData icon, String title, String subtitle) {
+  Widget _buildInfoItem(IconData icon, String title, String subtitle, bool isSmallScreen) {
     return Row(
       children: [
         Icon(
           icon,
           color: Colors.white.withOpacity(0.7),
-          size: 16,
+          size: isSmallScreen ? 14 : 16,
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: isSmallScreen ? 10 : 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -392,12 +412,14 @@ class _PulseKeyScreenState extends State<PulseKeyScreen> {
                 style: AppTheme.bodyMedium.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w500,
+                  fontSize: isSmallScreen ? 14 : 16,
                 ),
               ),
               Text(
                 subtitle,
                 style: AppTheme.bodySmall.copyWith(
                   color: Colors.white.withOpacity(0.7),
+                  fontSize: isSmallScreen ? 12 : 14,
                 ),
               ),
             ],
@@ -407,10 +429,11 @@ class _PulseKeyScreenState extends State<PulseKeyScreen> {
     );
   }
 
-  Widget _buildInstructionsSection() {
+
+  Widget _buildInstructionsSection(bool isSmallScreen) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.08),
         borderRadius: BorderRadius.circular(16),
@@ -426,71 +449,76 @@ class _PulseKeyScreenState extends State<PulseKeyScreen> {
               Icon(
                 Icons.help_outline,
                 color: Colors.white.withOpacity(0.8),
-                size: 20,
+                size: isSmallScreen ? 18 : 20,
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: isSmallScreen ? 6 : 8),
               Text(
                 'Como usar',
                 style: AppTheme.titleMedium.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
+                  fontSize: isSmallScreen ? 16 : 18,
                 ),
               ),
             ],
           ),
           
-          const SizedBox(height: 16),
+          SizedBox(height: isSmallScreen ? 12 : 16),
           
           _buildInstructionStep(
             '1',
             'Compartilhe o código com seu médico',
+            isSmallScreen,
           ),
           
-          const SizedBox(height: 8),
+          SizedBox(height: isSmallScreen ? 6 : 8),
           
           _buildInstructionStep(
             '2',
             'Médico insere o código na plataforma',
+            isSmallScreen,
           ),
           
-          const SizedBox(height: 8),
+          SizedBox(height: isSmallScreen ? 6 : 8),
           
           _buildInstructionStep(
             '3',
             'Acesso temporário aos seus dados',
+            isSmallScreen,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildInstructionStep(String number, String text) {
+  Widget _buildInstructionStep(String number, String text, bool isSmallScreen) {
     return Row(
       children: [
         Container(
-          width: 24,
-          height: 24,
+          width: isSmallScreen ? 20 : 24,
+          height: isSmallScreen ? 20 : 24,
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(isSmallScreen ? 10 : 12),
           ),
           child: Center(
             child: Text(
               number,
-              style: const TextStyle(
-                color: Color(0xFF00324A),
+              style: TextStyle(
+                color: const Color(0xFF00324A),
                 fontWeight: FontWeight.bold,
-                fontSize: 12,
+                fontSize: isSmallScreen ? 10 : 12,
               ),
             ),
           ),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: isSmallScreen ? 10 : 12),
         Expanded(
           child: Text(
             text,
             style: AppTheme.bodyMedium.copyWith(
               color: Colors.white.withOpacity(0.9),
+              fontSize: isSmallScreen ? 14 : 16,
             ),
           ),
         ),

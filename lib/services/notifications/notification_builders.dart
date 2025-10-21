@@ -24,13 +24,12 @@ class NotificationBuilders {
       priority: Priority.max,
       playSound: true,
       enableVibration: true,
-      vibrationPattern: defaultVibrationPattern,
       enableLights: true,
       color: primaryColor,
       ledColor: primaryColor,
       ledOnMs: 1000,
       ledOffMs: 500,
-      icon: '@mipmap/ic_launcher',
+      icon: '@drawable/pulseflow_logo',
       styleInformation: BigTextStyleInformation(
         'Dr(a). $doctorName ${specialty.isNotEmpty ? "($specialty)" : ""} solicitou acesso ao seu prontuário médico. Abra o app para gerar o código de acesso.',
         htmlFormatBigText: true,
@@ -68,7 +67,6 @@ class NotificationBuilders {
       priority: Priority.high,
       playSound: true,
       enableVibration: true,
-      vibrationPattern: defaultVibrationPattern,
       enableLights: true,
       color: primaryColor,
       icon: '@mipmap/ic_launcher',
@@ -135,13 +133,15 @@ class NotificationBuilders {
 
   /// Criar detalhes de notificação geral
   static NotificationDetails createGeneralNotification() {
-    const androidDetails = AndroidNotificationDetails(
-      NotificationChannels.generalChannelId,
-      'PulseFlow Notifications',
-      channelDescription: 'Canal de notificações do PulseFlow',
-      importance: Importance.high,
-      priority: Priority.high,
-    );
+           final androidDetails = AndroidNotificationDetails(
+             NotificationChannels.generalChannelId,
+             'PulseFlow Notifications',
+             channelDescription: 'Canal de notificações do PulseFlow',
+             importance: Importance.high,
+             priority: Priority.high,
+             playSound: true,
+             enableVibration: true,
+           );
 
     const iosDetails = DarwinNotificationDetails(
       presentAlert: true,
@@ -149,7 +149,7 @@ class NotificationBuilders {
       presentSound: true,
     );
 
-    return const NotificationDetails(
+    return NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
     );
@@ -164,15 +164,6 @@ class NotificationBuilders {
       priority: Priority.max,
       playSound: true,
       enableVibration: true,
-      vibrationPattern: defaultVibrationPattern,
-      enableLights: true,
-      color: primaryColor,
-      ledColor: primaryColor,
-      ledOnMs: 1000,
-      ledOffMs: 500,
-      icon: '@mipmap/ic_launcher',
-      category: AndroidNotificationCategory.message,
-      visibility: NotificationVisibility.public,
     );
 
     const iosDetails = DarwinNotificationDetails(

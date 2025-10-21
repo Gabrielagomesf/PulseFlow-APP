@@ -30,17 +30,17 @@ class NotificationService extends GetxService {
   Future<void> onInit() async {
     super.onInit();
 
-    try {
-      await _initializeLocalNotifications();
-    } catch (e) {
-      // Erro ao inicializar notificações locais
-    }
+         try {
+           await _initializeLocalNotifications();
+         } catch (e) {
+           // Erro ao inicializar notificações locais
+         }
 
-    try {
-      await _initializeFirebaseMessaging();
-    } catch (e) {
-      // Firebase não disponível
-    }
+         try {
+           await _initializeFirebaseMessaging();
+         } catch (e) {
+           // Firebase não disponível
+         }
 
     _accessRequestChecker.startPeriodicCheck();
   }
@@ -106,20 +106,20 @@ class NotificationService extends GetxService {
     }
   }
 
-  /// Solicitar permissões
-  Future<void> _requestPermissions() async {
-    await _localNotifications
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-        ?.requestNotificationsPermission();
+         /// Solicitar permissões
+         Future<void> _requestPermissions() async {
+           final androidResult = await _localNotifications
+               .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+               ?.requestNotificationsPermission();
 
-    await _localNotifications
-        .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
-        ?.requestPermissions(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
-  }
+           final iosResult = await _localNotifications
+               .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
+               ?.requestPermissions(
+                 alert: true,
+                 badge: true,
+                 sound: true,
+               );
+         }
 
   // ==================== NOTIFICAÇÕES PÚBLICAS ====================
 
@@ -212,6 +212,7 @@ class NotificationService extends GetxService {
   /// Cancelar lembretes de consultas
   Future<void> cancelAppointmentReminders() async {}
 
+
   // ==================== FIREBASE ====================
 
   /// Obter token FCM
@@ -239,17 +240,6 @@ class NotificationService extends GetxService {
   }
 
   // ==================== TESTES ====================
-
-  /// Testar notificação geral
-  Future<void> testNotification() async {
-    await _localNotifications.show(
-      DateTime.now().millisecondsSinceEpoch.remainder(100000),
-      'Teste de Notificação',
-      'Esta é uma notificação de teste do PulseFlow!',
-      NotificationBuilders.createGeneralNotification(),
-      payload: 'test',
-    );
-  }
 
   /// Testar notificação de acesso médico
   Future<void> testDoctorAccessNotification() async {

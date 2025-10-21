@@ -58,11 +58,11 @@ void main() async {
   Get.put(DiabetesService());
   Get.put(BiometricService());
   
-  try {
-    Get.put(NotificationService());
-  } catch (e) {
-    // Erro ao inicializar NotificationService
-  }
+         try {
+           Get.put(NotificationService());
+         } catch (e) {
+           // Erro ao inicializar NotificationService
+         }
 
   // Verifica se precisa migrar senhas antigas
   try {

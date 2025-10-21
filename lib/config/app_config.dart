@@ -18,7 +18,7 @@ class AppConfig {
     } catch (e) {
       // Fallback se não conseguir ler o .env
     }
-    return 'http://localhost:$DEFAULT_BACKEND_PORT';
+    return 'http://192.168.1.207:$DEFAULT_BACKEND_PORT';
   }
   
   // Configurações do Banco de Dados MongoDB

@@ -28,36 +28,40 @@
 	<true/>
 	<key>NSBiometricUsageDescription</key>
 	<string>Este app usa biometria para autenticação segura.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Este aplicativo usa Bluetooth para conectar com dispositivos de saúde e wearables.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_services._dns-sd._udp</string>
+	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Este aplicativo precisa acessar a câmera para capturar fotos de documentos e exames médicos.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Este app usa Face ID para autenticação biométrica segura.</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Este app precisa acessar seus dados de saúde para fornecer insights personalizados sobre sua frequência cardíaca, sono e atividade física.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Este app pode salvar dados de saúde para manter um registro completo do seu bem-estar.</string>
-	<key>NSUserNotificationUsageDescription</key>
-	<string>Este app precisa de notificações para enviar lembretes de medicamentos e consultas médicas.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>Este aplicativo precisa acessar a câmera para capturar fotos de documentos e exames médicos.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Este aplicativo precisa acessar suas fotos para anexar imagens de exames e documentos médicos.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Este aplicativo precisa salvar fotos na galeria.</string>
-	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>Este aplicativo usa Bluetooth para conectar com dispositivos de saúde e wearables.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Este aplicativo precisa acessar a rede local para conectar com dispositivos de saúde.</string>
-	<key>NSBonjourServices</key>
-	<array>
-		<string>_services._dns-sd._udp</string>
-	</array>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Este aplicativo precisa salvar fotos na galeria.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Este aplicativo precisa acessar suas fotos para anexar imagens de exames e documentos médicos.</string>
+	<key>NSUserNotificationUsageDescription</key>
+	<string>Este app precisa de notificações para enviar lembretes de medicamentos e consultas médicas.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIBackgroundModes</key>
 	<array>
-		<string>remote-notification</string>
 		<string>background-processing</string>
 		<string>bluetooth-central</string>
 		<string>audio</string>
+		<string>bluetooth-peripheral</string>
+		<string>fetch</string>
+		<string>processing</string>
+		<string>external-accessory</string>
+		<string>location</string>
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>

@@ -9,16 +9,23 @@ class AppConfig {
   static const String DEFAULT_MONGODB_PORT = '27017';
   
   // URL BASE DA API
+  // Para alterar a URL do servidor, edite o arquivo .env na raiz do projeto
+  // e adicione: API_BASE_URL=http://seu-ip-ou-dominio:porta
+  // Exemplo: API_BASE_URL=http://localhost:65432
+  // Exemplo: API_BASE_URL=http://192.168.1.100:65432
   static String get apiBaseUrl {
     try {
       final url = dotenv.env['API_BASE_URL'];
       if (url != null && url.isNotEmpty) {
-        return url;
+        // Remover barra final se existir
+        return url.endsWith('/') ? url.substring(0, url.length - 1) : url;
       }
     } catch (e) {
       // Fallback se não conseguir ler o .env
+      print('⚠️ [AppConfig] Erro ao ler API_BASE_URL do .env: $e');
     }
-    return 'http://192.168.1.207:$DEFAULT_BACKEND_PORT';
+    // URL padrão de fallback (desenvolvimento local)
+    return 'http://localhost:$DEFAULT_BACKEND_PORT';
   }
   
   // Configurações do Banco de Dados MongoDB

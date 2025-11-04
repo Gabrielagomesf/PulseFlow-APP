@@ -37,9 +37,12 @@ class _PulseKeyScreenState extends State<PulseKeyScreen> {
     final newCode = (100000 + random.nextInt(900000)).toString();
     final expiresAt = now.add(const Duration(minutes: 2));
     
-    _currentCode = newCode;
-    _lastCodeGeneration = now;
-    _timeRemaining = 120;
+    setState(() {
+      _currentCode = newCode;
+      _lastCodeGeneration = now;
+      _timeRemaining = 120;
+      _isSendingCode = true;
+    });
 
     await _sendCodeToBackend(newCode, expiresAt);
   }
@@ -79,33 +82,72 @@ class _PulseKeyScreenState extends State<PulseKeyScreen> {
       final currentUser = _authService.currentUser;
       
       if (currentUser == null || currentUser.id == null) {
-        Get.snackbar(
-          'Erro',
-          'Usuário não autenticado. Faça login novamente.',
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM,
-          duration: const Duration(seconds: 3),
-        );
+        if (mounted) {
+          Get.snackbar(
+            'Aviso',
+            'Usuário não autenticado. O código está disponível mas não será sincronizado.',
+            backgroundColor: Colors.orange,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.BOTTOM,
+            duration: const Duration(seconds: 3),
+          );
+        }
         return;
       }
 
-      
       await _apiService.sendAccessCode(
         patientId: currentUser.id!,
         accessCode: code,
         expiresAt: expiresAt,
       );
       
+      print('✅ [PulseKeyScreen] Código sincronizado com sucesso');
+      
     } catch (e) {
-      Get.snackbar(
-        'Erro de Conexão',
-        'Não foi possível sincronizar o código com o servidor.\nDetalhes: $e',
-        backgroundColor: Colors.orange,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 5),
-      );
+      // Não bloquear a funcionalidade - o código ainda funciona localmente
+      if (mounted) {
+        String errorMessage = 'Não foi possível sincronizar com o servidor.';
+        String fullError = e.toString();
+        
+        // Debug: mostrar erro completo no console
+        print('⚠️ [PulseKeyScreen] Erro de sincronização (código ainda funciona): $fullError');
+        
+        // Detectar tipo de erro específico
+        if (fullError.contains('Token de autenticação não encontrado') || 
+            fullError.contains('Sessão expirada')) {
+          errorMessage = 'Sessão expirada. O código está disponível mas não será sincronizado.';
+        } else if (fullError.contains('Servidor não está acessível') ||
+                   fullError.contains('URL do servidor inválida') || 
+                   fullError.contains('não foi possível conectar ao servidor') ||
+                   fullError.contains('Connection refused') ||
+                   fullError.contains('Network is unreachable')) {
+          // Para erros de conexão, mostrar aviso mais amigável
+          errorMessage = 'Servidor não acessível. O código está disponível localmente.\n\nVerifique a conexão com o servidor nas configurações.';
+        } else if (fullError.contains('CORS')) {
+          errorMessage = 'Erro de configuração do servidor (CORS). O código está disponível localmente.';
+        } else if (fullError.contains('401') || fullError.contains('Unauthorized')) {
+          errorMessage = 'Sessão expirada. O código está disponível mas não será sincronizado.';
+        } else if (fullError.contains('403') || fullError.contains('Forbidden')) {
+          errorMessage = 'Acesso negado. O código está disponível localmente.';
+        } else if (fullError.contains('404') || fullError.contains('not found')) {
+          errorMessage = 'Endpoint não encontrado. O código está disponível localmente.';
+        } else if (fullError.contains('500') || fullError.contains('Internal Server Error')) {
+          errorMessage = 'Erro no servidor. O código está disponível localmente.';
+        } else if (fullError.contains('Tempo de espera esgotado') || 
+                   fullError.contains('Timeout')) {
+          errorMessage = 'Servidor não respondeu. O código está disponível localmente.';
+        }
+        
+        // Mostrar aviso (não erro) já que o código ainda funciona
+        Get.snackbar(
+          'Aviso de Sincronização',
+          errorMessage,
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 4),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() {

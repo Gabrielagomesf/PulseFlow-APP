@@ -45,6 +45,7 @@ class AuthService extends GetxController {
         final patientId = JwtDecoder.decode(token)['sub'];
         final patient = await getPatientById(patientId);
         if (patient != null) {
+          _token.value = token; // Definir o token no reativo
           _currentUser.value = patient;
           _isAuthenticated.value = true;
         } else {

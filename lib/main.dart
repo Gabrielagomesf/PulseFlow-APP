@@ -15,8 +15,6 @@ import 'screens/login/login_controller.dart';
 import 'services/enxaqueca_service.dart';
 import 'services/diabetes_service.dart';
 import 'services/notification_service.dart';
-import 'services/biometric_service.dart';
-import 'services/smartwatch_service.dart';
 import 'services/notifications/firebase_handlers.dart';
 
 void main() async {
@@ -56,7 +54,6 @@ void main() async {
   Get.put(LoginController());
   Get.put(EnxaquecaService());
   Get.put(DiabetesService());
-  Get.put(BiometricService());
   
          try {
            Get.put(NotificationService());

@@ -16,9 +16,7 @@ mixin SafeControllerMixin on GetxController {
   void clearControllers() {
     for (final controller in _controllers) {
       try {
-        if (!controller.hasListeners) {
-          controller.clear();
-        }
+        controller.clear();
       } catch (e) {
       }
     }
@@ -27,9 +25,7 @@ mixin SafeControllerMixin on GetxController {
   void disposeControllers() {
     for (final controller in _controllers) {
       try {
-        if (!controller.hasListeners) {
-          controller.dispose();
-        }
+        controller.dispose();
       } catch (e) {
       }
     }

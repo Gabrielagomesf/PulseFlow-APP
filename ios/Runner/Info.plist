@@ -26,18 +26,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>NSBiometricUsageDescription</key>
-	<string>Este app usa biometria para autenticação segura.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>Este aplicativo usa Bluetooth para conectar com dispositivos de saúde e wearables.</string>
-	<key>NSBonjourServices</key>
-	<array>
-		<string>_services._dns-sd._udp</string>
-	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>Este aplicativo precisa acessar a câmera para capturar fotos de documentos e exames médicos.</string>
-	<key>NSFaceIDUsageDescription</key>
-	<string>Este app usa Face ID para autenticação biométrica segura.</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Este app precisa acessar seus dados de saúde para fornecer insights personalizados sobre sua frequência cardíaca, sono e atividade física.</string>
 	<key>NSHealthUpdateUsageDescription</key>

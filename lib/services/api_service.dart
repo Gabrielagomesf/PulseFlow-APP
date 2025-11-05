@@ -76,7 +76,7 @@ class ApiService {
         Uri.parse(url),
         headers: headers,
         body: jsonEncode(requestBody),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 30));
       
       print('📡 [ApiService] Status code: ${response.statusCode}');
 
@@ -175,7 +175,7 @@ class ApiService {
           'patientId': patientId,
           'accessCode': accessCode,
         }),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);

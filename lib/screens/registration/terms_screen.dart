@@ -1,272 +1,270 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-class TermsScreen extends StatelessWidget {
+class TermsScreen extends StatefulWidget {
   const TermsScreen({super.key});
+
+  @override
+  State<TermsScreen> createState() => _TermsScreenState();
+}
+
+class _TermsScreenState extends State<TermsScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _fadeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
+    _fadeAnimation = CurvedAnimation(parent: _fadeController, curve: Curves.easeIn);
+    _fadeController.forward();
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final isSmallScreen = size.width < 480;
-    final isMediumScreen = size.width >= 480 && size.width < 768;
-    final isLargeScreen = size.width >= 768 && size.width < 1024;
+    final isLandscape = size.width > size.height;
     
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFF00324A),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              const Color(0xFF00324A),
+              const Color(0xFF00324A).withValues(alpha: 0.85),
+            ],
+          ),
         ),
         child: SafeArea(
-          child: Column(
-            children: [
-              // Header section
-              Expanded(
-                flex: isSmallScreen ? 1 : 1,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(height: isSmallScreen ? 5 : 8),
-                    // Logo
-                    Image.asset(
-                      'assets/images/pulseflow2.png',
-                      width: isSmallScreen ? 70 : isMediumScreen ? 90 : isLargeScreen ? 110 : 130,
-                      height: isSmallScreen ? 70 : isMediumScreen ? 90 : isLargeScreen ? 110 : 130,
-                      fit: BoxFit.contain,
-                    ),
-                    SizedBox(height: isSmallScreen ? 6 : 8),
-                    Text(
-                      'Termos de Uso',
-                      style: TextStyle(
-                        fontSize: isSmallScreen ? 16 : isMediumScreen ? 20 : 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    SizedBox(height: isSmallScreen ? 2 : 4),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 20 : 30),
-                      child: Text(
-                        'PulseFlow - Plataforma de Saúde Digital',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: isSmallScreen ? 10 : 12,
-                          color: Colors.white.withValues(alpha: 0.9),
-                          height: 1.2,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: isSmallScreen ? 5 : 8),
-                  ],
-                ),
-              ),
-              
-              // Content section
-              Expanded(
-                flex: isSmallScreen ? 6 : 7,
-                child: Container(
-                  width: double.infinity,
-                  margin: EdgeInsets.only(top: isSmallScreen ? 10 : isMediumScreen ? 15 : isLargeScreen ? 20 : 25),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(32),
-                      topRight: Radius.circular(32),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.15),
-                        blurRadius: 40,
-                        offset: const Offset(0, 20),
-                      ),
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      // Header do container
-                      Container(
-                        width: double.infinity,
-                        padding: EdgeInsets.symmetric(
-                          vertical: isSmallScreen ? 16 : 20,
-                          horizontal: isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 24 : 28,
-                        ),
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(32),
-                            topRight: Radius.circular(32),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            IconButton(
-                              onPressed: () => Get.back(),
-                              icon: Icon(
-                                Icons.arrow_back_ios_new_rounded,
-                                color: const Color(0xFF00324A),
-                                size: isSmallScreen ? 20 : 24,
-                              ),
-                            ),
-                            Expanded(
-                              child: Text(
-                                'Termos de Uso e Privacidade',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: isSmallScreen ? 18 : isMediumScreen ? 20 : 22,
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF00324A),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 48), // Espaço para balancear o layout
-                          ],
-                        ),
-                      ),
-                      // Conteúdo dos termos
-                      Expanded(
-                        child: SingleChildScrollView(
-                          physics: const BouncingScrollPhysics(),
-                          padding: EdgeInsets.fromLTRB(
-                            isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 24 : 28,
-                            0,
-                            isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 24 : 28,
-                            isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 24 : 28,
-                          ),
-                          child: _buildTermsContent(isSmallScreen, isMediumScreen, isLargeScreen),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: _buildContent(isLandscape, size),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildTermsContent(bool isSmallScreen, bool isMediumScreen, bool isLargeScreen) {
+  Widget _buildContent(bool isLandscape, Size size) {
+    if (isLandscape) {
+      return Row(
+        children: [
+          Expanded(
+            flex: 1,
+            child: _buildLogoSection(size),
+          ),
+          Expanded(
+            flex: 1,
+            child: _buildFormSection(size),
+          ),
+        ],
+      );
+    } else {
+      return Column(
+        children: [
+          Expanded(
+            flex: 1,
+            child: _buildLogoSection(size),
+          ),
+          Expanded(
+            flex: 5,
+            child: _buildFormSection(size),
+          ),
+        ],
+      );
+    }
+  }
+
+  Widget _buildLogoSection(Size size) {
+    final availableHeight = size.height * 0.3; // Altura aproximada disponível para o logo
+    final isSmallHeight = size.height < 700;
+    final logoSize = isSmallHeight 
+      ? (size.width * 0.25).clamp(60.0, 100.0)
+      : (size.width * 0.35).clamp(80.0, 140.0);
+    final spacing = isSmallHeight ? 4.0 : size.height * 0.015;
+    
+    return Center(
+      child: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              'assets/images/pulseflow2.png',
+              width: logoSize,
+              height: logoSize,
+              fit: BoxFit.contain,
+            ),
+            SizedBox(height: spacing),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: size.width * 0.08),
+              child: Text(
+                'Termos de Uso',
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                style: TextStyle(
+                  fontSize: (size.width * 0.05).clamp(18.0, 28.0),
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 0.5,
+                ),
+                overflow: TextOverflow.visible,
+              ),
+            ),
+            SizedBox(height: spacing * 0.5),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: size.width * 0.08),
+              child: Text(
+                'PulseFlow - Plataforma de Saúde Digital',
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                style: TextStyle(
+                  fontSize: (size.width * 0.03).clamp(11.0, 15.0),
+                  color: Colors.white.withValues(alpha: 0.9),
+                  letterSpacing: 0.3,
+                ),
+                overflow: TextOverflow.visible,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFormSection(Size size) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
+        ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: size.width * 0.08,
+              vertical: size.height * 0.02,
+            ),
+            child: Row(
+              children: [
+                IconButton(
+                  onPressed: () => Get.back(),
+                  icon: Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    color: const Color(0xFF00324A),
+                    size: size.width * 0.05,
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    'Termos de Uso e Privacidade',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: (size.width * 0.055).clamp(20.0, 28.0),
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF00324A),
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+                SizedBox(width: size.width * 0.12),
+              ],
+            ),
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: EdgeInsets.symmetric(
+                horizontal: size.width * 0.08,
+                vertical: size.height * 0.02,
+              ),
+              child: _buildTermsContent(size),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTermsContent(Size size) {
+    final isSmallScreen = size.width < 400;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSection(
           title: '1. Sobre o PulseFlow',
           content: 'O PulseFlow é uma plataforma digital focada na área da saúde, desenvolvida para facilitar a interação segura entre médicos e pacientes. Nossa aplicação oferece funcionalidades como autenticação em dois fatores, visualização de prontuários médicos, anexos de exames e comunicação protegida entre profissionais da saúde e seus pacientes.',
-          isSmallScreen: isSmallScreen,
-          isMediumScreen: isMediumScreen,
-          isLargeScreen: isLargeScreen,
+          size: size,
         ),
         
+        SizedBox(height: size.height * 0.02),
         _buildSection(
           title: '2. Aceitação dos Termos',
           content: 'Ao utilizar o PulseFlow, você concorda em cumprir e estar vinculado a estes Termos de Uso. Se você não concordar com qualquer parte destes termos, não deve utilizar nossa plataforma.',
-          isSmallScreen: isSmallScreen,
-          isMediumScreen: isMediumScreen,
-          isLargeScreen: isLargeScreen,
+          size: size,
         ),
         
+        SizedBox(height: size.height * 0.02),
         _buildSection(
           title: '3. Uso da Plataforma',
           content: 'O PulseFlow destina-se exclusivamente a fins médicos e de saúde. Os usuários devem:\n\n• Fornecer informações verdadeiras e precisas\n• Manter a confidencialidade de suas credenciais de acesso\n• Utilizar a plataforma de forma ética e responsável\n• Respeitar a privacidade de outros usuários\n• Não compartilhar informações médicas sem autorização',
-          isSmallScreen: isSmallScreen,
-          isMediumScreen: isMediumScreen,
-          isLargeScreen: isLargeScreen,
+          size: size,
         ),
         
+        SizedBox(height: size.height * 0.02),
         _buildSection(
           title: '4. Proteção de Dados',
           content: 'Comprometemo-nos a proteger seus dados pessoais e informações médicas de acordo com a Lei Geral de Proteção de Dados (LGPD) e as melhores práticas de segurança. Implementamos medidas técnicas e organizacionais para garantir a segurança e confidencialidade de suas informações.',
-          isSmallScreen: isSmallScreen,
-          isMediumScreen: isMediumScreen,
-          isLargeScreen: isLargeScreen,
+          size: size,
         ),
         
+        SizedBox(height: size.height * 0.02),
         _buildSection(
           title: '5. Responsabilidades do Usuário',
           content: 'Você é responsável por:\n\n• Manter a segurança de sua conta e senha\n• Informar-nos imediatamente sobre qualquer uso não autorizado\n• Usar a plataforma apenas para fins legítimos\n• Não tentar acessar sistemas ou dados de outros usuários\n• Cumprir todas as leis e regulamentações aplicáveis',
-          isSmallScreen: isSmallScreen,
-          isMediumScreen: isMediumScreen,
-          isLargeScreen: isLargeScreen,
+          size: size,
         ),
         
+        SizedBox(height: size.height * 0.02),
         _buildSection(
           title: '6. Limitação de Responsabilidade',
           content: 'O PulseFlow é fornecido "como está". Não garantimos que a plataforma estará sempre disponível ou livre de erros. Nossa responsabilidade é limitada ao máximo permitido por lei.',
-          isSmallScreen: isSmallScreen,
-          isMediumScreen: isMediumScreen,
-          isLargeScreen: isLargeScreen,
+          size: size,
         ),
         
+        SizedBox(height: size.height * 0.02),
         _buildSection(
           title: '7. Modificações',
           content: 'Reservamo-nos o direito de modificar estes termos a qualquer momento. As alterações entrarão em vigor imediatamente após a publicação. O uso continuado da plataforma constitui aceitação dos novos termos.',
-          isSmallScreen: isSmallScreen,
-          isMediumScreen: isMediumScreen,
-          isLargeScreen: isLargeScreen,
+          size: size,
         ),
         
+        SizedBox(height: size.height * 0.02),
         _buildSection(
           title: '8. Contato',
           content: 'Para dúvidas sobre estes termos ou sobre o PulseFlow, entre em contato conosco através dos canais oficiais da plataforma.',
-          isSmallScreen: isSmallScreen,
-          isMediumScreen: isMediumScreen,
-          isLargeScreen: isLargeScreen,
+          size: size,
         ),
         
-        SizedBox(height: isSmallScreen ? 16 : 20),
+        SizedBox(height: size.height * 0.03),
         
-        // Botão de aceitar
-        Container(
-          width: double.infinity,
-          height: isSmallScreen ? 48 : isMediumScreen ? 52 : isLargeScreen ? 56 : 60,
-          decoration: BoxDecoration(
-            color: const Color(0xFF00324A),
-            borderRadius: BorderRadius.circular(isSmallScreen ? 14 : isMediumScreen ? 16 : isLargeScreen ? 18 : 20),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF00324A).withValues(alpha: 0.3),
-                blurRadius: isSmallScreen ? 10 : isMediumScreen ? 12 : isLargeScreen ? 15 : 18,
-                offset: Offset(0, isSmallScreen ? 5 : isMediumScreen ? 6 : isLargeScreen ? 8 : 10),
-              ),
-            ],
-          ),
-          child: ElevatedButton(
-            onPressed: () => Get.back(),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.transparent,
-              shadowColor: Colors.transparent,
-              padding: EdgeInsets.symmetric(
-                horizontal: isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 24 : 28,
-                vertical: isSmallScreen ? 12 : isMediumScreen ? 14 : isLargeScreen ? 16 : 18,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(isSmallScreen ? 14 : isMediumScreen ? 16 : isLargeScreen ? 18 : 20),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.check_circle, color: Colors.white, size: isSmallScreen ? 18 : isMediumScreen ? 20 : isLargeScreen ? 21 : 22),
-                SizedBox(width: isSmallScreen ? 8 : isMediumScreen ? 10 : isLargeScreen ? 12 : 14),
-                Text(
-                  'Entendi os Termos',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: isSmallScreen ? 15 : isMediumScreen ? 16 : isLargeScreen ? 17 : 18,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+        _buildAcceptButton(size),
         
-        SizedBox(height: isSmallScreen ? 16 : 20),
+        SizedBox(height: size.height * 0.03),
       ],
     );
   }
@@ -274,25 +272,27 @@ class TermsScreen extends StatelessWidget {
   Widget _buildSection({
     required String title,
     required String content,
-    required bool isSmallScreen,
-    required bool isMediumScreen,
-    required bool isLargeScreen,
+    required Size size,
   }) {
+    final isSmallScreen = size.width < 400;
+    final padding = isSmallScreen ? 12.0 : 16.0;
+    final titleSize = isSmallScreen ? size.width * 0.038 : size.width * 0.042;
+    final contentSize = isSmallScreen ? size.width * 0.032 : size.width * 0.035;
+    
     return Container(
-      margin: EdgeInsets.only(bottom: isSmallScreen ? 16 : 20),
-      padding: EdgeInsets.all(isSmallScreen ? 14 : isMediumScreen ? 16 : isLargeScreen ? 18 : 20),
+      padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFF00324A).withValues(alpha: 0.1),
+          color: const Color(0xFF00324A).withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withValues(alpha: 0.1),
             blurRadius: 8,
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -302,21 +302,84 @@ class TermsScreen extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              fontSize: isSmallScreen ? 16 : isMediumScreen ? 17 : isLargeScreen ? 18 : 19,
+              fontSize: titleSize.clamp(16.0, 22.0),
               fontWeight: FontWeight.bold,
               color: const Color(0xFF00324A),
+              letterSpacing: 0.3,
             ),
           ),
-          SizedBox(height: isSmallScreen ? 8 : 12),
+          SizedBox(height: size.height * 0.015),
           Text(
             content,
             style: TextStyle(
-              fontSize: isSmallScreen ? 14 : isMediumScreen ? 15 : isLargeScreen ? 15 : 16,
+              fontSize: contentSize.clamp(13.0, 17.0),
               color: Colors.grey[700],
-              height: 1.5,
+              height: 1.6,
+              letterSpacing: 0.2,
             ),
+            overflow: TextOverflow.visible,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAcceptButton(Size size) {
+    final isSmallScreen = size.width < 400;
+    final buttonHeight = isSmallScreen ? size.height * 0.065 : size.height * 0.07;
+    final fontSize = isSmallScreen ? size.width * 0.035 : size.width * 0.04;
+    final iconSize = isSmallScreen ? size.width * 0.045 : size.width * 0.05;
+    
+    return Container(
+      width: double.infinity,
+      height: buttonHeight.clamp(48.0, 60.0),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF00324A),
+            const Color(0xFF00324A).withValues(alpha: 0.9),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF00324A).withValues(alpha: 0.3),
+            blurRadius: 8,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ElevatedButton(
+        onPressed: () => Get.back(),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.check_circle,
+              color: Colors.white,
+              size: iconSize.clamp(18.0, 24.0),
+            ),
+            SizedBox(width: size.width * 0.02),
+            Flexible(
+              child: Text(
+                'Entendi os Termos',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: fontSize.clamp(14.0, 18.0),
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.visible,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

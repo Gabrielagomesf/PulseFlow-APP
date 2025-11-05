@@ -7,13 +7,11 @@ import '../models/patient.dart';
 import '../config/app_config.dart';
 import 'database_service.dart';
 import 'encryption_service.dart';
-import 'biometric_service.dart';
 import 'notification_service.dart';
 import 'package:mongo_dart/mongo_dart.dart' show ObjectId;
 import 'dart:math';
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';
-import 'package:flutter/material.dart';
 
 
 class AuthService extends GetxController {
@@ -794,69 +792,6 @@ class AuthService extends GetxController {
   void onInit() {
     super.onInit();
     // Inicialização do serviço, se necessário
-  }
-
-  // Métodos para login biométrico
-  Future<bool> loginWithBiometrics() async {
-    try {
-      final biometricService = Get.find<BiometricService>();
-      
-      if (!biometricService.isEnabled) {
-        Get.snackbar(
-          'Erro',
-          'Login biométrico não está habilitado',
-          snackPosition: SnackPosition.TOP,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
-        return false;
-      }
-      
-      final credentials = await biometricService.authenticateAndGetCredentials();
-      
-      if (credentials != null) {
-        final result = await login(credentials['email']!, credentials['password']!);
-        return result != null;
-      }
-      
-      return false;
-    } catch (e) {
-      return false;
-    }
-  }
-  
-  Future<void> enableBiometricLogin(String email, String password) async {
-    try {
-      final biometricService = Get.find<BiometricService>();
-      await biometricService.enableBiometricLogin(email, password);
-    } catch (e) {
-    }
-  }
-  
-  Future<void> disableBiometricLogin() async {
-    try {
-      final biometricService = Get.find<BiometricService>();
-      await biometricService.disableBiometricLogin();
-    } catch (e) {
-    }
-  }
-  
-  bool get isBiometricAvailable {
-    try {
-      final biometricService = Get.find<BiometricService>();
-      return biometricService.isAvailable;
-    } catch (e) {
-      return false;
-    }
-  }
-  
-  bool get isBiometricEnabled {
-    try {
-      final biometricService = Get.find<BiometricService>();
-      return biometricService.isEnabled;
-    } catch (e) {
-      return false;
-    }
   }
 
   @override

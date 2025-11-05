@@ -2,289 +2,63 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'forgot_password_controller.dart';
 
-class ForgotPasswordScreen extends StatelessWidget {
+class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
 
   @override
+  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+}
+
+class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _fadeController,
+      curve: Curves.easeIn,
+    );
+    _fadeController.forward();
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final isLandscape = size.width > size.height;
+
     return GetBuilder<ForgotPasswordController>(
       init: ForgotPasswordController(),
       builder: (controller) {
-        final size = MediaQuery.of(context).size;
-        final isSmallScreen = size.width < 480;
-        final isMediumScreen = size.width >= 480 && size.width < 768;
-        final isLargeScreen = size.width >= 768 && size.width < 1024;
-
         return Scaffold(
+          resizeToAvoidBottomInset: false,
           body: Container(
-            decoration: const BoxDecoration(
-              color: Color(0xFF00324A),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  const Color(0xFF00324A),
+                  const Color(0xFF00324A).withValues(alpha: 0.85),
+                ],
+              ),
             ),
             child: SafeArea(
-              child: Column(
-                children: [
-                  // Header section
-                  Expanded(
-                    flex: isSmallScreen ? 2 : 3,
-                    child: SingleChildScrollView(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SizedBox(height: isSmallScreen ? 30 : 40),
-                          // Logo
-                          Image.asset(
-                            'assets/images/pulseflow2.png',
-                            width: isSmallScreen ? 160 : isMediumScreen ? 180 : isLargeScreen ? 200 : 220,
-                            height: isSmallScreen ? 160 : isMediumScreen ? 180 : isLargeScreen ? 200 : 220,
-                            fit: BoxFit.contain,
-                          ),
-                          SizedBox(height: isSmallScreen ? 35 : 45),
-                          Text(
-                            'Esqueceu sua senha?',
-                            style: TextStyle(
-                              fontSize: isSmallScreen ? 16 : isMediumScreen ? 20 : 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          SizedBox(height: isSmallScreen ? 8 : 10),
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 20 : 30),
-                            child: Text(
-                              'Digite seu e-mail para receber um código de redefinição',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: isSmallScreen ? 11 : 13,
-                                color: Colors.white.withValues(alpha: 0.9),
-                                height: 1.2,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: isSmallScreen ? 15 : 20),
-                        ],
-                      ),
-                    ),
-                  ),
-                  
-                  // Content section
-                  Expanded(
-                    flex: isSmallScreen ? 3 : 4,
-                    child: Container(
-                      width: double.infinity,
-                      margin: EdgeInsets.only(top: isSmallScreen ? 15 : isMediumScreen ? 20 : isLargeScreen ? 25 : 30),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(32),
-                          topRight: Radius.circular(32),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.15),
-                            blurRadius: 40,
-                            offset: const Offset(0, 20),
-                          ),
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          // Header do container
-                          Container(
-                            width: double.infinity,
-                            padding: EdgeInsets.symmetric(
-                              vertical: isSmallScreen ? 20 : 24,
-                              horizontal: isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 24 : 28,
-                            ),
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.only(
-                                topLeft: Radius.circular(32),
-                                topRight: Radius.circular(32),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                IconButton(
-                                  onPressed: () => Get.back(),
-                                  icon: Icon(
-                                    Icons.arrow_back_ios_new_rounded,
-                                    color: const Color(0xFF00324A),
-                                    size: isSmallScreen ? 20 : 24,
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Text(
-                                    'Recuperar Senha',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: isSmallScreen ? 18 : isMediumScreen ? 20 : 22,
-                                      fontWeight: FontWeight.bold,
-                                      color: const Color(0xFF00324A),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 48), // Espaço para balancear o layout
-                              ],
-                            ),
-                          ),
-                          // Conteúdo do formulário
-                          Expanded(
-                            child: SingleChildScrollView(
-                              physics: const BouncingScrollPhysics(),
-                              padding: EdgeInsets.fromLTRB(
-                                isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 24 : 28,
-                                0,
-                                isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 24 : 28,
-                                isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 24 : 28,
-                              ),
-                              child: Form(
-                                key: controller.formKey,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // Campo de e-mail
-                                    _buildTextField(
-                                      controller: controller.emailController,
-                                      label: 'E-mail',
-                                      hint: 'Digite seu e-mail cadastrado',
-                                      icon: Icons.email_outlined,
-                                      keyboardType: TextInputType.emailAddress,
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Por favor, digite seu e-mail';
-                                        }
-                                        if (!GetUtils.isEmail(value)) {
-                                          return 'Por favor, digite um e-mail válido';
-                                        }
-                                        return null;
-                                      },
-                                      isSmallScreen: isSmallScreen,
-                                      isMediumScreen: isMediumScreen,
-                                      isLargeScreen: isLargeScreen,
-                                    ),
-                                    
-                                    SizedBox(height: isSmallScreen ? 24 : 30),
-                                    
-                                    // Botão de enviar código
-                                    Obx(() => Container(
-                                      width: double.infinity,
-                                      height: isSmallScreen ? 48 : isMediumScreen ? 52 : isLargeScreen ? 56 : 60,
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF00324A),
-                                        borderRadius: BorderRadius.circular(isSmallScreen ? 14 : isMediumScreen ? 16 : isLargeScreen ? 18 : 20),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: const Color(0xFF00324A).withValues(alpha: 0.3),
-                                            blurRadius: isSmallScreen ? 10 : isMediumScreen ? 12 : isLargeScreen ? 15 : 18,
-                                            offset: Offset(0, isSmallScreen ? 5 : isMediumScreen ? 6 : isLargeScreen ? 8 : 10),
-                                          ),
-                                        ],
-                                      ),
-                                      child: ElevatedButton(
-                                        onPressed: controller.isLoading.value ? null : controller.sendResetCode,
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.transparent,
-                                          shadowColor: Colors.transparent,
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 24 : 28,
-                                            vertical: isSmallScreen ? 12 : isMediumScreen ? 14 : isLargeScreen ? 16 : 18,
-                                          ),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(isSmallScreen ? 14 : isMediumScreen ? 16 : isLargeScreen ? 18 : 20),
-                                          ),
-                                        ),
-                                        child: controller.isLoading.value
-                                            ? SizedBox(
-                                                width: isSmallScreen ? 18 : isMediumScreen ? 20 : isLargeScreen ? 21 : 22,
-                                                height: isSmallScreen ? 18 : isMediumScreen ? 20 : isLargeScreen ? 21 : 22,
-                                                child: const CircularProgressIndicator(
-                                                  color: Colors.white,
-                                                  strokeWidth: 2,
-                                                ),
-                                              )
-                                            : Row(
-                                                mainAxisAlignment: MainAxisAlignment.center,
-                                                children: [
-                                                  Icon(
-                                                    Icons.send,
-                                                    color: Colors.white,
-                                                    size: isSmallScreen ? 18 : isMediumScreen ? 20 : isLargeScreen ? 21 : 22,
-                                                  ),
-                                                  SizedBox(width: isSmallScreen ? 8 : isMediumScreen ? 10 : isLargeScreen ? 12 : 14),
-                                                  Text(
-                                                    'Enviar Código',
-                                                    style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontWeight: FontWeight.bold,
-                                                      fontSize: isSmallScreen ? 15 : isMediumScreen ? 16 : isLargeScreen ? 17 : 18,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                      ),
-                                    )),
-                                    
-                                    SizedBox(height: isSmallScreen ? 20 : 24),
-                                    
-                                    // Botão voltar
-                                    Container(
-                                      width: double.infinity,
-                                      height: isSmallScreen ? 44 : isMediumScreen ? 48 : isLargeScreen ? 52 : 56,
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(isSmallScreen ? 14 : isMediumScreen ? 16 : isLargeScreen ? 18 : 20),
-                                        border: Border.all(
-                                          color: const Color(0xFF00324A).withValues(alpha: 0.2),
-                                          width: 1,
-                                        ),
-                                      ),
-                                      child: TextButton(
-                                        onPressed: () => Get.back(),
-                                        style: TextButton.styleFrom(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: isSmallScreen ? 16 : isMediumScreen ? 20 : isLargeScreen ? 24 : 28,
-                                            vertical: isSmallScreen ? 12 : isMediumScreen ? 14 : isLargeScreen ? 16 : 18,
-                                          ),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(isSmallScreen ? 14 : isMediumScreen ? 16 : isLargeScreen ? 18 : 20),
-                                          ),
-                                        ),
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              Icons.arrow_back,
-                                              color: const Color(0xFF00324A),
-                                              size: isSmallScreen ? 18 : isMediumScreen ? 20 : isLargeScreen ? 21 : 22,
-                                            ),
-                                            SizedBox(width: isSmallScreen ? 8 : isMediumScreen ? 10 : isLargeScreen ? 12 : 14),
-                                            Text(
-                                              'Voltar para o login',
-                                              style: TextStyle(
-                                                color: const Color(0xFF00324A),
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: isSmallScreen ? 15 : isMediumScreen ? 16 : isLargeScreen ? 17 : 18,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: _buildContent(isLandscape, size),
               ),
             ),
           ),
@@ -293,78 +67,281 @@ class ForgotPasswordScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required IconData icon,
-    TextInputType? keyboardType,
-    String? Function(String?)? validator,
-    required bool isSmallScreen,
-    required bool isMediumScreen,
-    required bool isLargeScreen,
-  }) {
+  Widget _buildContent(bool isLandscape, Size size) {
+    if (isLandscape) {
+      return Row(
+        children: [
+          Expanded(
+            flex: 1,
+            child: _buildLogoSection(size),
+          ),
+          Expanded(
+            flex: 1,
+            child: _buildFormSection(size),
+          ),
+        ],
+      );
+    } else {
+      return Column(
+        children: [
+          Expanded(
+            flex: 1,
+            child: _buildLogoSection(size),
+          ),
+          Expanded(
+            flex: 4,
+            child: _buildFormSection(size),
+          ),
+        ],
+      );
+    }
+  }
+
+  Widget _buildLogoSection(Size size) {
+    final availableHeight = size.height * 0.3; // Altura aproximada disponível para o logo
+    final isSmallHeight = size.height < 700;
+    final logoSize = isSmallHeight
+        ? (size.width * 0.25).clamp(60.0, 100.0)
+        : (size.width * 0.35).clamp(80.0, 140.0);
+    final spacing = isSmallHeight ? 4.0 : size.height * 0.015;
+
+    return Center(
+      child: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              'assets/images/pulseflow2.png',
+              width: logoSize,
+              height: logoSize,
+              fit: BoxFit.contain,
+            ),
+            SizedBox(height: spacing),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: size.width * 0.08),
+              child: Text(
+                'Esqueceu sua senha?',
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                style: TextStyle(
+                  fontSize: (size.width * 0.05).clamp(18.0, 28.0),
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 0.5,
+                ),
+                overflow: TextOverflow.visible,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFormSection(Size size) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
+        ),
+      ),
+      child: Form(
+        key: Get.find<ForgotPasswordController>().formKey,
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: size.width * 0.08,
+              vertical: 32,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(height: size.height * 0.04),
+                _buildHeader(size),
+                SizedBox(height: size.height * 0.04),
+                _buildEmailField(size),
+                SizedBox(height: size.height * 0.04),
+                _buildSendCodeButton(size),
+                SizedBox(height: size.height * 0.025),
+                _buildBackButton(size),
+                SizedBox(height: size.height * 0.04),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(Size size) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          'Recuperar Senha',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF00324A),
+            letterSpacing: 0.5,
+          ),
+        ),
+        SizedBox(height: 8),
+        Text(
+          'Enviaremos um código para seu e-mail',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.grey[600],
+            letterSpacing: 0.3,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmailField(Size size) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: TextFormField(
+        controller: Get.find<ForgotPasswordController>().emailController,
+        keyboardType: TextInputType.emailAddress,
+        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        decoration: InputDecoration(
+          labelText: 'E-mail',
+          labelStyle: TextStyle(color: Colors.grey[600]),
+          hintText: 'Digite seu e-mail cadastrado',
+          prefixIcon: Icon(Icons.email_outlined, color: const Color(0xFF00324A)),
+          filled: true,
+          fillColor: Colors.grey[50],
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: const Color(0xFF00324A).withValues(alpha: 0.3)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: const Color(0xFF00324A).withValues(alpha: 0.3)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: const Color(0xFF00324A), width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.red[400]!, width: 1),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.red[400]!, width: 2),
+          ),
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        ),
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return 'Por favor, digite seu e-mail';
+          }
+          if (!GetUtils.isEmail(value)) {
+            return 'Por favor, digite um e-mail válido';
+          }
+          return null;
+        },
+      ),
+    );
+  }
+
+  Widget _buildSendCodeButton(Size size) {
+    return Obx(() => Container(
+      width: double.infinity,
+      height: 54,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF00324A),
+            const Color(0xFF00324A).withValues(alpha: 0.9),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: const Color(0xFF00324A).withValues(alpha: 0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: TextFormField(
-        controller: controller,
-        keyboardType: keyboardType,
-        style: TextStyle(
-          fontSize: isSmallScreen ? 16 : isMediumScreen ? 17 : isLargeScreen ? 17 : 18,
-          fontWeight: FontWeight.w500,
-          color: const Color(0xFF00324A),
+      child: ElevatedButton(
+        onPressed: Get.find<ForgotPasswordController>().isLoading.value
+            ? null
+            : Get.find<ForgotPasswordController>().sendResetCode,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
-        decoration: InputDecoration(
-          labelText: label,
-          hintText: hint,
-          labelStyle: TextStyle(
-            color: Colors.grey[600],
-            fontWeight: FontWeight.w500,
-            fontSize: isSmallScreen ? 14 : isMediumScreen ? 15 : isLargeScreen ? 15 : 16,
-          ),
-          prefixIcon: Container(
-            margin: const EdgeInsets.all(12),
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF00324A).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+        child: Get.find<ForgotPasswordController>().isLoading.value
+            ? SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.send, color: Colors.white, size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'Enviar Código',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    ));
+  }
+
+  Widget _buildBackButton(Size size) {
+    return Container(
+      width: double.infinity,
+      height: 54,
+      child: OutlinedButton(
+        onPressed: () => Get.back(),
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: const Color(0xFF00324A), width: 2),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.arrow_back, color: const Color(0xFF00324A), size: 20),
+            SizedBox(width: 8),
+            Text(
+              'Voltar para o login',
+              style: TextStyle(
+                color: const Color(0xFF00324A),
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
+              ),
             ),
-            child: Icon(icon, color: const Color(0xFF00324A), size: isSmallScreen ? 18 : isMediumScreen ? 19 : isLargeScreen ? 19 : 20),
-          ),
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: Colors.grey[200]!),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: Colors.grey[200]!),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: Color(0xFF00324A), width: 2),
-          ),
-          errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: Colors.red[400]!, width: 1),
-          ),
-          contentPadding: EdgeInsets.symmetric(
-            horizontal: isSmallScreen ? 20 : isMediumScreen ? 22 : isLargeScreen ? 23 : 24, 
-            vertical: isSmallScreen ? 18 : isMediumScreen ? 20 : isLargeScreen ? 21 : 22
-          ),
+          ],
         ),
-        validator: validator,
       ),
     );
   }

@@ -16,15 +16,19 @@ class AppConfig {
   static String get apiBaseUrl {
     try {
       final url = dotenv.env['API_BASE_URL'];
+      print('🔧 [CONFIG] URL do .env: $url');
       if (url != null && url.isNotEmpty) {
         // Remover barra final se existir
-        return url.endsWith('/') ? url.substring(0, url.length - 1) : url;
+        final cleanUrl = url.endsWith('/') ? url.substring(0, url.length - 1) : url;
+        print('🔧 [CONFIG] Usando URL do .env: $cleanUrl');
+        return cleanUrl;
       }
     } catch (e) {
       // Fallback se não conseguir ler o .env
       print('⚠️ [AppConfig] Erro ao ler API_BASE_URL do .env: $e');
     }
     // URL padrão de fallback (desenvolvimento local)
+    print('🔧 [CONFIG] Usando URL padrão: http://localhost:$DEFAULT_BACKEND_PORT');
     return 'http://localhost:$DEFAULT_BACKEND_PORT';
   }
   

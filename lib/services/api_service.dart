@@ -6,20 +6,40 @@ import 'package:get/get.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config/app_config.dart';
 import 'auth_service.dart';
+import '../utils/http_client_helper.dart';
 
 class ApiService {
   static final ApiService _instance = ApiService._internal();
   factory ApiService() => _instance;
   ApiService._internal();
 
+  // Cliente HTTP personalizado que aceita certificados SSL não confiáveis (para desenvolvimento)
+  http.Client get _httpClient {
+    print('🔧 [ApiService] Obtendo cliente HTTP personalizado');
+    return HttpClientHelper.getClient();
+  }
+
   // URL base do backend web
   String get baseUrl => AppConfig.apiBaseUrl;
 
   // Headers padrão para requisições
-  Map<String, String> get _defaultHeaders => {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-  };
+  Map<String, String> get _defaultHeaders {
+    final headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+    
+    // Adicionar headers do ngrok se estiver usando ngrok (para evitar página de aviso)
+    if (baseUrl.contains('ngrok')) {
+      headers['ngrok-skip-browser-warning'] = 'true';
+      // Adicionar User-Agent para parecer um navegador e evitar bloqueio
+      headers['User-Agent'] = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1';
+      // Adicionar referer pode ajudar
+      headers['Referer'] = baseUrl;
+    }
+    
+    return headers;
+  }
 
   // Headers com autenticação
   Future<Map<String, String>> _getAuthHeaders() async {
@@ -71,34 +91,68 @@ class ApiService {
       
       print('✅ [ApiService] Token de autenticação encontrado');
       print('🔍 [ApiService] Headers (sem token): ${headers.keys.toList()}');
+      print('🔍 [ApiService] Token presente: ${headers.containsKey('Authorization')}');
+      if (headers.containsKey('Authorization')) {
+        final authHeader = headers['Authorization']!;
+        final tokenPreview = authHeader.length > 20 ? '${authHeader.substring(0, 20)}...' : authHeader;
+        print('🔍 [ApiService] Token preview: $tokenPreview');
+      }
+      print('🔍 [ApiService] Usando cliente HTTP personalizado para SSL');
+      print('🔍 [ApiService] Corpo da requisição: ${jsonEncode(requestBody)}');
 
-      final response = await http.post(
+      final response = await _httpClient.post(
         Uri.parse(url),
         headers: headers,
         body: jsonEncode(requestBody),
       ).timeout(const Duration(seconds: 30));
       
+      print('✅ [ApiService] Resposta recebida com sucesso');
+      
       print('📡 [ApiService] Status code: ${response.statusCode}');
+      print('📡 [ApiService] Response body (primeiros 200 chars): ${response.body.length > 200 ? response.body.substring(0, 200) : response.body}');
+      print('📡 [ApiService] Response headers: ${response.headers}');
+      
+      // Verificar se o ngrok está bloqueando (retornando HTML em vez de JSON)
+      final contentType = response.headers['content-type'] ?? '';
+      if (contentType.contains('text/html') && baseUrl.contains('ngrok')) {
+        print('⚠️ [ApiService] Ngrok está retornando página HTML (bloqueio). A página de aviso pode estar ativa.');
+        print('⚠️ [ApiService] Solução: Visite a URL no navegador uma vez para desbloquear: $baseUrl');
+        throw Exception('Ngrok está bloqueando a requisição. Visite $baseUrl no navegador para desbloquear o túnel.');
+      }
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         return data;
       } else {
         String errorMessage = 'Erro desconhecido';
+        Map<String, dynamic>? errorBody;
         try {
           if (response.body.isNotEmpty) {
-            final errorBody = jsonDecode(response.body);
-            errorMessage = errorBody['message'] ?? errorBody.toString();
+            // Tentar decodificar como JSON primeiro
+            if (contentType.contains('application/json')) {
+              errorBody = jsonDecode(response.body);
+              errorMessage = errorBody?['message'] ?? errorBody?['error'] ?? errorBody.toString();
+              print('📡 [ApiService] Erro detalhado do servidor: $errorBody');
+            } else {
+              // Se não for JSON, pode ser HTML do ngrok
+              errorMessage = 'Resposta não é JSON (pode ser página de bloqueio do ngrok)';
+              print('⚠️ [ApiService] Resposta não é JSON - Content-Type: $contentType');
+            }
           }
         } catch (e) {
-          errorMessage = response.body.isNotEmpty ? response.body : 'Erro desconhecido';
+          errorMessage = response.body.isNotEmpty ? response.body.substring(0, 100) : 'Erro desconhecido';
+          print('⚠️ [ApiService] Não foi possível decodificar o corpo da resposta de erro: $e');
         }
         
         // Mensagens específicas por status code
         if (response.statusCode == 401) {
           throw Exception('Sessão expirada. Faça login novamente.');
         } else if (response.statusCode == 403) {
-          throw Exception('Acesso negado. Verifique suas permissões.');
+          // Melhorar mensagem de erro 403 com mais detalhes
+          final detailMessage = errorBody?['message'] ?? errorBody?['error'] ?? 'Acesso negado pelo servidor';
+          print('❌ [ApiService] Erro 403 - Detalhes: $detailMessage');
+          print('⚠️ [ApiService] Verifique: 1) Se o token JWT é válido, 2) Se o usuário tem permissão para acessar este endpoint, 3) Se o backend está verificando corretamente o token');
+          throw Exception('Acesso negado (403). $detailMessage');
         } else if (response.statusCode == 404) {
           throw Exception('Endpoint não encontrado. Verifique a configuração do servidor.');
         } else if (response.statusCode == 500) {
@@ -139,6 +193,20 @@ class ApiService {
     } on FormatException catch (e) {
       print('❌ [ApiService] FormatException: ${e.message}');
       throw Exception('Erro ao processar resposta do servidor: ${e.message}');
+    } on TlsException catch (e) {
+      final errorUrl = '$baseUrl/api/access-code/gerar';
+      print('❌ [ApiService] TlsException: ${e.message}');
+      print('❌ [ApiService] TlsException OS Error: ${e.osError?.message ?? "N/A"}');
+      print('⚠️ [ApiService] Dica: Verifique se o ngrok está rodando e se o servidor backend está acessível');
+      print('⚠️ [ApiService] Teste a URL no navegador: $errorUrl');
+      throw Exception('Erro de certificado SSL. O servidor pode estar fechando a conexão. Verifique se o ngrok e o servidor backend estão rodando corretamente.');
+    } on HandshakeException catch (e) {
+      final errorUrl = '$baseUrl/api/access-code/gerar';
+      print('❌ [ApiService] HandshakeException: ${e.message}');
+      print('❌ [ApiService] HandshakeException OS Error: ${e.osError?.message ?? "N/A"}');
+      print('⚠️ [ApiService] Dica: O handshake SSL foi interrompido. Pode ser problema no servidor ou no ngrok');
+      print('⚠️ [ApiService] Teste a URL no navegador: $errorUrl');
+      throw Exception('Erro de handshake SSL. A conexão foi interrompida durante o handshake. Verifique se o servidor backend está rodando e acessível através do ngrok.');
     } catch (e) {
       print('❌ [ApiService] Erro genérico: ${e.runtimeType} - ${e.toString()}');
       print('❌ [ApiService] Stack trace: ${StackTrace.current}');
@@ -168,7 +236,7 @@ class ApiService {
   }) async {
     try {
       final headers = await _getAuthHeaders();
-      final response = await http.post(
+      final response = await _httpClient.post(
         Uri.parse('$baseUrl/api/access-code/verificar'),
         headers: headers,
         body: jsonEncode({
@@ -191,7 +259,7 @@ class ApiService {
   // Testar conexão com o backend
   Future<bool> testConnection() async {
     try {
-      final response = await http.get(
+      final response = await _httpClient.get(
         Uri.parse('$baseUrl/api/access-code/test'),
         headers: _defaultHeaders,
       ).timeout(const Duration(seconds: 5));
@@ -206,7 +274,7 @@ class ApiService {
   Future<List<Map<String, dynamic>>> buscarSolicitacoesPendentes(String patientId) async {
     try {
       final headers = await _getAuthHeaders();
-      final response = await http.get(
+      final response = await _httpClient.get(
         Uri.parse('$baseUrl/api/access-code/solicitacoes/$patientId'),
         headers: headers,
       ).timeout(const Duration(seconds: 5));
@@ -225,7 +293,7 @@ class ApiService {
   Future<bool> marcarSolicitacaoVisualizada(String solicitacaoId) async {
     try {
       final headers = await _getAuthHeaders();
-      final response = await http.put(
+      final response = await _httpClient.put(
         Uri.parse('$baseUrl/api/access-code/solicitacoes/$solicitacaoId/visualizar'),
         headers: headers,
       ).timeout(const Duration(seconds: 5));

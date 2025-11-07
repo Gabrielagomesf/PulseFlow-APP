@@ -1479,7 +1479,7 @@ class HomeScreen extends StatelessWidget {
         children: [
           _buildNavItem(Icons.home, 'Início', true, () {}),
           _buildNavItem(Icons.grid_view, 'Históricos', false, () {
-            Get.toNamed('/medical-records');
+            Get.toNamed('/history-selection');
           }),
           _buildNavItem(Icons.add, 'Registro', false, () {
             Get.toNamed('/menu');

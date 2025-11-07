@@ -616,7 +616,7 @@ class _EventoClinicoFormScreenState extends State<EventoClinicoFormScreen> {
             Get.toNamed('/home');
           }),
           _buildNavItem(Icons.grid_view, 'Históricos', false, () {
-            Get.toNamed('/medical-records');
+            Get.toNamed('/history-selection');
           }),
           _buildNavItem(Icons.add, 'Registro', true, () {
             Get.toNamed('/menu');

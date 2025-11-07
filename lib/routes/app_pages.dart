@@ -29,6 +29,7 @@ import '../screens/exame/exame_upload_screen.dart';
 import '../screens/exame/exame_list_screen.dart';
 import '../screens/hormonal/hormonal_screen.dart';
 import '../screens/splash/splash_screen.dart';
+import '../screens/history_selection/history_selection_screen.dart';
 import '../services/auth_service.dart';
 
 import  'app_routes.dart';
@@ -194,6 +195,11 @@ class AppPages {
         final pacienteId = Get.find<PacienteController>().pacienteId.value;
         return HormonalScreen(pacienteId: pacienteId);
       },
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.HISTORY_SELECTION,
+      page: () => const HistorySelectionScreen(),
       transition: Transition.rightToLeft,
     ),
   ];

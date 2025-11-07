@@ -303,4 +303,36 @@ class ApiService {
       return false;
     }
   }
+
+  Future<Map<String, dynamic>?> verificarConexaoMedico(String patientId) async {
+    try {
+      final headers = await _getAuthHeaders();
+      final response = await _httpClient.get(
+        Uri.parse('$baseUrl/api/pacientes/$patientId/conexao-ativa'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return Map<String, dynamic>.from(data);
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<bool> desconectarMedico(String patientId) async {
+    try {
+      final headers = await _getAuthHeaders();
+      final response = await _httpClient.post(
+        Uri.parse('$baseUrl/api/pacientes/$patientId/desconectar-medico'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 5));
+
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
 }

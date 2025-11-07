@@ -16,19 +16,28 @@ class PulseKeyScreen extends StatefulWidget {
 
 class _PulseKeyScreenState extends State<PulseKeyScreen> {
   String _currentCode = '';
-  int _timeRemaining = 120; // 2 minutos em segundos
+  int _timeRemaining = 120;
   bool _isActive = true;
   DateTime? _lastCodeGeneration;
   Timer? _timer;
+  Timer? _connectionTimer;
   final ApiService _apiService = ApiService();
   final AuthService _authService = Get.find<AuthService>();
   bool _isSendingCode = false;
+  bool _isMedicoConectado = false;
+  String? _medicoNome;
+  String? _medicoEspecialidade;
+  int _tempoConectado = 0;
+  bool _isLoadingConexao = false;
+  bool _isDesconectando = false;
 
   @override
   void initState() {
     super.initState();
     _initializeCode();
     _startTimer();
+    _checkConnection();
+    _startConnectionTimer();
   }
 
   void _initializeCode() async {
@@ -169,9 +178,130 @@ class _PulseKeyScreenState extends State<PulseKeyScreen> {
     );
   }
 
+  Future<void> _checkConnection() async {
+    final currentUser = _authService.currentUser;
+    if (currentUser?.id == null) return;
+    
+    setState(() {
+      _isLoadingConexao = true;
+    });
+    
+    try {
+      final conexao = await _apiService.verificarConexaoMedico(currentUser!.id!);
+      
+      if (mounted && conexao != null) {
+        setState(() {
+          _isMedicoConectado = conexao['conectado'] == true;
+          if (_isMedicoConectado) {
+            final medico = conexao['medico'] as Map<String, dynamic>?;
+            _medicoNome = medico?['nome'] as String?;
+            _medicoEspecialidade = medico?['especialidade'] as String?;
+            _tempoConectado = conexao['tempoConectado'] as int? ?? 0;
+          } else {
+            _medicoNome = null;
+            _medicoEspecialidade = null;
+            _tempoConectado = 0;
+          }
+          _isLoadingConexao = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingConexao = false;
+        });
+      }
+    }
+  }
+  
+  void _startConnectionTimer() {
+    _connectionTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      _checkConnection();
+      if (_isMedicoConectado) {
+        setState(() {
+          _tempoConectado += 5;
+        });
+      }
+    });
+  }
+  
+  Future<void> _desconectarMedico() async {
+    final currentUser = _authService.currentUser;
+    if (currentUser?.id == null) return;
+    
+    setState(() {
+      _isDesconectando = true;
+    });
+    
+    try {
+      final sucesso = await _apiService.desconectarMedico(currentUser!.id!);
+      
+      if (mounted) {
+        if (sucesso) {
+          setState(() {
+            _isMedicoConectado = false;
+            _medicoNome = null;
+            _medicoEspecialidade = null;
+            _tempoConectado = 0;
+          });
+          
+          Get.snackbar(
+            'Médico desconectado',
+            'O médico foi desconectado com sucesso',
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.BOTTOM,
+            duration: const Duration(seconds: 2),
+          );
+        } else {
+          Get.snackbar(
+            'Erro',
+            'Não foi possível desconectar o médico',
+            backgroundColor: Colors.red,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.BOTTOM,
+            duration: const Duration(seconds: 2),
+          );
+        }
+        setState(() {
+          _isDesconectando = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isDesconectando = false;
+        });
+        Get.snackbar(
+          'Erro',
+          'Erro ao desconectar médico',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 2),
+        );
+      }
+    }
+  }
+  
+  String _formatConnectionTime(int seconds) {
+    final hours = seconds ~/ 3600;
+    final minutes = (seconds % 3600) ~/ 60;
+    final secs = seconds % 60;
+    
+    if (hours > 0) {
+      return '${hours}h ${minutes}m';
+    } else if (minutes > 0) {
+      return '${minutes}m ${secs}s';
+    } else {
+      return '${secs}s';
+    }
+  }
+
   @override
   void dispose() {
     _timer?.cancel();
+    _connectionTimer?.cancel();
     super.dispose();
   }
 
@@ -186,45 +316,48 @@ class _PulseKeyScreenState extends State<PulseKeyScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Header minimalista
             _buildHeader(),
-            
-            // Conteúdo principal
             Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.symmetric(
                   horizontal: screenWidth * 0.05,
                   vertical: isSmallScreen ? 16 : 24,
                 ),
-                child: Column(
-                  children: [
-                    // Código principal
-                    _buildCodeSection(isSmallScreen),
-                    
-                    SizedBox(height: isSmallScreen ? 20 : 32),
-                    
-                    // Timer
-                    _buildTimer(),
-                    
-                    SizedBox(height: isSmallScreen ? 20 : 24),
-                    
-                    // Informações resumidas
-                    _buildInfoSection(isSmallScreen),
-                    
-                    SizedBox(height: isSmallScreen ? 16 : 24),
-                    
-                    // Instruções resumidas
-                    _buildInstructionsSection(isSmallScreen),
-                    
-                    // Espaço extra para garantir que o botão seja visível
-                    SizedBox(height: isSmallScreen ? 20 : 40),
-                  ],
-                ),
+                child: _isMedicoConectado
+                    ? _buildConexaoAtivaView(isSmallScreen)
+                    : _buildCodigoView(isSmallScreen, screenWidth),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+  
+  Widget _buildCodigoView(bool isSmallScreen, double screenWidth) {
+    return Column(
+      children: [
+        _buildCodeSection(isSmallScreen),
+        SizedBox(height: isSmallScreen ? 20 : 32),
+        _buildTimer(),
+        SizedBox(height: isSmallScreen ? 20 : 24),
+        _buildInfoSection(isSmallScreen),
+        SizedBox(height: isSmallScreen ? 16 : 24),
+        _buildInstructionsSection(isSmallScreen),
+        SizedBox(height: isSmallScreen ? 20 : 40),
+      ],
+    );
+  }
+  
+  Widget _buildConexaoAtivaView(bool isSmallScreen) {
+    return Column(
+      children: [
+        SizedBox(height: isSmallScreen ? 20 : 40),
+        _buildMedicoConectadoSection(isSmallScreen),
+        SizedBox(height: isSmallScreen ? 24 : 32),
+        _buildConexaoInfoSection(isSmallScreen),
+        SizedBox(height: isSmallScreen ? 20 : 40),
+      ],
     );
   }
 
@@ -416,7 +549,7 @@ class _PulseKeyScreenState extends State<PulseKeyScreen> {
           
           SizedBox(height: isSmallScreen ? 12 : 16),
           
-          _buildInfoItem(
+          _buildInfoItemSimple(
             Icons.timer,
             'Válido por 2 minutos',
             'Código expira automaticamente',
@@ -425,7 +558,7 @@ class _PulseKeyScreenState extends State<PulseKeyScreen> {
           
           SizedBox(height: isSmallScreen ? 8 : 12),
           
-          _buildInfoItem(
+          _buildInfoItemSimple(
             Icons.security,
             'Acesso seguro',
             'Logs de acesso registrados',
@@ -436,7 +569,7 @@ class _PulseKeyScreenState extends State<PulseKeyScreen> {
     );
   }
 
-  Widget _buildInfoItem(IconData icon, String title, String subtitle, bool isSmallScreen) {
+  Widget _buildInfoItemSimple(IconData icon, String title, String subtitle, bool isSmallScreen) {
     return Row(
       children: [
         Icon(
@@ -470,7 +603,6 @@ class _PulseKeyScreenState extends State<PulseKeyScreen> {
       ],
     );
   }
-
 
   Widget _buildInstructionsSection(bool isSmallScreen) {
     return Container(
@@ -572,6 +704,302 @@ class _PulseKeyScreenState extends State<PulseKeyScreen> {
     final minutes = seconds ~/ 60;
     final remainingSeconds = seconds % 60;
     return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+  }
+  
+  Widget _buildMedicoConectadoSection(bool isSmallScreen) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(isSmallScreen ? 24 : 32),
+      decoration: BoxDecoration(
+        color: Colors.green.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.green.withOpacity(0.5),
+          width: 2,
+        ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
+            decoration: BoxDecoration(
+              color: Colors.green.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.medical_services,
+              color: Colors.green,
+              size: isSmallScreen ? 40 : 50,
+            ),
+          ),
+          
+          SizedBox(height: isSmallScreen ? 20 : 24),
+          
+          Text(
+            'Médico Conectado',
+            style: AppTheme.headlineSmall.copyWith(
+              color: Colors.green,
+              fontWeight: FontWeight.bold,
+              fontSize: isSmallScreen ? 20 : 24,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          
+          SizedBox(height: isSmallScreen ? 16 : 20),
+          
+          if (_medicoNome != null) ...[
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: isSmallScreen ? 16 : 20,
+                vertical: isSmallScreen ? 12 : 16,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.person,
+                    color: Colors.white,
+                    size: isSmallScreen ? 20 : 24,
+                  ),
+                  SizedBox(width: isSmallScreen ? 10 : 12),
+                  Flexible(
+                    child: Text(
+                      _medicoNome!,
+                      style: AppTheme.headlineSmall.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: isSmallScreen ? 18 : 22,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: isSmallScreen ? 12 : 16),
+          ],
+          
+          if (_medicoEspecialidade != null) ...[
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: isSmallScreen ? 16 : 20,
+                vertical: isSmallScreen ? 10 : 14,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.work_outline,
+                    color: Colors.white.withOpacity(0.9),
+                    size: isSmallScreen ? 18 : 20,
+                  ),
+                  SizedBox(width: isSmallScreen ? 8 : 10),
+                  Flexible(
+                    child: Text(
+                      _medicoEspecialidade!,
+                      style: AppTheme.titleMedium.copyWith(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: isSmallScreen ? 16 : 18,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: isSmallScreen ? 16 : 20),
+          ],
+          
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: isSmallScreen ? 16 : 20,
+              vertical: isSmallScreen ? 10 : 14,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.orange.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.orange.withOpacity(0.4),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.access_time,
+                  color: Colors.orange,
+                  size: isSmallScreen ? 18 : 20,
+                ),
+                SizedBox(width: isSmallScreen ? 8 : 10),
+                Text(
+                  _formatConnectionTime(_tempoConectado),
+                  style: AppTheme.titleMedium.copyWith(
+                    color: Colors.orange,
+                    fontWeight: FontWeight.bold,
+                    fontSize: isSmallScreen ? 16 : 18,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildConexaoInfoSection(bool isSmallScreen) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(isSmallScreen ? 20 : 24),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                color: Colors.white.withOpacity(0.9),
+                size: isSmallScreen ? 20 : 24,
+              ),
+              SizedBox(width: isSmallScreen ? 10 : 12),
+              Text(
+                'Sobre a Conexão',
+                style: AppTheme.titleMedium.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: isSmallScreen ? 18 : 20,
+                ),
+              ),
+            ],
+          ),
+          
+          SizedBox(height: isSmallScreen ? 16 : 20),
+          
+          _buildInfoItem(
+            Icons.security,
+            'Conexão Segura',
+            'Seu médico está visualizando seus dados de forma segura através do código de acesso',
+            isSmallScreen,
+          ),
+          
+          SizedBox(height: isSmallScreen ? 12 : 16),
+          
+          _buildInfoItem(
+            Icons.visibility,
+            'Acesso Temporário',
+            'O médico pode visualizar seus dados enquanto estiver conectado',
+            isSmallScreen,
+          ),
+          
+          SizedBox(height: isSmallScreen ? 12 : 16),
+          
+          _buildInfoItem(
+            Icons.block,
+            'Você tem controle',
+            'Você pode desconectar o médico a qualquer momento usando o botão abaixo',
+            isSmallScreen,
+          ),
+          
+          SizedBox(height: isSmallScreen ? 24 : 32),
+          
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _isDesconectando ? null : _desconectarMedico,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(
+                  vertical: isSmallScreen ? 16 : 18,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 4,
+              ),
+              child: _isDesconectando
+                  ? SizedBox(
+                      height: isSmallScreen ? 20 : 24,
+                      width: isSmallScreen ? 20 : 24,
+                      child: const CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.link_off,
+                          size: isSmallScreen ? 22 : 24,
+                        ),
+                        SizedBox(width: isSmallScreen ? 10 : 12),
+                        Text(
+                          'Desconectar Médico',
+                          style: TextStyle(
+                            fontSize: isSmallScreen ? 16 : 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildInfoItem(IconData icon, String title, String subtitle, bool isSmallScreen) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          icon,
+          color: Colors.white.withOpacity(0.8),
+          size: isSmallScreen ? 18 : 20,
+        ),
+        SizedBox(width: isSmallScreen ? 12 : 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: AppTheme.bodyLarge.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: isSmallScreen ? 15 : 17,
+                ),
+              ),
+              SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: AppTheme.bodySmall.copyWith(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: isSmallScreen ? 13 : 15,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }
 

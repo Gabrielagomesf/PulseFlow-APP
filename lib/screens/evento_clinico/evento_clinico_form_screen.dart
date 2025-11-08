@@ -600,34 +600,38 @@ class _EventoClinicoFormScreenState extends State<EventoClinicoFormScreen> {
   }
 
   Widget _buildBottomNavigation() {
-    return Container(
-      height: 80,
-      decoration: const BoxDecoration(
-        color: Color(0xFF00324A),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
+    return SafeArea(
+      top: false,
+      bottom: true,
+      child: Container(
+        height: 80,
+        decoration: const BoxDecoration(
+          color: Color(0xFF00324A),
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
         ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildNavItem(Icons.home, 'Início', false, () {
-            Get.toNamed('/home');
-          }),
-          _buildNavItem(Icons.grid_view, 'Históricos', false, () {
-            Get.toNamed('/history-selection');
-          }),
-          _buildNavItem(Icons.add, 'Registro', true, () {
-            Get.toNamed('/menu');
-          }),
-          _buildNavItem(Icons.vpn_key, 'Pulse Key', false, () {
-            Get.toNamed('/pulse-key');
-          }),
-          _buildNavItem(Icons.person, 'Perfil', false, () {
-            Get.toNamed('/profile');
-          }),
-        ],
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildNavItem(Icons.home, 'Início', false, () {
+              Get.toNamed('/home');
+            }),
+            _buildNavItem(Icons.grid_view, 'Históricos', false, () {
+              Get.toNamed('/history-selection');
+            }),
+            _buildNavItem(Icons.add, 'Registro', true, () {
+              Get.toNamed('/menu');
+            }),
+            _buildNavItem(Icons.vpn_key, 'Pulse Key', false, () {
+              Get.toNamed('/pulse-key');
+            }),
+            _buildNavItem(Icons.person, 'Perfil', false, () {
+              Get.toNamed('/profile');
+            }),
+          ],
+        ),
       ),
     );
   }

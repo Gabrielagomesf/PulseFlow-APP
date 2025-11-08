@@ -1,5 +1,14 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import '../../models/medical_note.dart';
 import '../../theme/app_theme.dart';
 import '../../routes/app_routes.dart';
 import '../../services/auth_service.dart';
@@ -102,6 +111,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
                 ),
               ],
       ),
+      bottomNavigationBar: _buildBottomNavigation(),
     );
   }
 
@@ -135,7 +145,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
               const SizedBox(width: 12),
               const Expanded(
                 child: Text(
-                  'Histórico de Registros',
+                  'Histórico Clínico',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 22,
@@ -388,7 +398,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                'Histórico de Registros',
+                                'Histórico Clínico',
                                 style: AppTheme.titleMedium.copyWith(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w700,
@@ -1002,7 +1012,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
     );
   }
 
-  Widget _buildRecordsList(List<dynamic> list, bool isTablet, bool isPhone) {
+  Widget _buildRecordsList(List<MedicalNote> list, bool isTablet, bool isPhone) {
     return Column(
       children: [
         for (int i = 0; i < list.length; i++) ...[
@@ -1013,7 +1023,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
     );
   }
 
-  Widget _buildRecordCard(dynamic record, int index, bool isTablet, bool isPhone) {
+  Widget _buildRecordCard(MedicalNote record, int index, bool isTablet, bool isPhone) {
     final d = record.data;
     final dd = d.day.toString().padLeft(2, '0');
     final mm = d.month.toString().padLeft(2, '0');
@@ -1082,7 +1092,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
                               color: const Color(0xFF1E3A8A),
                             ),
                             const SizedBox(width: 6),
-                            Expanded(
+                            Flexible(
                               child: Text(
                                 record.categoria,
                                 style: AppTheme.bodySmall.copyWith(
@@ -1098,11 +1108,15 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      '$dd/$mm/$yy',
-                      style: AppTheme.bodySmall.copyWith(
-                        color: const Color(0xFF64748B),
-                        fontWeight: FontWeight.w500,
+                    Flexible(
+                      child: Text(
+                        '$dd/$mm/$yy',
+                        style: AppTheme.bodySmall.copyWith(
+                          color: const Color(0xFF64748B),
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -1119,6 +1133,8 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
                     letterSpacing: -0.5,
                     fontSize: isTablet ? 20 : 18,
                   ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 
                 const SizedBox(height: 16),
@@ -1169,6 +1185,8 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
                                     color: const Color(0xFF1E293B),
                                     fontWeight: FontWeight.w700,
                                   ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ],
                             ),
@@ -1227,23 +1245,219 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
     );
   }
 
-  void _showRecordDetails(dynamic record) {
+  void _showRecordDetails(MedicalNote record) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _buildRecordDetailsModal(record),
+      useSafeArea: true,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: _buildRecordDetailsModal(record),
+      ),
     );
   }
 
-  Widget _buildRecordDetailsModal(dynamic record) {
+  Future<void> _exportRecordToPdf(MedicalNote record) async {
+    try {
+      final now = DateTime.now();
+      final pdf = pw.Document();
+
+      final bytes = await rootBundle.load('assets/images/Pulselogo.png');
+      final logoImage = pw.MemoryImage(bytes.buffer.asUint8List());
+      final patientName =
+          Get.find<MedicalRecordsController>().patient.value?.name ?? 'Paciente não identificado';
+
+      pw.Widget pdfInfoRow(String label, String value) {
+        return pw.Container(
+          margin: const pw.EdgeInsets.only(bottom: 10),
+          child: pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Container(
+                width: 140,
+                margin: const pw.EdgeInsets.only(right: 12),
+                child: pw.Text(
+                  '$label:',
+                  style: pw.TextStyle(
+                    fontSize: 12,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.blueGrey800,
+                  ),
+                ),
+              ),
+              pw.Expanded(
+                child: pw.Text(
+                  value.isEmpty ? 'Não informado' : value,
+                  style: pw.TextStyle(
+                    fontSize: 12,
+                    color: PdfColors.blueGrey900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+
+      final generatedAt = _formatDateTime(now);
+      final atendimentoEm = _formatDate(record.data);
+
+      final summaryText = record.titulo.isEmpty
+          ? 'Não há informações adicionais registradas para este atendimento.'
+          : (record.titulo.length > 220 ? '${record.titulo.substring(0, 220)}...' : record.titulo);
+
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          build: (_) {
+            return pw.Container(
+              padding: const pw.EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                mainAxisSize: pw.MainAxisSize.min,
+                children: [
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text(
+                            'Histórico Clínico',
+                            style: pw.TextStyle(
+                              fontSize: 20,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.blue900,
+                            ),
+                          ),
+                          pw.SizedBox(height: 6),
+                          pw.Text(
+                            'Documento gerado em $generatedAt',
+                            style: pw.TextStyle(
+                              fontSize: 10,
+                              color: PdfColors.blueGrey600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      pw.Container(
+                        width: 90,
+                        height: 36,
+                        child: pw.Image(logoImage, fit: pw.BoxFit.contain),
+                      ),
+                    ],
+                  ),
+                  pw.SizedBox(height: 24),
+                  pw.Text(
+                    'Dados Principais',
+                    style: pw.TextStyle(
+                      fontSize: 14,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.blueGrey900,
+                    ),
+                  ),
+                  pw.SizedBox(height: 8),
+                  pdfInfoRow('Título', record.titulo),
+                  pdfInfoRow('Paciente', patientName),
+                  pdfInfoRow('Especialidade', record.categoria),
+                  pdfInfoRow('Médico responsável', record.medico),
+                  pdfInfoRow('Data do atendimento', atendimentoEm),
+                  pw.SizedBox(height: 16),
+                  pw.Text(
+                    'Resumo do Registro',
+                    style: pw.TextStyle(
+                      fontSize: 14,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.blueGrey900,
+                    ),
+                  ),
+                  pw.SizedBox(height: 6),
+                  pw.Text(
+                    summaryText,
+                    style: pw.TextStyle(
+                      fontSize: 11,
+                      height: 1.4,
+                      color: PdfColors.blueGrey800,
+                    ),
+                  ),
+                  pw.SizedBox(height: 12),
+                  pw.Text(
+                    'Histórico exportado automaticamente pelo aplicativo PulseFlow.',
+                    style: pw.TextStyle(
+                      fontSize: 9,
+                      color: PdfColors.blueGrey600,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      );
+
+      final savedBytes = await pdf.save();
+      Directory directory;
+      if (Platform.isAndroid || Platform.isIOS) {
+        directory = await getApplicationDocumentsDirectory();
+      } else {
+        directory = await getTemporaryDirectory();
+      }
+
+      final filename =
+          'historico_${_sanitizeFileName(record.titulo)}_${DateFormat('yyyyMMdd_HHmmss').format(now)}.pdf';
+      final file = File('${directory.path}/$filename');
+      await file.writeAsBytes(savedBytes, flush: true);
+
+      Get.snackbar(
+        'PDF exportado',
+        'Arquivo salvo como $filename',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.white,
+        colorText: const Color(0xFF1E293B),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 4),
+      );
+
+      final openResult = await OpenFilex.open(file.path);
+      if (openResult.type != ResultType.done) {
+        Get.snackbar(
+          'Abrir arquivo',
+          'Não foi possível abrir o PDF automaticamente. Caminho: ${file.path}',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.orange.shade100,
+          colorText: const Color(0xFF1E293B),
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 5),
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Erro ao exportar',
+        'Não foi possível gerar o PDF. Tente novamente.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: const Color(0xFF1E293B),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 5),
+      );
+    }
+  }
+
+  Widget _buildRecordDetailsModal(MedicalNote record) {
     return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.9,
+      ),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           // Handle
           Container(
@@ -1260,6 +1474,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
           Padding(
             padding: const EdgeInsets.all(24),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -1277,6 +1492,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         record.titulo,
@@ -1284,13 +1500,18 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
                           color: const Color(0xFF1E293B),
                           fontWeight: FontWeight.w700,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
+                      const SizedBox(height: 4),
                       Text(
                         record.categoria,
                         style: AppTheme.bodyMedium.copyWith(
                           color: const Color(0xFF1E3A8A),
                           fontWeight: FontWeight.w600,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
@@ -1299,17 +1520,20 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
                   onPressed: () => Navigator.pop(context),
                   icon: const Icon(Icons.close_rounded),
                   color: const Color(0xFF64748B),
+                  constraints: const BoxConstraints(),
+                  padding: EdgeInsets.zero,
                 ),
               ],
             ),
           ),
           
           // Content
-          Expanded(
+          Flexible(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   // Informações básicas
                   _buildDetailSection(
@@ -1335,6 +1559,8 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
                         style: AppTheme.bodyMedium.copyWith(
                           color: const Color(0xFF4B5563),
                         ),
+                        maxLines: null,
+                        overflow: TextOverflow.visible,
                       ),
                     ],
                   ),
@@ -1354,43 +1580,46 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
                 top: BorderSide(color: const Color(0xFFE2E8F0)),
               ),
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close_rounded),
-                    label: const Text('Fechar'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF64748B),
-                      side: const BorderSide(color: Color(0xFFE2E8F0)),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+            child: SafeArea(
+              top: false,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close_rounded),
+                      label: const Text('Fechar'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF64748B),
+                        side: const BorderSide(color: Color(0xFFE2E8F0)),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      // Aqui você pode adicionar navegação para criar novo registro se necessário
-                    },
-                    icon: const Icon(Icons.picture_as_pdf_rounded),
-                    label: const Text('Exportar PDF'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1E3A8A),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        Navigator.pop(context);
+                        await _exportRecordToPdf(record);
+                      },
+                      icon: const Icon(Icons.picture_as_pdf_rounded),
+                      label: const Text('Exportar PDF'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1E3A8A),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
@@ -1413,6 +1642,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             children: [
@@ -1429,11 +1659,15 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
                 ),
               ),
               const SizedBox(width: 12),
-              Text(
-                title,
-                style: AppTheme.titleMedium.copyWith(
-                  color: const Color(0xFF1E293B),
-                  fontWeight: FontWeight.w600,
+              Flexible(
+                child: Text(
+                  title,
+                  style: AppTheme.titleMedium.copyWith(
+                    color: const Color(0xFF1E293B),
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -1451,23 +1685,29 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 120,
+          Flexible(
+            flex: 2,
             child: Text(
               '$label:',
               style: AppTheme.bodyMedium.copyWith(
                 color: const Color(0xFF64748B),
                 fontWeight: FontWeight.w500,
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          Expanded(
+          const SizedBox(width: 12),
+          Flexible(
+            flex: 3,
             child: Text(
               value,
               style: AppTheme.bodyMedium.copyWith(
                 color: const Color(0xFF1F2937),
                 fontWeight: FontWeight.w600,
               ),
+              maxLines: null,
+              overflow: TextOverflow.visible,
             ),
           ),
         ],
@@ -1499,6 +1739,18 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
     );
   }
 
+  String _sanitizeFileName(String input) {
+    final sanitized = input.replaceAll(RegExp(r'[^\w\s-]'), '').trim();
+    if (sanitized.isEmpty) {
+      return 'registro';
+    }
+    return sanitized.replaceAll(RegExp(r'\s+'), '_').toLowerCase();
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    return DateFormat('dd/MM/yyyy HH:mm').format(dateTime);
+  }
+
   static String _formatDate(DateTime d) {
     final dd = d.day.toString().padLeft(2, '0');
     final mm = d.month.toString().padLeft(2, '0');
@@ -1525,6 +1777,79 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
         backgroundColor: const Color(0xFF22C55E),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
+  }
+
+  Widget _buildBottomNavigation() {
+    return SafeArea(
+      top: false,
+      bottom: true,
+      child: Container(
+        height: 80,
+        decoration: const BoxDecoration(
+          color: Color(0xFF00324A),
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildNavItem(Icons.home, 'Início', false, () {
+              Get.offAllNamed(Routes.HOME);
+            }),
+            _buildNavItem(Icons.grid_view, 'Históricos', true, () {
+              Get.toNamed(Routes.HISTORY_SELECTION);
+            }),
+            _buildNavItem(Icons.add, 'Registro', false, () {
+              Get.toNamed(Routes.MENU);
+            }),
+            _buildNavItem(Icons.vpn_key, 'Pulse Key', false, () {
+              Get.toNamed(Routes.PULSE_KEY);
+            }),
+            _buildNavItem(Icons.person, 'Perfil', false, () {
+              Get.toNamed(Routes.PROFILE);
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem(IconData icon, String label, bool isSelected, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white.withOpacity(0.2) : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? Colors.white : Colors.white.withOpacity(0.6),
+              size: isSelected ? 26 : 24,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.white.withOpacity(0.6),
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }

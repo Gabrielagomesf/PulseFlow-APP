@@ -158,8 +158,8 @@ class _HistorySelectionScreenState extends State<HistorySelectionScreen> with Si
       children: [
         _buildHistoryCard(
           icon: Icons.history_rounded,
-          title: 'Histórico Geral',
-          subtitle: 'Registros médicos completos',
+          title: 'Histórico Clínico',
+          subtitle: 'Registros médicos da consulta',
           gradientColors: [
             const Color(0xFF00324A),
             const Color(0xFF004A6B),
@@ -173,10 +173,10 @@ class _HistorySelectionScreenState extends State<HistorySelectionScreen> with Si
         _buildHistoryCard(
           icon: Icons.event_available_rounded,
           title: 'Histórico de Eventos',
-          subtitle: 'Consultas e procedimentos',
+          subtitle: 'Eventos de saúde',
           gradientColors: [
-            const Color(0xFF2563EB),
-            const Color(0xFF3B82F6),
+            const Color(0xFF00324A),
+            const Color(0xFF004A6B),
           ],
           onPressed: () {
             HapticFeedback.mediumImpact();
@@ -189,8 +189,8 @@ class _HistorySelectionScreenState extends State<HistorySelectionScreen> with Si
           title: 'Histórico de Gastrite',
           subtitle: 'Crises e sintomas relacionados',
           gradientColors: [
-            const Color(0xFFDC2626),
-            const Color(0xFFEF4444),
+            const Color(0xFF00324A),
+            const Color(0xFF004A6B),
           ],
           onPressed: () {
             HapticFeedback.mediumImpact();
@@ -203,8 +203,8 @@ class _HistorySelectionScreenState extends State<HistorySelectionScreen> with Si
           title: 'Histórico Menstrual',
           subtitle: 'Ciclos e acompanhamento',
           gradientColors: [
-            const Color(0xFFEC4899),
-            const Color(0xFFF472B6),
+            const Color(0xFF00324A),
+            const Color(0xFF004A6B),
           ],
           onPressed: () {
             HapticFeedback.mediumImpact();
@@ -331,32 +331,36 @@ class _HistorySelectionScreenState extends State<HistorySelectionScreen> with Si
   }
 
   Widget _buildBottomNavigation() {
-    return Container(
-      height: 80,
-      decoration: const BoxDecoration(
-        color: Color(0xFF00324A),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
+    return SafeArea(
+      top: false,
+      bottom: true,
+      child: Container(
+        height: 80,
+        decoration: const BoxDecoration(
+          color: Color(0xFF00324A),
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
         ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildNavItem(Icons.home, 'Início', false, () {
-            Get.offAllNamed('/home');
-          }),
-          _buildNavItem(Icons.grid_view, 'Históricos', true, () {}),
-          _buildNavItem(Icons.add, 'Registro', false, () {
-            Get.toNamed('/menu');
-          }),
-          _buildNavItem(Icons.vpn_key, 'Pulse Key', false, () {
-            Get.toNamed('/pulse-key');
-          }),
-          _buildNavItem(Icons.person, 'Perfil', false, () {
-            Get.toNamed('/profile');
-          }),
-        ],
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildNavItem(Icons.home, 'Início', false, () {
+              Get.offAllNamed('/home');
+            }),
+            _buildNavItem(Icons.grid_view, 'Históricos', true, () {}),
+            _buildNavItem(Icons.add, 'Registro', false, () {
+              Get.toNamed('/menu');
+            }),
+            _buildNavItem(Icons.vpn_key, 'Pulse Key', false, () {
+              Get.toNamed('/pulse-key');
+            }),
+            _buildNavItem(Icons.person, 'Perfil', false, () {
+              Get.toNamed('/profile');
+            }),
+          ],
+        ),
       ),
     );
   }

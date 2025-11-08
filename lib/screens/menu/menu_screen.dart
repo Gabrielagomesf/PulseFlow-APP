@@ -17,13 +17,10 @@ class MenuScreen extends StatelessWidget {
     final pacienteController = Get.find<PacienteController>();
 
     return Scaffold(
-      backgroundColor: const Color(0xFF00324A), // Cor de fundo azul para ocupar toda a tela
+      backgroundColor: const Color(0xFF00324A),
       body: Column(
         children: [
-          // Header com perfil - sem SafeArea para ocupar toda a área superior
           _buildHeader(),
-          
-          // Conteúdo principal
           Expanded(
             child: Container(
               decoration: const BoxDecoration(
@@ -38,26 +35,14 @@ class MenuScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Seção Dados de Saúde
                     _buildSectionHeader('Dados de Saúde'),
                     const SizedBox(height: 16),
                     _buildHealthDataSection(),
-                    
                     const SizedBox(height: 32),
-                    
-                    // Seção Registros de Saúde
                     _buildSectionHeader('Registros de Saúde'),
                     const SizedBox(height: 16),
                     _buildHealthRecordsGrid(pacienteController),
-                    
                     const SizedBox(height: 32),
-                    
-                    // Seção Históricos
-                    _buildSectionHeader('Históricos'),
-                    const SizedBox(height: 16),
-                    _buildHistoryGrid(),
-                    
-                    const SizedBox(height: 24),
                   ],
                 ),
               ),
@@ -73,13 +58,13 @@ class MenuScreen extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.only(
-        top: MediaQuery.of(Get.context!).padding.top + 16, // Adiciona padding da status bar
+        top: MediaQuery.of(Get.context!).padding.top + 16,
         left: 16,
         right: 16,
         bottom: 16,
       ),
       decoration: const BoxDecoration(
-        color: Color(0xFF00324A), // Nova cor azul
+        color: Color(0xFF00324A),
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(24),
           bottomRight: Radius.circular(24),
@@ -87,17 +72,13 @@ class MenuScreen extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Top row com logo centralizado
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Logo do PulseFlow
               _buildPulseFlowLogo(),
             ],
           ),
           const SizedBox(height: 20),
-          
-          // Título do menu
           const Text(
             'Menu Principal',
             style: TextStyle(
@@ -112,14 +93,13 @@ class MenuScreen extends StatelessWidget {
   }
 
   Widget _buildPulseFlowLogo() {
-    return Container(
+    return SizedBox(
       width: 140,
       height: 45,
       child: Image.asset(
         'assets/images/PulseNegativo.png',
         fit: BoxFit.contain,
         errorBuilder: (context, error, stackTrace) {
-          // Fallback caso a imagem não seja encontrada
           return Container(
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.1),
@@ -143,32 +123,47 @@ class MenuScreen extends StatelessWidget {
   }
 
   Widget _buildBottomNavigation() {
-    return Container(
-      height: 80,
-      decoration: const BoxDecoration(
-        color: Color(0xFF00324A),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
+    return SafeArea(
+      top: false,
+      bottom: true,
+      child: Container(
+        height: 80,
+        decoration: const BoxDecoration(
+          color: Color(0xFF00324A),
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildNavItem(Icons.home, 'Início', false, () {
+              Get.offAllNamed('/home');
+            }),
+            _buildNavItem(Icons.grid_view, 'Históricos', false, () {
+              Get.toNamed('/history-selection');
+            }),
+            _buildNavItem(Icons.add, 'Registro', true, () {}),
+            _buildNavItem(Icons.vpn_key, 'Pulse Key', false, () {
+              Get.toNamed('/pulse-key');
+            }),
+            _buildNavItem(Icons.person, 'Perfil', false, () {
+              Get.toNamed('/profile');
+            }),
+          ],
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildNavItem(Icons.home, 'Início', false, () {
-            Get.offAllNamed('/home');
-          }),
-          _buildNavItem(Icons.grid_view, 'Históricos', false, () {
-            Get.toNamed('/history-selection');
-          }),
-          _buildNavItem(Icons.add, 'Registro', true, () {}),
-          _buildNavItem(Icons.vpn_key, 'Pulse Key', false, () {
-            Get.toNamed('/pulse-key');
-          }),
-          _buildNavItem(Icons.person, 'Perfil', false, () {
-            Get.toNamed('/profile');
-          }),
-        ],
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        color: Color(0xFF1E293B),
       ),
     );
   }
@@ -201,18 +196,6 @@ class MenuScreen extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  // Cabeçalho de seção
-  Widget _buildSectionHeader(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.bold,
-        color: Color(0xFF1E293B),
       ),
     );
   }
@@ -306,58 +289,6 @@ class MenuScreen extends StatelessWidget {
       ],
     );
   }
-
-  // Grid de históricos
-  Widget _buildHistoryGrid() {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
-      childAspectRatio: 1.1,
-      children: [
-        _buildMenuButton(
-          icon: Icons.history,
-          title: 'Histórico\nGeral',
-          color: const Color(0xFF00324A),
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            Get.toNamed('/medical-records');
-          },
-        ),
-        _buildMenuButton(
-          icon: Icons.event_available,
-          title: 'Histórico\nEventos',
-          color: const Color(0xFF00324A),
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            Get.toNamed(Routes.EVENTO_CLINICO_HISTORY);
-          },
-        ),
-        _buildMenuButton(
-          icon: Icons.restaurant,
-          title: 'Histórico\nGastrite',
-          color: const Color(0xFF00324A),
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            Get.toNamed(Routes.CRISE_GASTRITE_HISTORY);
-          },
-        ),
-        _buildMenuButton(
-          icon: Icons.timeline,
-          title: 'Histórico\nMenstrual',
-          color: const Color(0xFF00324A),
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            Get.toNamed(Routes.MENSTRUACAO_HISTORY);
-          },
-        ),
-      ],
-    );
-  }
-
-  // Grid de dispositivos - removido (smartwatch e configurações)
 
   Widget _buildMenuButton({
     required IconData icon,
@@ -500,10 +431,7 @@ class MenuScreen extends StatelessWidget {
               ),
             ],
           ),
-          
           const SizedBox(height: 16),
-          
-          // Grid de dados de saúde
           Row(
             children: [
               Expanded(
@@ -534,10 +462,7 @@ class MenuScreen extends StatelessWidget {
               ),
             ],
           ),
-          
           const SizedBox(height: 16),
-          
-          // Botões de ação
           Row(
             children: [
               Expanded(
@@ -635,3 +560,4 @@ class MenuScreen extends StatelessWidget {
     );
   }
 }
+

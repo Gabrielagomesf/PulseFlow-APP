@@ -91,6 +91,27 @@ class DatabaseService {
     }
   }
 
+  Future<List<Map<String, dynamic>>> getDoctors() async {
+    try {
+      await _ensureConnection();
+      final collection = _db!.collection('users');
+      final docs = await collection.find().toList();
+      return docs.map((doc) {
+        final map = Map<String, dynamic>.from(doc);
+        final id = map['_id'];
+        if (id is ObjectId) {
+          map['id'] = id.toHexString();
+        } else if (id != null) {
+          map['id'] = id.toString();
+        }
+        map.remove('_id');
+        return map;
+      }).toList();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   // =================== ENXAQUECAS ===================
   Future<Enxaqueca> createEnxaqueca(Enxaqueca enxaqueca) async {
     try {

@@ -6,7 +6,9 @@ abstract class Routes {
   static const FORGOT_PASSWORD = '/forgot-password';
   static const RESET_PASSWORD = '/reset-password';
   static const PROFILE = '/profile';
-  static const APPOINTMENTS = '/appointments';
+  static const APPOINTMENTS_SPECIALTY = '/appointments-specialty';
+  static const APPOINTMENTS_DOCTORS = '/appointments-doctors';
+  static const APPOINTMENT_SCHEDULER = '/appointments-scheduler';
   static const MEDICAL_RECORDS = '/medical-records';
   static const PRESCRIPTIONS = '/prescriptions';
   static const SETTINGS = '/settings';

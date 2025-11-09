@@ -30,6 +30,9 @@ import '../screens/exame/exame_list_screen.dart';
 import '../screens/hormonal/hormonal_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../screens/history_selection/history_selection_screen.dart';
+import '../screens/appointments/appointment_specialty_screen.dart';
+import '../screens/appointments/appointment_doctor_list_screen.dart';
+import '../screens/appointments/appointment_scheduler_screen.dart';
 import '../services/auth_service.dart';
 
 import  'app_routes.dart';
@@ -201,6 +204,24 @@ class AppPages {
       name: Routes.HISTORY_SELECTION,
       page: () => const HistorySelectionScreen(),
       transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.APPOINTMENTS_SPECIALTY,
+      page: () => const AppointmentSpecialtyScreen(),
+      transition: Transition.rightToLeft,
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: Routes.APPOINTMENTS_DOCTORS,
+      page: () => const AppointmentDoctorListScreen(),
+      transition: Transition.rightToLeft,
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: Routes.APPOINTMENT_SCHEDULER,
+      page: () => const AppointmentSchedulerScreen(),
+      transition: Transition.rightToLeft,
+      middlewares: [AuthMiddleware()],
     ),
   ];
 } 

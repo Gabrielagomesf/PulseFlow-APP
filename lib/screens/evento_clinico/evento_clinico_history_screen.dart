@@ -476,113 +476,201 @@ class _EventoClinicoHistoryScreenState extends State<EventoClinicoHistoryScreen>
       return;
     }
 
+    final searchController = TextEditingController();
+    bool isModalOpen = true;
+    bool shouldApplyFilters = false;
+    bool ignoreTextChange = false;
+    String? pendingEspecialidade = _selectedEspecialidade;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) {
-        final selectedLower = _selectedEspecialidade?.trim().toLowerCase();
-        return SafeArea(
-          top: false,
-          child: Container(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.7,
-            ),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  margin: const EdgeInsets.only(top: 12),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final selectedLower = _selectedEspecialidade?.toLowerCase();
+            final query = searchController.text.trim().toLowerCase();
+            final filteredEspecialidades = query.isEmpty
+                ? especialidades
+                : especialidades.where((especialidade) => especialidade.toLowerCase().contains(query)).toList();
+
+            return SafeArea(
+              top: false,
+              child: Container(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.75,
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Filtrar por especialidade',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF1E293B),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(top: 12),
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Filtrar por especialidade',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF1E293B),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          if (_selectedEspecialidade != null && _selectedEspecialidade!.isNotEmpty)
+                            TextButton(
+                              onPressed: () {
+                                pendingEspecialidade = null;
+                                shouldApplyFilters = true;
+                                isModalOpen = false;
+                                Navigator.pop(context);
+                              },
+                              child: const Text('Limpar'),
+                            ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: TextField(
+                        controller: searchController,
+                        decoration: InputDecoration(
+                          hintText: 'Buscar especialidade',
+                          prefixIcon: const Icon(Icons.search_rounded),
+                          filled: true,
+                          fillColor: const Color(0xFFF1F5F9),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                        ),
+                        onChanged: (_) {
+                          if (!isModalOpen || ignoreTextChange) return;
+                          setModalState(() {});
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (filteredEspecialidades.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.search_off_rounded,
+                                  color: Color(0xFF1E3A8A),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  query.isEmpty
+                                      ? 'Nenhuma especialidade disponível atualmente.'
+                                      : 'Nenhuma especialidade encontrada para "$query".',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF475569),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else
+                      Flexible(
+                        child: ListView.separated(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          itemCount: filteredEspecialidades.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 6),
+                          itemBuilder: (context, index) {
+                            final especialidade = filteredEspecialidades[index];
+                            final isSelected = especialidade.toLowerCase() == selectedLower;
+                            return ListTile(
+                              onTap: () {
+                                pendingEspecialidade = especialidade;
+                                ignoreTextChange = true;
+                                searchController
+                                  ..text = especialidade
+                                  ..selection = TextSelection.collapsed(offset: especialidade.length);
+                                ignoreTextChange = false;
+                                shouldApplyFilters = true;
+                                isModalOpen = false;
+                                Navigator.pop(context);
+                              },
+                              leading: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.local_hospital_rounded,
+                                  color: Color(0xFF1E3A8A),
+                                ),
+                              ),
+                              title: Text(
+                                especialidade,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF1F2937),
+                                ),
+                              ),
+                              trailing: isSelected
+                                  ? const Icon(Icons.check_rounded, color: Color(0xFF1E3A8A))
+                                  : null,
+                            );
+                          },
                         ),
                       ),
-                      if (selectedLower != null && selectedLower.isNotEmpty)
-                        TextButton(
-                          onPressed: () {
-                            setState(() {
-                              _selectedEspecialidade = null;
-                            });
-                            _applyFilters();
-                            Navigator.pop(context);
-                          },
-                          child: const Text('Limpar'),
-                        ),
-                    ],
-                  ),
+                    const SizedBox(height: 16),
+                  ],
                 ),
-                Flexible(
-                  child: ListView.separated(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    itemCount: especialidades.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 6),
-                    itemBuilder: (context, index) {
-                      final especialidade = especialidades[index];
-                      final isSelected = especialidade.toLowerCase() == selectedLower;
-                      return ListTile(
-                        onTap: () {
-                          setState(() {
-                            _selectedEspecialidade = especialidade;
-                          });
-                          _applyFilters();
-                          Navigator.pop(context);
-                        },
-                        leading: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF1E3A8A).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.local_hospital_rounded,
-                            color: Color(0xFF1E3A8A),
-                          ),
-                        ),
-                        title: Text(
-                          especialidade,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF1F2937),
-                          ),
-                        ),
-                        trailing: isSelected
-                            ? const Icon(Icons.check_rounded, color: Color(0xFF1E3A8A))
-                            : null,
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
-    );
+    ).whenComplete(() {
+      isModalOpen = false;
+      searchController.dispose();
+      if (!mounted || !shouldApplyFilters) return;
+      setState(() {
+        _selectedEspecialidade = pendingEspecialidade;
+      });
+      _applyFilters();
+    });
   }
 
   void _showTipoFilter(List<String> tipos) {

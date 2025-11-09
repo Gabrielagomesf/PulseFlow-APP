@@ -41,7 +41,7 @@ class MenuScreen extends StatelessWidget {
                     const SizedBox(height: 32),
                     _buildSectionHeader('Registros de Saúde'),
                     const SizedBox(height: 16),
-                    _buildHealthRecordsGrid(pacienteController),
+                    _buildHealthRecordsList(pacienteController),
                     const SizedBox(height: 32),
                   ],
                 ),
@@ -200,92 +200,92 @@ class MenuScreen extends StatelessWidget {
     );
   }
 
-  // Grid de registros de saúde
-  Widget _buildHealthRecordsGrid(PacienteController pacienteController) {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
-      childAspectRatio: 1.1,
+  Widget _buildHealthRecordsList(PacienteController pacienteController) {
+    final cards = [
+      _RecordCardData(
+        icon: Icons.attach_file,
+        title: 'Exames anexados',
+        subtitle: 'Arquivos e resultados clínicos',
+        onTap: () {
+          HapticFeedback.lightImpact();
+          Get.toNamed(Routes.EXAME_UPLOAD);
+        },
+      ),
+      _RecordCardData(
+        icon: Icons.psychology,
+        title: 'Controle de Enxaqueca',
+        subtitle: 'Crises, sintomas e tratamentos',
+        onTap: () {
+          HapticFeedback.lightImpact();
+          Get.to(() => EnxaquecaScreen(
+                pacienteId: pacienteController.pacienteId.value,
+              ));
+        },
+      ),
+      _RecordCardData(
+        icon: Icons.bloodtype,
+        title: 'Monitoramento da Diabetes',
+        subtitle: 'Glicemia, medicamentos e hábitos',
+        onTap: () {
+          HapticFeedback.lightImpact();
+          Get.to(() => DiabetesScreen(
+                pacienteId: pacienteController.pacienteId.value,
+              ));
+        },
+      ),
+      _RecordCardData(
+        customIcon: const BpMenuIcon(size: 40, color: Colors.white),
+        title: 'Pressão arterial',
+        subtitle: 'Registros de aferições e alertas',
+        onTap: () {
+          HapticFeedback.lightImpact();
+          Get.toNamed(Routes.PRESSAO);
+        },
+      ),
+      _RecordCardData(
+        icon: Icons.sick,
+        title: 'Crises de gastrite',
+        subtitle: 'Sintomas, dieta e medicamentos',
+        onTap: () {
+          HapticFeedback.lightImpact();
+          Get.toNamed(Routes.CRISE_GASTRITE_FORM);
+        },
+      ),
+      _RecordCardData(
+        icon: Icons.event_note,
+        title: 'Eventos clínicos',
+        subtitle: 'Consultas, exames e procedimentos',
+        onTap: () {
+          HapticFeedback.lightImpact();
+          Get.toNamed(Routes.EVENTO_CLINICO_FORM);
+        },
+      ),
+      _RecordCardData(
+        customIcon: const HormonalIcon(size: 40, color: Colors.white),
+        title: 'Acompanhamento hormonal',
+        subtitle: 'Exames, hormônios e tendências',
+        onTap: () {
+          HapticFeedback.lightImpact();
+          Get.toNamed(Routes.HORMONAL);
+        },
+      ),
+      _RecordCardData(
+        icon: Icons.favorite,
+        title: 'Ciclo menstrual',
+        subtitle: 'Calendário e sintomas do ciclo',
+        onTap: () {
+          HapticFeedback.lightImpact();
+          Get.toNamed(Routes.MENSTRUACAO_FORM);
+        },
+      ),
+    ];
+
+    return Column(
       children: [
-        _buildMenuButton(
-          icon: Icons.attach_file,
-          title: 'Exames\n(Anexos)',
-          color: const Color(0xFF00324A),
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            Get.toNamed(Routes.EXAME_UPLOAD);
-          },
-        ),
-        _buildMenuButton(
-          icon: Icons.psychology,
-          title: 'Enxaqueca',
-          color: const Color(0xFF00324A),
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            Get.to(() => EnxaquecaScreen(
-              pacienteId: pacienteController.pacienteId.value,
-            ));
-          },
-        ),
-        _buildMenuButton(
-          icon: Icons.bloodtype,
-          title: 'Diabetes',
-          color: const Color(0xFF00324A),
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            Get.to(() => DiabetesScreen(
-              pacienteId: pacienteController.pacienteId.value,
-            ));
-          },
-        ),
-        _buildMenuButtonCustomIcon(
-          icon: const BpMenuIcon(size: 40, color: Colors.white),
-          title: 'Pressão\nArterial',
-          color: const Color(0xFF00324A),
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            Get.toNamed(Routes.PRESSAO);
-          },
-        ),
-        _buildMenuButton(
-          icon: Icons.sick,
-          title: 'Crise de\nGastrite',
-          color: const Color(0xFF00324A),
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            Get.toNamed(Routes.CRISE_GASTRITE_FORM);
-          },
-        ),
-        _buildMenuButton(
-          icon: Icons.event_note,
-          title: 'Evento\nClínico',
-          color: const Color(0xFF00324A),
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            Get.toNamed(Routes.EVENTO_CLINICO_FORM);
-          },
-        ),
-        _buildMenuButtonCustomIcon(
-          icon: const HormonalIcon(size: 40, color: Colors.white),
-          title: 'Hormonal',
-          color: const Color(0xFF00324A),
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            Get.toNamed(Routes.HORMONAL);
-          },
-        ),
-        _buildMenuButton(
-          icon: Icons.favorite,
-          title: 'Ciclo\nMenstrual',
-          color: const Color(0xFF00324A),
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            Get.toNamed(Routes.MENSTRUACAO_FORM);
-          },
-        ),
+        for (int i = 0; i < cards.length; i++) ...[
+          _RecordCard(data: cards[i]),
+          if (i < cards.length - 1) const SizedBox(height: 16),
+        ],
       ],
     );
   }
@@ -302,38 +302,44 @@ class MenuScreen extends StatelessWidget {
       hint: 'Toque para acessar $title',
       child: Container(
         decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 3,
-            offset: const Offset(0, 1),
-          ),
-        ],
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFCBD5F5).withOpacity(0.35),
+              blurRadius: 18,
+              offset: const Offset(0, 10),
+            ),
+          ],
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(18),
             onTap: onPressed,
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(18),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    icon,
-                    size: 40,
-                    color: Colors.white,
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(
+                      icon,
+                      size: 28,
+                      color: color,
+                    ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   Text(
                     title,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: Color(0xFF1E293B),
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
@@ -359,34 +365,40 @@ class MenuScreen extends StatelessWidget {
       hint: 'Toque para acessar $title',
       child: Container(
         decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(20),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              spreadRadius: 1,
-              blurRadius: 3,
-              offset: const Offset(0, 1),
+              color: const Color(0xFFCBD5F5).withOpacity(0.35),
+              blurRadius: 18,
+              offset: const Offset(0, 10),
             ),
           ],
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(18),
             onTap: onPressed,
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(18),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  icon,
-                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: icon,
+                  ),
+                  const SizedBox(height: 12),
                   Text(
                     title,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: Color(0xFF1E293B),
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
@@ -556,6 +568,135 @@ class MenuScreen extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _RecordCardData {
+  final IconData? icon;
+  final Widget? customIcon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _RecordCardData({
+    this.icon,
+    this.customIcon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  }) : assert(icon != null || customIcon != null);
+}
+
+class _RecordCard extends StatelessWidget {
+  final _RecordCardData data;
+
+  const _RecordCard({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    const gradientColors = [Color(0xFF00324A), Color(0xFF004A6B)];
+    return Semantics(
+      button: true,
+      label: data.title,
+      hint: 'Toque para acessar ${data.title}',
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: gradientColors,
+          ),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: gradientColors.first.withOpacity(0.25),
+              blurRadius: 22,
+              offset: const Offset(0, 10),
+            ),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(24),
+            onTap: data.onTap,
+            splashColor: Colors.white.withOpacity(0.2),
+            highlightColor: Colors.white.withOpacity(0.1),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.3),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Center(
+                      child: data.customIcon ??
+                          Icon(
+                            data.icon,
+                            size: 32,
+                            color: Colors.white,
+                          ),
+                    ),
+                  ),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          data.title,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          data.subtitle,
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 16,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

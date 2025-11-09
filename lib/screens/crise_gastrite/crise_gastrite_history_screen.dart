@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import '../../models/crise_gastrite.dart';
 import '../../services/auth_service.dart';
 import '../../services/database_service.dart';
@@ -16,6 +17,9 @@ class CriseGastriteHistoryScreen extends StatefulWidget {
 class _CriseGastriteHistoryScreenState extends State<CriseGastriteHistoryScreen>
     with TickerProviderStateMixin {
   final List<CriseGastrite> _crises = [];
+  List<CriseGastrite> _filteredCrises = [];
+  String? _selectedIntensidade;
+  String? _selectedPeriodo;
   bool _isLoading = true;
   bool _hasError = false;
   String _errorMessage = '';
@@ -65,12 +69,15 @@ class _CriseGastriteHistoryScreenState extends State<CriseGastriteHistoryScreen>
       }
 
       final crises = await DatabaseService().getCrisesGastriteByPacienteId(currentUser!.id!);
-      
+
       setState(() {
         _crises.clear();
         _crises.addAll(crises);
         _isLoading = false;
+        _filteredCrises = List<CriseGastrite>.from(crises);
       });
+
+      _applyFilters();
     } catch (e) {
       setState(() {
         _isLoading = false;
@@ -78,6 +85,35 @@ class _CriseGastriteHistoryScreenState extends State<CriseGastriteHistoryScreen>
         _errorMessage = e.toString();
       });
     }
+  }
+
+  void _applyFilters() {
+    if (!mounted) return;
+
+    final selectedIntensidade = _selectedIntensidade?.trim().toLowerCase();
+    final selectedPeriodo = _selectedPeriodo?.trim();
+
+    final filtered = _crises.where((crise) {
+      if (selectedIntensidade != null && selectedIntensidade.isNotEmpty) {
+        final label = _getIntensityFilterLabel(crise.intensidadeDor).toLowerCase();
+        if (label != selectedIntensidade) {
+          return false;
+        }
+      }
+
+      if (selectedPeriodo != null && selectedPeriodo.isNotEmpty) {
+        final periodLabel = DateFormat('MM/yyyy').format(DateTime(crise.data.year, crise.data.month));
+        if (periodLabel != selectedPeriodo) {
+          return false;
+        }
+      }
+
+      return true;
+    }).toList();
+
+    setState(() {
+      _filteredCrises = filtered;
+    });
   }
 
   @override
@@ -122,6 +158,8 @@ class _CriseGastriteHistoryScreenState extends State<CriseGastriteHistoryScreen>
                             _buildErrorState()
                           else if (_crises.isEmpty)
                             _buildEmptyState()
+                          else if (_filteredCrises.isEmpty)
+                            _buildNoResultsState()
                           else
                             _buildCrisesList(isTablet, isPhone),
                         ],
@@ -243,15 +281,10 @@ class _CriseGastriteHistoryScreenState extends State<CriseGastriteHistoryScreen>
                 child: _buildFilterDropdown(
                   hint: 'Intensidade',
                   icon: Icons.favorite_rounded,
+                  value: _selectedIntensidade,
                   onTap: () {
-                    Get.snackbar(
-                      'Filtro',
-                      'Filtro por intensidade em desenvolvimento',
-                      snackPosition: SnackPosition.BOTTOM,
-                      backgroundColor: Colors.white,
-                      colorText: const Color(0xFF1E293B),
-                      margin: const EdgeInsets.all(16),
-                    );
+                    final options = _getAvailableIntensidades();
+                    _showIntensidadeFilter(options);
                   },
                 ),
               ),
@@ -260,15 +293,10 @@ class _CriseGastriteHistoryScreenState extends State<CriseGastriteHistoryScreen>
                 child: _buildFilterDropdown(
                   hint: 'Período',
                   icon: Icons.date_range,
+                  value: _selectedPeriodo,
                   onTap: () {
-                    Get.snackbar(
-                      'Filtro',
-                      'Filtro por período em desenvolvimento',
-                      snackPosition: SnackPosition.BOTTOM,
-                      backgroundColor: Colors.white,
-                      colorText: const Color(0xFF1E293B),
-                      margin: const EdgeInsets.all(16),
-                    );
+                    final options = _getAvailablePeriodos();
+                    _showPeriodoFilter(options);
                   },
                 ),
               ),
@@ -283,55 +311,75 @@ class _CriseGastriteHistoryScreenState extends State<CriseGastriteHistoryScreen>
     required String hint,
     required IconData icon,
     required VoidCallback onTap,
+    String? value,
   }) {
+    final isActive = value != null && value.trim().isNotEmpty;
+    final displayText = isActive ? value!.trim() : hint;
+
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         height: 36,
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Colors.white.withOpacity(0.1),
-              Colors.white.withOpacity(0.05),
-            ],
+            colors: isActive
+                ? [
+                    Colors.white.withOpacity(0.18),
+                    Colors.white.withOpacity(0.1),
+                  ]
+                : [
+                    Colors.white.withOpacity(0.1),
+                    Colors.white.withOpacity(0.05),
+                  ],
           ),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: Colors.white.withOpacity(0.2),
-            width: 1,
+            color: isActive ? Colors.white.withOpacity(0.35) : Colors.white.withOpacity(0.2),
+            width: isActive ? 1.5 : 1,
           ),
+          boxShadow: isActive
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.12),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : null,
         ),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(2),
+              padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(4),
+                color: Colors.white.withOpacity(isActive ? 0.25 : 0.12),
+                borderRadius: BorderRadius.circular(6),
               ),
               child: Icon(
                 icon,
-                color: Colors.white.withOpacity(0.7),
-                size: 12,
+                color: Colors.white,
+                size: 14,
               ),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 8),
             Expanded(
               child: Text(
-                hint,
+                displayText,
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
+                  color: Colors.white.withOpacity(isActive ? 1 : 0.8),
                   fontSize: 11,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
                 ),
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
             Icon(
               Icons.keyboard_arrow_down_rounded,
-              color: Colors.white.withOpacity(0.7),
-              size: 16,
+              color: Colors.white.withOpacity(isActive ? 1 : 0.7),
+              size: 18,
             ),
           ],
         ),
@@ -339,12 +387,383 @@ class _CriseGastriteHistoryScreenState extends State<CriseGastriteHistoryScreen>
     );
   }
 
+  List<String> _getAvailableIntensidades() {
+    final map = <int, String>{};
+    for (final crise in _crises) {
+      final bucket = _getIntensityBucket(crise.intensidadeDor);
+      map.putIfAbsent(bucket, () => _getIntensityFilterLabel(crise.intensidadeDor));
+    }
+    final entries = map.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    return entries.map((entry) => entry.value).toList();
+  }
+
+  List<String> _getAvailablePeriodos() {
+    final map = <String, String>{};
+    for (final crise in _crises) {
+      final periodDate = DateTime(crise.data.year, crise.data.month);
+      final key = '${periodDate.year.toString().padLeft(4, '0')}-${periodDate.month.toString().padLeft(2, '0')}';
+      final label = DateFormat('MM/yyyy').format(periodDate);
+      map.putIfAbsent(key, () => label);
+    }
+    final entries = map.entries.toList()
+      ..sort((a, b) => b.key.compareTo(a.key));
+    return entries.map((entry) => entry.value).toList();
+  }
+
+  void _showIntensidadeFilter(List<String> intensidades) {
+    if (intensidades.isEmpty) {
+      Get.snackbar(
+        'Filtro',
+        'Nenhuma intensidade registrada para filtrar.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.white,
+        colorText: const Color(0xFF1E293B),
+        margin: const EdgeInsets.all(16),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        final selectedValue = _selectedIntensidade?.trim().toLowerCase();
+        return SafeArea(
+          top: false,
+          child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.7,
+            ),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Filtrar por intensidade',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1E293B),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (selectedValue != null && selectedValue.isNotEmpty)
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _selectedIntensidade = null;
+                            });
+                            _applyFilters();
+                            Navigator.pop(context);
+                          },
+                          child: const Text('Limpar'),
+                        ),
+                    ],
+                  ),
+                ),
+                Flexible(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    itemCount: intensidades.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 6),
+                    itemBuilder: (context, index) {
+                      final intensidade = intensidades[index];
+                      final isSelected = intensidade.toLowerCase() == selectedValue;
+                      return ListTile(
+                        onTap: () {
+                          setState(() {
+                            _selectedIntensidade = intensidade;
+                          });
+                          _applyFilters();
+                          Navigator.pop(context);
+                        },
+                        leading: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFDC2626).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.favorite_rounded,
+                            color: Color(0xFFDC2626),
+                          ),
+                        ),
+                        title: Text(
+                          intensidade,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1F2937),
+                          ),
+                        ),
+                        trailing: isSelected
+                            ? const Icon(Icons.check_rounded, color: Color(0xFFDC2626))
+                            : null,
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showPeriodoFilter(List<String> periodos) {
+    if (periodos.isEmpty) {
+      Get.snackbar(
+        'Filtro',
+        'Nenhum período disponível para filtrar.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.white,
+        colorText: const Color(0xFF1E293B),
+        margin: const EdgeInsets.all(16),
+      );
+      return;
+    }
+
+    final searchController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        final selectedPeriodo = _selectedPeriodo?.trim();
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final query = searchController.text.trim();
+            final normalizedQuery = query.toLowerCase();
+            final filteredPeriodos = query.isEmpty
+                ? periodos
+                : periodos
+                    .where((periodo) => periodo.toLowerCase().contains(normalizedQuery))
+                    .toList();
+
+            return SafeArea(
+              top: false,
+              child: Container(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.75,
+                ),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.only(top: 12),
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Filtrar por período (MM/AAAA)',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF1E293B),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (selectedPeriodo != null && selectedPeriodo.isNotEmpty)
+                            TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  _selectedPeriodo = null;
+                                });
+                                _applyFilters();
+                                Navigator.pop(context);
+                              },
+                              child: const Text('Limpar'),
+                            ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: TextField(
+                        controller: searchController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          hintText: 'Digite o período (MM/AAAA)',
+                          prefixIcon: const Icon(Icons.search_rounded),
+                          filled: true,
+                          fillColor: const Color(0xFFF1F5F9),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                        ),
+                        onChanged: (value) {
+                          String digits = value.replaceAll(RegExp(r'[^0-9]'), '');
+                          if (digits.length > 6) {
+                            digits = digits.substring(0, 6);
+                          }
+
+                          String formatted;
+                          if (digits.length <= 2) {
+                            formatted = digits;
+                          } else {
+                            formatted = '${digits.substring(0, 2)}/${digits.substring(2)}';
+                          }
+
+                          if (formatted != value) {
+                            final offset = formatted.length;
+                            searchController
+                              ..text = formatted
+                              ..selection = TextSelection.collapsed(offset: offset);
+                          }
+
+                          setModalState(() {});
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (filteredPeriodos.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.search_off_rounded,
+                                  color: Color(0xFF1E3A8A),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  query.isEmpty
+                                      ? 'Nenhum período disponível no momento.'
+                                      : 'Nenhum período encontrado para \"$query\". Verifique o formato MM/AAAA.',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF475569),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else
+                      Flexible(
+                        child: ListView.separated(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          itemCount: filteredPeriodos.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 6),
+                          itemBuilder: (context, index) {
+                            final periodo = filteredPeriodos[index];
+                            final isSelected = periodo == selectedPeriodo;
+                            return ListTile(
+                              onTap: () {
+                                setState(() {
+                                  _selectedPeriodo = periodo;
+                                });
+                                _applyFilters();
+                                Navigator.pop(context);
+                              },
+                              leading: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.date_range,
+                                  color: Color(0xFF1E3A8A),
+                                ),
+                              ),
+                              title: Text(
+                                periodo,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF1F2937),
+                                ),
+                              ),
+                              trailing: isSelected
+                                  ? const Icon(Icons.check_rounded, color: Color(0xFF1E3A8A))
+                                  : null,
+                            );
+                          },
+                        ),
+                      ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    ).whenComplete(() => searchController.dispose());
+  }
+
   Widget _buildCounterSection() {
+    final totalCount = _crises.length;
+    final filteredCount = _filteredCrises.length;
+    final hasFilters = (_selectedIntensidade != null && _selectedIntensidade!.trim().isNotEmpty) ||
+        (_selectedPeriodo != null && _selectedPeriodo!.trim().isNotEmpty);
+    final text = hasFilters && filteredCount != totalCount
+        ? '$filteredCount registro${filteredCount == 1 ? '' : 's'} filtrado${filteredCount == 1 ? '' : 's'} de $totalCount'
+        : '$filteredCount registro${filteredCount == 1 ? '' : 's'} encontrado${filteredCount == 1 ? '' : 's'}';
+
     return Row(
       children: [
         Expanded(
           child: Text(
-            '${_crises.length} registro${_crises.length != 1 ? 's' : ''} encontrado${_crises.length != 1 ? 's' : ''}',
+            text,
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -858,11 +1277,86 @@ class _CriseGastriteHistoryScreenState extends State<CriseGastriteHistoryScreen>
   Widget _buildCrisesList(bool isTablet, bool isPhone) {
     return Column(
       children: [
-        for (int i = 0; i < _crises.length; i++) ...[
-          _buildCriseCard(_crises[i], i, isTablet, isPhone),
-          if (i < _crises.length - 1) const SizedBox(height: 16),
+        for (int i = 0; i < _filteredCrises.length; i++) ...[
+          _buildCriseCard(_filteredCrises[i], i, isTablet, isPhone),
+          if (i < _filteredCrises.length - 1) const SizedBox(height: 16),
         ],
       ],
+    );
+  }
+
+  int _getIntensityBucket(int intensidade) {
+    if (intensidade <= 0) return 0;
+    if (intensidade <= 2) return 1;
+    if (intensidade <= 4) return 2;
+    if (intensidade <= 6) return 3;
+    if (intensidade <= 8) return 4;
+    return 5;
+  }
+
+  String _getIntensityFilterLabel(int intensidade) {
+    final bucket = _getIntensityBucket(intensidade);
+    switch (bucket) {
+      case 0:
+        return 'Sem Dor (0/10)';
+      case 1:
+        return 'Dor Leve (1-2/10)';
+      case 2:
+        return 'Dor Moderada (3-4/10)';
+      case 3:
+        return 'Dor Moderada a Intensa (5-6/10)';
+      case 4:
+        return 'Dor Intensa (7-8/10)';
+      case 5:
+        return 'Dor Muito Intensa (9-10/10)';
+      default:
+        return 'Dor Moderada';
+    }
+  }
+
+  Widget _buildNoResultsState() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E3A8A).withOpacity(0.08),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.search_off_rounded,
+              size: 32,
+              color: Color(0xFF1E3A8A),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Nenhuma crise encontrada',
+            style: AppTheme.titleMedium.copyWith(
+              color: const Color(0xFF1E293B),
+              fontWeight: FontWeight.w700,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Ajuste os filtros ou limpe a seleção para visualizar outras crises registradas.',
+            style: AppTheme.bodySmall.copyWith(
+              color: const Color(0xFF64748B),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 
@@ -1431,51 +1925,54 @@ class _CriseGastriteHistoryScreenState extends State<CriseGastriteHistoryScreen>
           ),
           
           // Footer
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              border: Border(
-                top: BorderSide(color: const Color(0xFFE2E8F0)),
+          SafeArea(
+            top: false,
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                border: Border(
+                  top: BorderSide(color: const Color(0xFFE2E8F0)),
+                ),
               ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close_rounded),
-                    label: const Text('Fechar'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF64748B),
-                      side: const BorderSide(color: Color(0xFFE2E8F0)),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close_rounded),
+                      label: const Text('Fechar'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF64748B),
+                        side: const BorderSide(color: Color(0xFFE2E8F0)),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      Get.toNamed(Routes.CRISE_GASTRITE_FORM, arguments: crise);
-                    },
-                    icon: const Icon(Icons.edit_rounded),
-                    label: const Text('Editar'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1E3A8A),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Get.toNamed(Routes.CRISE_GASTRITE_FORM, arguments: crise);
+                      },
+                      icon: const Icon(Icons.edit_rounded),
+                      label: const Text('Editar'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1E3A8A),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],

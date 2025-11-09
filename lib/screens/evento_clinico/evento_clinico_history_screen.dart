@@ -1,8 +1,16 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../models/evento_clinico.dart';
 import '../../services/auth_service.dart';
 import '../../services/database_service.dart';
+import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:flutter/services.dart';
+import 'package:open_filex/open_filex.dart';
 import '../../routes/app_routes.dart';
 
 class EventoClinicoHistoryScreen extends StatefulWidget {
@@ -26,53 +34,6 @@ class _EventoClinicoHistoryScreenState extends State<EventoClinicoHistoryScreen>
   DateTime? _selectedDateFrom;
   DateTime? _selectedDateTo;
   
-  // Listas para os filtros
-  final List<String> _especialidades = [
-    'Cardiologia',
-    'Neurologia',
-    'Ortopedia',
-    'Pediatria',
-    'Ginecologia',
-    'Dermatologia',
-    'Oftalmologia',
-    'Otorrinolaringologia',
-    'Psiquiatria',
-    'Anestesiologia',
-    'Patologia',
-    'Radiologia',
-    'Urologia',
-    'Endocrinologia',
-    'Gastroenterologia',
-    'Pneumologia',
-    'Reumatologia',
-    'Oncologia',
-    'Hematologia',
-    'Nefrologia',
-  ];
-  
-  final List<String> _tiposConsulta = [
-    'Consulta Regular',
-    'Consulta de Emergência',
-    'Consulta de Retorno',
-    'Acompanhamento de Condição',
-    'Episódio Psicológico ou Emocional',
-    'Exame Médico',
-    'Procedimento Médico',
-    'Cirurgia',
-    'Terapia',
-    'Reabilitação',
-  ];
-  
-  final List<String> _intensidadesDor = [
-    'Sem Dor (0/10)',
-    'Dor Leve (1-2/10)',
-    'Dor Moderada (3-4/10)',
-    'Dor Moderada a Intensa (5-6/10)',
-    'Dor Intensa (7-8/10)',
-    'Dor Muito Intensa (9/10)',
-    'Dor Insuportável (10/10)',
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -109,54 +70,35 @@ class _EventoClinicoHistoryScreenState extends State<EventoClinicoHistoryScreen>
   void _applyFilters() {
     setState(() {
       _filteredEventos = _eventos.where((evento) {
-        // Filtro por especialidade
-        if (_selectedEspecialidade != null && evento.especialidade != _selectedEspecialidade) {
-          return false;
-        }
-        
-        // Filtro por tipo de consulta
-        if (_selectedTipo != null && evento.tipoEvento != _selectedTipo) {
-          return false;
-        }
-        
-        // Filtro por intensidade da dor
-        if (_selectedIntensidadeDor != null) {
-          final intensidade = int.tryParse(evento.intensidadeDor) ?? 0;
-          bool matchesIntensity = false;
-          
-          switch (_selectedIntensidadeDor) {
-            case 'Sem Dor (0/10)':
-              matchesIntensity = intensidade == 0;
-              break;
-            case 'Dor Leve (1-2/10)':
-              matchesIntensity = intensidade >= 1 && intensidade <= 2;
-              break;
-            case 'Dor Moderada (3-4/10)':
-              matchesIntensity = intensidade >= 3 && intensidade <= 4;
-              break;
-            case 'Dor Moderada a Intensa (5-6/10)':
-              matchesIntensity = intensidade >= 5 && intensidade <= 6;
-              break;
-            case 'Dor Intensa (7-8/10)':
-              matchesIntensity = intensidade >= 7 && intensidade <= 8;
-              break;
-            case 'Dor Muito Intensa (9/10)':
-              matchesIntensity = intensidade == 9;
-              break;
-            case 'Dor Insuportável (10/10)':
-              matchesIntensity = intensidade == 10;
-              break;
-          }
-          
-          if (!matchesIntensity) {
+        final selectedEspecialidade = _selectedEspecialidade?.trim().toLowerCase();
+        if (selectedEspecialidade != null && selectedEspecialidade.isNotEmpty) {
+          final especialidadeEvento = evento.especialidade.trim().toLowerCase();
+          if (especialidadeEvento != selectedEspecialidade) {
             return false;
           }
         }
-        
-        // Filtro por data (se implementado futuramente)
+
+        final selectedTipo = _selectedTipo?.trim().toLowerCase();
+        if (selectedTipo != null && selectedTipo.isNotEmpty) {
+          final tipoEvento = evento.tipoEvento.trim().toLowerCase();
+          if (tipoEvento != selectedTipo) {
+            return false;
+          }
+        }
+
+        final selectedIntensidade = _selectedIntensidadeDor?.trim().toLowerCase();
+        if (selectedIntensidade != null && selectedIntensidade.isNotEmpty) {
+          final intensidadeValor = int.tryParse(evento.intensidadeDor) ?? 0;
+          final labelEvento = _getIntensityFilterLabel(intensidadeValor).toLowerCase();
+          if (labelEvento != selectedIntensidade) {
+            return false;
+          }
+        }
+
         if (_selectedDateFrom != null && evento.dataHora.isBefore(_selectedDateFrom!)) {
           return false;
         }
+
         if (_selectedDateTo != null && evento.dataHora.isAfter(_selectedDateTo!)) {
           return false;
         }
@@ -165,18 +107,6 @@ class _EventoClinicoHistoryScreenState extends State<EventoClinicoHistoryScreen>
       }).toList();
     });
   }
-
-  void _clearFilters() {
-    setState(() {
-      _selectedTipo = null;
-      _selectedEspecialidade = null;
-      _selectedIntensidadeDor = null;
-      _selectedDateFrom = null;
-      _selectedDateTo = null;
-      _filteredEventos = _eventos;
-    });
-  }
-
 
   String _getIntensidadeLabel(int intensidade) {
     switch (intensidade) {
@@ -312,8 +242,6 @@ class _EventoClinicoHistoryScreenState extends State<EventoClinicoHistoryScreen>
   }
 
   Widget _buildFilterSection() {
-    final hasActiveFilters = _selectedEspecialidade != null || _selectedTipo != null || _selectedIntensidadeDor != null;
-    
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
@@ -323,30 +251,16 @@ class _EventoClinicoHistoryScreenState extends State<EventoClinicoHistoryScreen>
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: hasActiveFilters 
-            ? [
-                Colors.white.withOpacity(0.15),
-                Colors.white.withOpacity(0.08),
-              ]
-            : [
-                Colors.white.withOpacity(0.1),
-                Colors.white.withOpacity(0.05),
-              ],
+          colors: [
+            Colors.white.withOpacity(0.1),
+            Colors.white.withOpacity(0.05),
+          ],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: hasActiveFilters 
-            ? Colors.white.withOpacity(0.3)
-            : Colors.white.withOpacity(0.2),
-          width: hasActiveFilters ? 1.5 : 1,
+          color: Colors.white.withOpacity(0.2),
+          width: 1,
         ),
-        boxShadow: hasActiveFilters ? [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
-          ),
-        ] : null,
       ),
       child: Column(
         children: [
@@ -357,16 +271,12 @@ class _EventoClinicoHistoryScreenState extends State<EventoClinicoHistoryScreen>
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: hasActiveFilters 
-                    ? Colors.white.withOpacity(0.2)
-                    : Colors.white.withOpacity(0.1),
+                  color: Colors.white.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   Icons.tune_rounded,
-                  color: hasActiveFilters 
-                    ? Colors.white
-                    : Colors.white.withOpacity(0.8),
+                  color: Colors.white.withOpacity(0.8),
                   size: 16,
                 ),
               ),
@@ -382,73 +292,9 @@ class _EventoClinicoHistoryScreenState extends State<EventoClinicoHistoryScreen>
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    if (hasActiveFilters) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.8),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          '${_getActiveFilterCount()} ativo${_getActiveFilterCount() > 1 ? 's' : ''}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
-              if (hasActiveFilters)
-                AnimatedScale(
-                  scale: 1.0,
-                  duration: const Duration(milliseconds: 200),
-                  child: GestureDetector(
-                    onTap: _clearFilters,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.red.withOpacity(0.8),
-                            Colors.red.withOpacity(0.6),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.red.withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.clear_rounded,
-                            color: Colors.white,
-                            size: 12,
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            'Limpar',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
             ],
           ),
           
@@ -461,14 +307,10 @@ class _EventoClinicoHistoryScreenState extends State<EventoClinicoHistoryScreen>
                 child: _buildEnhancedDropdown(
                   hint: 'Especialidade',
                   value: _selectedEspecialidade,
-                  items: _especialidades,
                   icon: Icons.medical_services_rounded,
-                  isActive: _selectedEspecialidade != null,
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedEspecialidade = value;
-                    });
-                    _applyFilters();
+                  onTap: () {
+                    final options = _getAvailableEspecialidades();
+                    _showEspecialidadeFilter(options);
                   },
                 ),
               ),
@@ -477,14 +319,10 @@ class _EventoClinicoHistoryScreenState extends State<EventoClinicoHistoryScreen>
                 child: _buildEnhancedDropdown(
                   hint: 'Tipo',
                   value: _selectedTipo,
-                  items: _tiposConsulta,
                   icon: Icons.event_note_rounded,
-                  isActive: _selectedTipo != null,
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedTipo = value;
-                    });
-                    _applyFilters();
+                  onTap: () {
+                    final options = _getAvailableTiposEvento();
+                    _showTipoFilter(options);
                   },
                 ),
               ),
@@ -493,14 +331,10 @@ class _EventoClinicoHistoryScreenState extends State<EventoClinicoHistoryScreen>
                 child: _buildEnhancedDropdown(
                   hint: 'Dor',
                   value: _selectedIntensidadeDor,
-                  items: _intensidadesDor,
                   icon: Icons.favorite_rounded,
-                  isActive: _selectedIntensidadeDor != null,
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedIntensidadeDor = value;
-                    });
-                    _applyFilters();
+                  onTap: () {
+                    final options = _getAvailableIntensidades();
+                    _showIntensidadeFilter(options);
                   },
                 ),
               ),
@@ -511,166 +345,517 @@ class _EventoClinicoHistoryScreenState extends State<EventoClinicoHistoryScreen>
     );
   }
 
-  int _getActiveFilterCount() {
-    int count = 0;
-    if (_selectedEspecialidade != null) count++;
-    if (_selectedTipo != null) count++;
-    if (_selectedIntensidadeDor != null) count++;
-    return count;
-  }
-
   Widget _buildEnhancedDropdown({
     required String hint,
-    required String? value,
-    required List<String> items,
     required IconData icon,
-    required bool isActive,
-    required Function(String?) onChanged,
+    required VoidCallback onTap,
+    String? value,
   }) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      height: 36,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isActive 
-            ? [
-                Colors.white.withOpacity(0.15),
-                Colors.white.withOpacity(0.08),
-              ]
-            : [
-                Colors.white.withOpacity(0.1),
-                Colors.white.withOpacity(0.05),
-              ],
+    final isActive = value != null && value.trim().isNotEmpty;
+    final displayText = isActive ? value!.trim() : hint;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        height: 36,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isActive
+                ? [
+                    Colors.white.withOpacity(0.18),
+                    Colors.white.withOpacity(0.1),
+                  ]
+                : [
+                    Colors.white.withOpacity(0.1),
+                    Colors.white.withOpacity(0.05),
+                  ],
+          ),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isActive ? Colors.white.withOpacity(0.35) : Colors.white.withOpacity(0.2),
+            width: isActive ? 1.5 : 1,
+          ),
+          boxShadow: isActive
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.12),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : null,
         ),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: isActive 
-            ? Colors.white.withOpacity(0.3)
-            : Colors.white.withOpacity(0.2),
-          width: isActive ? 1.5 : 1,
-        ),
-        boxShadow: isActive ? [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ] : null,
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: value,
-          hint: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Row(
-              children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    color: isActive 
-                      ? Colors.white.withOpacity(0.2)
-                      : Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Icon(
-                    icon,
-                    color: isActive 
-                      ? Colors.white
-                      : Colors.white.withOpacity(0.7),
-                    size: 12,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    hint,
-                    style: TextStyle(
-                      color: isActive 
-                        ? Colors.white
-                        : Colors.white.withOpacity(0.7),
-                      fontSize: 11,
-                      fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          dropdownColor: const Color(0xFF00324A),
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-          ),
-          icon: Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: AnimatedRotation(
-              turns: isActive ? 0.5 : 0,
-              duration: const Duration(milliseconds: 200),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(isActive ? 0.25 : 0.12),
+                borderRadius: BorderRadius.circular(6),
+              ),
               child: Icon(
-                Icons.keyboard_arrow_down_rounded,
-                color: isActive 
-                  ? Colors.white
-                  : Colors.white.withOpacity(0.7),
-                size: 16,
+                icon,
+                color: Colors.white,
+                size: 14,
               ),
             ),
-          ),
-          isExpanded: true,
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          items: [
-            DropdownMenuItem<String>(
-              value: null,
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.all_inclusive_rounded,
-                    color: Colors.white.withOpacity(0.7),
-                    size: 14,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Todos',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                displayText,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(isActive ? 1 : 0.8),
+                  fontSize: 11,
+                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-            ...items.map((item) => DropdownMenuItem<String>(
-              value: item,
-              child: Row(
-                children: [
-                  Icon(
-                    icon,
-                    color: Colors.white.withOpacity(0.8),
-                    size: 14,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      item,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            )),
+            Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: Colors.white.withOpacity(isActive ? 1 : 0.7),
+              size: 18,
+            ),
           ],
-          onChanged: onChanged,
         ),
       ),
     );
+  }
+
+  List<String> _getAvailableEspecialidades() {
+    final map = <String, String>{};
+    for (final evento in _eventos) {
+      final especialidade = evento.especialidade.trim();
+      if (especialidade.isEmpty) continue;
+      final key = especialidade.toLowerCase();
+      map.putIfAbsent(key, () => especialidade);
+    }
+    final list = map.values.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return list;
+  }
+
+  List<String> _getAvailableTiposEvento() {
+    final map = <String, String>{};
+    for (final evento in _eventos) {
+      final tipo = evento.tipoEvento.trim();
+      if (tipo.isEmpty) continue;
+      final key = tipo.toLowerCase();
+      map.putIfAbsent(key, () => tipo);
+    }
+    final list = map.values.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return list;
+  }
+
+  List<String> _getAvailableIntensidades() {
+    final map = <int, String>{};
+    for (final evento in _eventos) {
+      final intensidade = int.tryParse(evento.intensidadeDor) ?? 0;
+      final bucket = _getIntensityBucket(intensidade);
+      map.putIfAbsent(bucket, () => _getIntensityFilterLabel(intensidade));
+    }
+    final entries = map.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    return entries.map((entry) => entry.value).toList();
+  }
+
+  void _showEspecialidadeFilter(List<String> especialidades) {
+    if (especialidades.isEmpty) {
+      Get.snackbar(
+        'Filtro',
+        'Nenhuma especialidade disponível nos eventos.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.white,
+        colorText: const Color(0xFF1E293B),
+        margin: const EdgeInsets.all(16),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        final selectedLower = _selectedEspecialidade?.trim().toLowerCase();
+        return SafeArea(
+          top: false,
+          child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.7,
+            ),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Filtrar por especialidade',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1E293B),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (selectedLower != null && selectedLower.isNotEmpty)
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _selectedEspecialidade = null;
+                            });
+                            _applyFilters();
+                            Navigator.pop(context);
+                          },
+                          child: const Text('Limpar'),
+                        ),
+                    ],
+                  ),
+                ),
+                Flexible(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    itemCount: especialidades.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 6),
+                    itemBuilder: (context, index) {
+                      final especialidade = especialidades[index];
+                      final isSelected = especialidade.toLowerCase() == selectedLower;
+                      return ListTile(
+                        onTap: () {
+                          setState(() {
+                            _selectedEspecialidade = especialidade;
+                          });
+                          _applyFilters();
+                          Navigator.pop(context);
+                        },
+                        leading: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.local_hospital_rounded,
+                            color: Color(0xFF1E3A8A),
+                          ),
+                        ),
+                        title: Text(
+                          especialidade,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1F2937),
+                          ),
+                        ),
+                        trailing: isSelected
+                            ? const Icon(Icons.check_rounded, color: Color(0xFF1E3A8A))
+                            : null,
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showTipoFilter(List<String> tipos) {
+    if (tipos.isEmpty) {
+      Get.snackbar(
+        'Filtro',
+        'Nenhum tipo de evento disponível.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.white,
+        colorText: const Color(0xFF1E293B),
+        margin: const EdgeInsets.all(16),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        final selectedLower = _selectedTipo?.trim().toLowerCase();
+        return SafeArea(
+          top: false,
+          child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.7,
+            ),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Filtrar por tipo de evento',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1E293B),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (selectedLower != null && selectedLower.isNotEmpty)
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _selectedTipo = null;
+                            });
+                            _applyFilters();
+                            Navigator.pop(context);
+                          },
+                          child: const Text('Limpar'),
+                        ),
+                    ],
+                  ),
+                ),
+                Flexible(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    itemCount: tipos.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 6),
+                    itemBuilder: (context, index) {
+                      final tipo = tipos[index];
+                      final isSelected = tipo.toLowerCase() == selectedLower;
+                      return ListTile(
+                        onTap: () {
+                          setState(() {
+                            _selectedTipo = tipo;
+                          });
+                          _applyFilters();
+                          Navigator.pop(context);
+                        },
+                        leading: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0F766E).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.event_note_rounded,
+                            color: Color(0xFF0F766E),
+                          ),
+                        ),
+                        title: Text(
+                          tipo,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1F2937),
+                          ),
+                        ),
+                        trailing: isSelected
+                            ? const Icon(Icons.check_rounded, color: Color(0xFF0F766E))
+                            : null,
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showIntensidadeFilter(List<String> intensidades) {
+    if (intensidades.isEmpty) {
+      Get.snackbar(
+        'Filtro',
+        'Nenhuma intensidade de dor registrada.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.white,
+        colorText: const Color(0xFF1E293B),
+        margin: const EdgeInsets.all(16),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        final selectedLower = _selectedIntensidadeDor?.trim().toLowerCase();
+        return SafeArea(
+          top: false,
+          child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.7,
+            ),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  margin: const EdgeInsets.only(top: 12),
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Filtrar por intensidade da dor',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1E293B),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (selectedLower != null && selectedLower.isNotEmpty)
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _selectedIntensidadeDor = null;
+                            });
+                            _applyFilters();
+                            Navigator.pop(context);
+                          },
+                          child: const Text('Limpar'),
+                        ),
+                    ],
+                  ),
+                ),
+                Flexible(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    itemCount: intensidades.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 6),
+                    itemBuilder: (context, index) {
+                      final intensidade = intensidades[index];
+                      final isSelected = intensidade.toLowerCase() == selectedLower;
+                      return ListTile(
+                        onTap: () {
+                          setState(() {
+                            _selectedIntensidadeDor = intensidade;
+                          });
+                          _applyFilters();
+                          Navigator.pop(context);
+                        },
+                        leading: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFDC2626).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.favorite_rounded,
+                            color: Color(0xFFDC2626),
+                          ),
+                        ),
+                        title: Text(
+                          intensidade,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1F2937),
+                          ),
+                        ),
+                        trailing: isSelected
+                            ? const Icon(Icons.check_rounded, color: Color(0xFFDC2626))
+                            : null,
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  int _getIntensityBucket(int intensidade) {
+    if (intensidade <= 0) return 0;
+    if (intensidade <= 2) return 1;
+    if (intensidade <= 4) return 2;
+    if (intensidade <= 6) return 3;
+    if (intensidade <= 8) return 4;
+    if (intensidade == 9) return 5;
+    return 6;
+  }
+
+  String _getIntensityFilterLabel(int intensidade) {
+    switch (_getIntensityBucket(intensidade)) {
+      case 0:
+        return 'Sem Dor (0/10)';
+      case 1:
+        return 'Dor Leve (1-2/10)';
+      case 2:
+        return 'Dor Moderada (3-4/10)';
+      case 3:
+        return 'Dor Moderada a Intensa (5-6/10)';
+      case 4:
+        return 'Dor Intensa (7-8/10)';
+      case 5:
+        return 'Dor Muito Intensa (9/10)';
+      default:
+        return 'Dor Insuportável (10/10)';
+    }
   }
 
   Widget _buildLoadingState() {
@@ -850,7 +1035,6 @@ class _EventoClinicoHistoryScreenState extends State<EventoClinicoHistoryScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Header com contador e filtros ativos
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -864,100 +1048,44 @@ class _EventoClinicoHistoryScreenState extends State<EventoClinicoHistoryScreen>
               ),
             ],
           ),
-          child: Column(
+          child: Row(
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      '${_filteredEventos.length} eventos encontrados',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF1E293B),
-                      ),
-                    ),
+              Expanded(
+                child: Text(
+                  '${_filteredEventos.length} evento${_filteredEventos.length == 1 ? '' : 's'} encontrado${_filteredEventos.length == 1 ? '' : 's'}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1E293B),
                   ),
-                  const SizedBox(width: 12),
-                  IconButton(
-                    onPressed: _loadEventos,
-                    icon: const Icon(Icons.refresh_rounded),
-                    color: const Color(0xFF00324A),
-                    style: IconButton.styleFrom(
-                      backgroundColor: const Color(0xFF00324A).withOpacity(0.1),
-                      padding: const EdgeInsets.all(8),
-                      minimumSize: const Size(36, 36),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                  if (_selectedTipo != null || _selectedEspecialidade != null || _selectedDateFrom != null || _selectedDateTo != null)
-                    Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF00324A).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: TextButton.icon(
-                        onPressed: () {
-                          setState(() {
-                            _selectedTipo = null;
-                            _selectedEspecialidade = null;
-                            _selectedDateFrom = null;
-                            _selectedDateTo = null;
-                            _filteredEventos = _eventos;
-                          });
-                        },
-                        icon: const Icon(
-                          Icons.clear,
-                          size: 16,
-                          color: Color(0xFF00324A),
-                        ),
-                        label: const Text(
-                          'Limpar Filtros',
-                          style: TextStyle(
-                            color: Color(0xFF00324A),
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-              // Mostrar filtros ativos
-              if (_selectedTipo != null || _selectedEspecialidade != null || _selectedDateFrom != null || _selectedDateTo != null) ...[
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    if (_selectedTipo != null)
-                      _buildFilterChip('Tipo: $_selectedTipo', () => setState(() => _selectedTipo = null)),
-                    if (_selectedEspecialidade != null)
-                      _buildFilterChip('Especialidade: $_selectedEspecialidade', () => setState(() => _selectedEspecialidade = null)),
-                    if (_selectedDateFrom != null)
-                      _buildFilterChip('De: ${_selectedDateFrom!.day}/${_selectedDateFrom!.month}/${_selectedDateFrom!.year}', () => setState(() => _selectedDateFrom = null)),
-                    if (_selectedDateTo != null)
-                      _buildFilterChip('Até: ${_selectedDateTo!.day}/${_selectedDateTo!.month}/${_selectedDateTo!.year}', () => setState(() => _selectedDateTo = null)),
-                  ],
                 ),
-              ],
+              ),
+              const SizedBox(width: 12),
+              IconButton(
+                onPressed: _loadEventos,
+                icon: const Icon(Icons.refresh_rounded),
+                color: const Color(0xFF00324A),
+                style: IconButton.styleFrom(
+                  backgroundColor: const Color(0xFF00324A).withOpacity(0.1),
+                  padding: const EdgeInsets.all(8),
+                  minimumSize: const Size(36, 36),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
         const SizedBox(height: 16),
-        
-        // Lista de eventos
         Expanded(
-          child: ListView.builder(
+          child: ListView.separated(
+            padding: const EdgeInsets.only(bottom: 24),
             itemCount: _filteredEventos.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 16),
             itemBuilder: (context, index) {
               final evento = _filteredEventos[index];
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: _buildEventoCard(evento),
-              );
+              return _buildEventoCard(evento);
             },
           ),
         ),
@@ -1465,14 +1593,9 @@ class _EventoClinicoHistoryScreenState extends State<EventoClinicoHistoryScreen>
                   const SizedBox(width: 16),
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: () {
+                      onPressed: () async {
                         Navigator.pop(context);
-                        Get.snackbar(
-                          'Exportar PDF',
-                          'Funcionalidade em desenvolvimento',
-                          backgroundColor: const Color(0xFF1E3A8A),
-                          colorText: Colors.white,
-                        );
+                        await _exportEventoToPdf(evento);
                       },
                       icon: const Icon(Icons.picture_as_pdf_rounded),
                       label: const Text('Exportar PDF'),
@@ -1656,5 +1779,265 @@ class _EventoClinicoHistoryScreenState extends State<EventoClinicoHistoryScreen>
         ),
       ),
     );
+  }
+
+  Future<void> _exportEventoToPdf(EventoClinico evento) async {
+    try {
+      final now = DateTime.now();
+      final pdf = pw.Document();
+      final bytes = await rootBundle.load('assets/images/Pulselogo.png');
+      final logoImage = pw.MemoryImage(bytes.buffer.asUint8List());
+      final generatedAt = DateFormat('dd/MM/yyyy HH:mm').format(now);
+      final atendimentoEm = DateFormat('dd/MM/yyyy HH:mm').format(evento.dataHora);
+      final patientName = AuthService.instance.currentUser?.name ?? 'Paciente não identificado';
+
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          build: (_) {
+            const titleColor = PdfColor.fromInt(0xFF00324A);
+            return pw.Container(
+              padding: const pw.EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text(
+                            'Histórico de Eventos Clínicos',
+                            style: pw.TextStyle(
+                              fontSize: 20,
+                              fontWeight: pw.FontWeight.bold,
+                              color: titleColor,
+                            ),
+                          ),
+                          pw.SizedBox(height: 6),
+                          pw.Text(
+                            'Documento gerado em $generatedAt',
+                            style: pw.TextStyle(
+                              fontSize: 10,
+                              color: PdfColors.blueGrey600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      pw.Container(
+                        width: 90,
+                        height: 36,
+                        child: pw.Image(logoImage, fit: pw.BoxFit.contain),
+                      ),
+                    ],
+                  ),
+                  pw.SizedBox(height: 12),
+                  pw.Text(
+                    'Dados principais',
+                    style: pw.TextStyle(
+                      fontSize: 14,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.blueGrey900,
+                    ),
+                  ),
+                  pw.SizedBox(height: 12),
+                  _pdfInfoRow('Título do evento', _fallbackValue(evento.titulo, fallback: 'Sem título informado')),
+                  _pdfInfoRow('Paciente', patientName),
+                  _pdfInfoRow('Especialidade', evento.especialidade),
+                  _pdfInfoRow('Tipo do evento', evento.tipoEvento),
+                  _pdfInfoRow('Data do atendimento', atendimentoEm),
+                  if (int.tryParse(evento.intensidadeDor) != null && int.tryParse(evento.intensidadeDor)! > 0)
+                    _pdfInfoRow(
+                      'Intensidade da dor',
+                      '${evento.intensidadeDor}/10 - ${_getIntensidadeLabel(int.parse(evento.intensidadeDor))}',
+                    ),
+                  pw.SizedBox(height: 18),
+                  pw.Text(
+                    'Descrição do evento',
+                    style: pw.TextStyle(
+                      fontSize: 14,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.blueGrey900,
+                    ),
+                  ),
+                  pw.SizedBox(height: 8),
+                  pw.Text(
+                    _formatLongText(evento.descricao, fallback: 'Sem descrição registrada.'),
+                    style: pw.TextStyle(
+                      fontSize: 11,
+                      height: 1.4,
+                      color: PdfColors.blueGrey800,
+                    ),
+                  ),
+                  if (evento.sintomas.isNotEmpty) ...[
+                    pw.SizedBox(height: 12),
+                    pw.Text(
+                      'Sintomas relatados',
+                      style: pw.TextStyle(
+                        fontSize: 14,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.blueGrey900,
+                      ),
+                    ),
+                    pw.SizedBox(height: 6),
+                    pw.Text(
+                      evento.sintomas,
+                      style: pw.TextStyle(
+                        fontSize: 11,
+                        height: 1.4,
+                        color: PdfColors.blueGrey800,
+                      ),
+                    ),
+                  ],
+                  if (evento.alivio.isNotEmpty) ...[
+                    pw.SizedBox(height: 12),
+                    pw.Text(
+                      'Medicação / Alívio',
+                      style: pw.TextStyle(
+                        fontSize: 14,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.blueGrey900,
+                      ),
+                    ),
+                    pw.SizedBox(height: 6),
+                    pw.Text(
+                      evento.alivio,
+                      style: pw.TextStyle(
+                        fontSize: 11,
+                        height: 1.4,
+                        color: PdfColors.blueGrey800,
+                      ),
+                    ),
+                  ],
+                  pw.SizedBox(height: 20),
+                  pw.Container(
+                    width: double.infinity,
+                    padding: const pw.EdgeInsets.all(12),
+                    decoration: pw.BoxDecoration(
+                      color: const PdfColor.fromInt(0xFFE0F2FE),
+                      borderRadius: pw.BorderRadius.circular(10),
+                    ),
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text(
+                          'Observações',
+                          style: pw.TextStyle(
+                            fontSize: 12,
+                            fontWeight: pw.FontWeight.bold,
+                            color: PdfColors.blueGrey900,
+                          ),
+                        ),
+                        pw.SizedBox(height: 4),
+                        pw.Text(
+                          'Histórico exportado automaticamente pelo aplicativo PulseFlow.',
+                          style: pw.TextStyle(
+                            fontSize: 10,
+                            color: PdfColors.blueGrey700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      );
+
+      final savedBytes = await pdf.save();
+      final directory = await getApplicationDocumentsDirectory();
+      final sanitizedPatient = _sanitizeFileName(patientName);
+      final atendimentoDate = DateFormat('ddMMyyyy').format(evento.dataHora);
+      final filename = '${sanitizedPatient}_$atendimentoDate.pdf';
+      final file = File('${directory.path}/$filename');
+      await file.writeAsBytes(savedBytes, flush: true);
+
+      Get.snackbar(
+        'PDF exportado',
+        'Arquivo salvo como $filename',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.white,
+        colorText: const Color(0xFF1E293B),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 4),
+      );
+
+      final openResult = await OpenFilex.open(file.path);
+      if (openResult.type != ResultType.done) {
+        Get.snackbar(
+          'Abrir arquivo',
+          'Não foi possível abrir o PDF automaticamente. Caminho: ${file.path}',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.orange.shade100,
+          colorText: const Color(0xFF1E293B),
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 5),
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Erro ao exportar',
+        'Não foi possível gerar o PDF. Tente novamente.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: const Color(0xFF1E293B),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 5),
+      );
+    }
+  }
+
+  pw.Widget _pdfInfoRow(String label, String value) {
+    return pw.Container(
+      margin: const pw.EdgeInsets.only(bottom: 8),
+      child: pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.SizedBox(
+            width: 140,
+            child: pw.Text(
+              '$label:',
+              style: pw.TextStyle(
+                fontSize: 12,
+                fontWeight: pw.FontWeight.bold,
+                color: PdfColors.blueGrey800,
+              ),
+            ),
+          ),
+          pw.Expanded(
+            child: pw.Text(
+              value.isEmpty ? 'Não informado' : value,
+              style: pw.TextStyle(
+                fontSize: 12,
+                color: PdfColors.blueGrey900,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatLongText(String text, {String fallback = 'Informação não registrada.'}) {
+    if (text.trim().isEmpty) {
+      return fallback;
+    }
+    return text.length > 400 ? '${text.substring(0, 400)}...' : text;
+  }
+
+  String _fallbackValue(String value, {required String fallback}) {
+    return value.trim().isEmpty ? fallback : value;
+  }
+
+  String _sanitizeFileName(String input) {
+    final sanitized = input.replaceAll(RegExp(r'[^\w\s-]'), '').trim();
+    if (sanitized.isEmpty) {
+      return 'paciente';
+    }
+    return sanitized.replaceAll(RegExp(r'\s+'), '_').toLowerCase();
   }
 }

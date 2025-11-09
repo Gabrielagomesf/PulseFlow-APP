@@ -26,6 +26,8 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
   late AnimationController _slideController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  String? _selectedEspecialidade;
+  String? _selectedMedico;
 
   @override
   void initState() {
@@ -85,22 +87,30 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
                     ),
                     child: Column(
                       children: [
-                          // Contador e ações
-                          _buildCounterSection(controller),
-                        const SizedBox(height: 24),
-                        
-                          Obx(() {
-                            if (controller.isLoading.value) {
-                              return _buildLoadingState();
-                            }
-                            
-                            final list = controller.notes;
-                            if (list.isEmpty) {
-                              return _buildEmptyState();
-                            }
-                            
-                            return _buildRecordsList(list, isTablet, isPhone);
-                          }),
+                        Obx(() {
+                          if (controller.isLoading.value) {
+                            return _buildLoadingState();
+                          }
+
+                          final notes = controller.notes.toList();
+                          final filtered = _applyFilters(notes);
+                          final totalCount = notes.length;
+                          final filteredCount = filtered.length;
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildCounterSection(totalCount, filteredCount),
+                              const SizedBox(height: 24),
+                              if (totalCount == 0)
+                                _buildEmptyState()
+                              else if (filtered.isEmpty)
+                                _buildNoResultsState()
+                              else
+                                _buildRecordsList(filtered, isTablet, isPhone),
+                            ],
+                          );
+                        }),
                       ],
                       ),
                     ),
@@ -208,15 +218,10 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
                 child: _buildEnhancedDropdown(
                   hint: 'Especialidade',
                   icon: Icons.category_outlined,
+                  value: _selectedEspecialidade,
                   onTap: () {
-                    Get.snackbar(
-                      'Filtro',
-                      'Filtro por especialidade em desenvolvimento',
-                      snackPosition: SnackPosition.BOTTOM,
-                      backgroundColor: Colors.white,
-                      colorText: const Color(0xFF1E293B),
-                      margin: const EdgeInsets.all(16),
-                    );
+                    final notes = Get.find<MedicalRecordsController>().notes.toList();
+                    _showEspecialidadeFilter(notes);
                   },
                 ),
               ),
@@ -225,15 +230,10 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
                 child: _buildEnhancedDropdown(
                   hint: 'Médico',
                   icon: Icons.person_search,
+                  value: _selectedMedico,
                   onTap: () {
-                    Get.snackbar(
-                      'Filtro',
-                      'Busca por médico em desenvolvimento',
-                      snackPosition: SnackPosition.BOTTOM,
-                      backgroundColor: Colors.white,
-                      colorText: const Color(0xFF1E293B),
-                      margin: const EdgeInsets.all(16),
-                    );
+                    final notes = Get.find<MedicalRecordsController>().notes.toList();
+                    _showMedicoFilter(notes);
                   },
                 ),
               ),
@@ -248,6 +248,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
     required String hint,
     required IconData icon,
     required VoidCallback onTap,
+    String? value,
   }) {
     return GestureDetector(
       onTap: onTap,
@@ -284,11 +285,11 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
             const SizedBox(width: 6),
             Expanded(
               child: Text(
-                hint,
+                value != null && value.isNotEmpty ? value : hint,
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
+                  color: value != null && value.isNotEmpty ? Colors.white : Colors.white.withOpacity(0.7),
+                  fontSize: 12,
+                  fontWeight: value != null && value.isNotEmpty ? FontWeight.w600 : FontWeight.w500,
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -304,22 +305,28 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
     );
   }
 
-  Widget _buildCounterSection(MedicalRecordsController controller) {
+  Widget _buildCounterSection(int totalCount, int filteredCount) {
+    final hasFilter = ((_selectedEspecialidade != null && _selectedEspecialidade!.isNotEmpty) ||
+        (_selectedMedico != null && _selectedMedico!.isNotEmpty));
+    final text = hasFilter && totalCount != filteredCount
+        ? '$filteredCount registro${filteredCount != 1 ? 's' : ''} filtrado${filteredCount != 1 ? 's' : ''} de $totalCount'
+        : '$filteredCount registro${filteredCount != 1 ? 's' : ''} encontrado${filteredCount != 1 ? 's' : ''}';
+
     return Row(
       children: [
         Expanded(
-          child: Obx(() => Text(
-            '${controller.notes.length} registro${controller.notes.length != 1 ? 's' : ''} encontrado${controller.notes.length != 1 ? 's' : ''}',
+          child: Text(
+            text,
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: Color(0xFF1E293B),
             ),
-          )),
+          ),
         ),
         const SizedBox(width: 12),
         IconButton(
-          onPressed: () => controller.loadNotes(),
+          onPressed: () => Get.find<MedicalRecordsController>().loadNotes(),
           icon: const Icon(Icons.refresh_rounded),
           color: const Color(0xFF00324A),
           style: IconButton.styleFrom(
@@ -1407,8 +1414,9 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
         directory = await getTemporaryDirectory();
       }
 
-      final filename =
-          'historico_${_sanitizeFileName(record.titulo)}_${DateFormat('yyyyMMdd_HHmmss').format(now)}.pdf';
+      final paciente = patientName;
+      final atendimentoDate = DateFormat('ddMMyyyy').format(record.data);
+      final filename = '${_sanitizeFileName(paciente)}_$atendimentoDate.pdf';
       final file = File('${directory.path}/$filename');
       await file.writeAsBytes(savedBytes, flush: true);
 
@@ -1712,6 +1720,285 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
           ),
         ],
       ),
+    );
+  }
+
+  List<MedicalNote> _applyFilters(List<MedicalNote> notes) {
+    final selectedEspecialidade = _selectedEspecialidade?.trim().toLowerCase();
+    final selectedMedico = _selectedMedico?.trim().toLowerCase();
+
+    return notes.where((note) {
+      final categoria = note.categoria.trim().toLowerCase();
+      final matchesEspecialidade = selectedEspecialidade == null || selectedEspecialidade.isEmpty
+          ? true
+          : categoria == selectedEspecialidade;
+
+      final medico = note.medico.trim().toLowerCase();
+      final matchesMedico = selectedMedico == null || selectedMedico.isEmpty ? true : medico == selectedMedico;
+
+      return matchesEspecialidade && matchesMedico;
+    }).toList();
+  }
+
+  List<String> _getAvailableEspecialidades(List<MedicalNote> notes) {
+    final map = <String, String>{};
+    for (final note in notes) {
+      final categoria = note.categoria.trim();
+      if (categoria.isNotEmpty) {
+        final key = categoria.toLowerCase();
+        map.putIfAbsent(key, () => categoria);
+      }
+    }
+    final list = map.values.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return list;
+  }
+
+  List<String> _getAvailableMedicos(List<MedicalNote> notes) {
+    final map = <String, String>{};
+    for (final note in notes) {
+      final medico = note.medico.trim();
+      if (medico.isNotEmpty) {
+        final key = medico.toLowerCase();
+        map.putIfAbsent(key, () => medico);
+      }
+    }
+    final list = map.values.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return list;
+  }
+
+  void _showEspecialidadeFilter(List<MedicalNote> notes) {
+    final especialidades = _getAvailableEspecialidades(notes);
+    if (especialidades.isEmpty) {
+      Get.snackbar(
+        'Filtro',
+        'Nenhuma especialidade disponível nos registros.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.white,
+        colorText: const Color(0xFF1E293B),
+        margin: const EdgeInsets.all(16),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        final selectedLower = _selectedEspecialidade?.toLowerCase();
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.7,
+          ),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Filtrar por especialidade',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1E293B),
+                      ),
+                    ),
+                    if (_selectedEspecialidade != null && _selectedEspecialidade!.isNotEmpty)
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _selectedEspecialidade = null;
+                          });
+                          Navigator.pop(context);
+                        },
+                        child: const Text('Limpar'),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Flexible(
+                child: ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  itemCount: especialidades.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 6),
+                  itemBuilder: (context, index) {
+                    final especialidade = especialidades[index];
+                    final isSelected = especialidade.toLowerCase() == selectedLower;
+                    return ListTile(
+                      onTap: () {
+                        setState(() {
+                          _selectedEspecialidade = especialidade;
+                        });
+                        Navigator.pop(context);
+                      },
+                      leading: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.local_hospital_rounded,
+                          color: Color(0xFF1E3A8A),
+                        ),
+                      ),
+                      title: Text(
+                        especialidade,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1F2937),
+                        ),
+                      ),
+                      trailing: isSelected
+                          ? const Icon(Icons.check_rounded, color: Color(0xFF1E3A8A))
+                          : null,
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showMedicoFilter(List<MedicalNote> notes) {
+    final medicos = _getAvailableMedicos(notes);
+    if (medicos.isEmpty) {
+      Get.snackbar(
+        'Filtro',
+        'Nenhum médico disponível nos registros.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.white,
+        colorText: const Color(0xFF1E293B),
+        margin: const EdgeInsets.all(16),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        final selectedLower = _selectedMedico?.toLowerCase();
+        return Container(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.7,
+          ),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Filtrar por médico',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1E293B),
+                      ),
+                    ),
+                    if (_selectedMedico != null && _selectedMedico!.isNotEmpty)
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _selectedMedico = null;
+                          });
+                          Navigator.pop(context);
+                        },
+                        child: const Text('Limpar'),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Flexible(
+                child: ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  itemCount: medicos.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 6),
+                  itemBuilder: (context, index) {
+                    final medico = medicos[index];
+                    final isSelected = medico.toLowerCase() == selectedLower;
+                    return ListTile(
+                      onTap: () {
+                        setState(() {
+                          _selectedMedico = medico;
+                        });
+                        Navigator.pop(context);
+                      },
+                      leading: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.person_outline_rounded,
+                          color: Color(0xFF1E3A8A),
+                        ),
+                      ),
+                      title: Text(
+                        medico,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1F2937),
+                        ),
+                      ),
+                      trailing: isSelected
+                          ? const Icon(Icons.check_rounded, color: Color(0xFF1E3A8A))
+                          : null,
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
     );
   }
 

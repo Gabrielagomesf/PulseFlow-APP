@@ -25,6 +25,8 @@ class _CriseGastriteFormScreenState extends State<CriseGastriteFormScreen> {
   int _intensidadeDor = 0;
   bool _alivioMedicacao = false;
   bool _isLoading = false;
+  CriseGastrite? _criseAtual;
+  bool _isEditing = false;
 
   final List<String> _sintomasComuns = [
     'Náusea',
@@ -51,13 +53,37 @@ class _CriseGastriteFormScreenState extends State<CriseGastriteFormScreen> {
   @override
   void initState() {
     super.initState();
+    _initializeFormData();
+  }
+
+  void _initializeFormData() {
+    final args = Get.arguments;
+
     if (widget.criseGastrite != null) {
-      _loadCriseData();
+      _criseAtual = widget.criseGastrite;
+      _isEditing = true;
+    }
+
+    if (args != null) {
+      if (args is Map && args['crise'] is CriseGastrite) {
+        _criseAtual = args['crise'] as CriseGastrite;
+        _isEditing = args['isEditing'] == true;
+      } else if (args is CriseGastrite) {
+        _criseAtual = args;
+        _isEditing = true;
+      }
+    }
+
+    if (_criseAtual != null && _criseAtual!.id != null) {
+      _isEditing = true;
+    }
+
+    if (_criseAtual != null) {
+      _populateForm(_criseAtual!);
     }
   }
 
-  void _loadCriseData() {
-    final crise = widget.criseGastrite!;
+  void _populateForm(CriseGastrite crise) {
     _selectedDate = crise.data;
     _intensidadeDor = crise.intensidadeDor;
     _sintomasController.text = crise.sintomas;
@@ -149,7 +175,7 @@ class _CriseGastriteFormScreenState extends State<CriseGastriteFormScreen> {
       }
 
       final crise = CriseGastrite(
-        id: widget.criseGastrite?.id,
+        id: _criseAtual?.id,
         pacienteId: currentUser!.id,
         data: _selectedDate,
         intensidadeDor: _intensidadeDor,
@@ -158,19 +184,22 @@ class _CriseGastriteFormScreenState extends State<CriseGastriteFormScreen> {
         medicacao: _medicacaoController.text.trim(),
         alivioMedicacao: _alivioMedicacao,
         observacoes: _observacoesController.text.trim(),
-        createdAt: widget.criseGastrite?.createdAt,
+        createdAt: _criseAtual?.createdAt ?? DateTime.now(),
         updatedAt: DateTime.now(),
       );
 
-      if (widget.criseGastrite == null) {
-        await DatabaseService().createCriseGastrite(crise);
-      } else {
+      if (_isEditing && _criseAtual?.id != null) {
         await DatabaseService().updateCriseGastrite(crise);
+        _criseAtual = crise;
+      } else {
+        await DatabaseService().createCriseGastrite(crise);
+        _criseAtual = crise;
       }
 
-      // Mostrar confirmação e limpar campos
       _showSuccessAlert();
-      _clearForm();
+      if (!_isEditing) {
+        _clearForm();
+      }
     } catch (e) {
       Get.snackbar(
         'Erro',
@@ -242,7 +271,7 @@ class _CriseGastriteFormScreenState extends State<CriseGastriteFormScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    widget.criseGastrite == null ? 'Nova Crise de Gastrite' : 'Editar Crise',
+                                    _isEditing ? 'Editar Crise de Gastrite' : 'Nova Crise de Gastrite',
                                     style: const TextStyle(
                                       fontSize: 20,
                                       fontWeight: FontWeight.w700,
@@ -374,7 +403,7 @@ class _CriseGastriteFormScreenState extends State<CriseGastriteFormScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  widget.criseGastrite == null ? 'Registro de Crise de Gastrite' : 'Editar Crise',
+                  _isEditing ? 'Editar Crise de Gastrite' : 'Registro de Crise de Gastrite',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w700,
@@ -509,7 +538,7 @@ class _CriseGastriteFormScreenState extends State<CriseGastriteFormScreen> {
                     ),
                   )
                 : Text(
-                    widget.criseGastrite == null ? 'Salvar' : 'Atualizar',
+                    _isEditing ? 'Atualizar' : 'Salvar',
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
                     ),
@@ -586,9 +615,9 @@ class _CriseGastriteFormScreenState extends State<CriseGastriteFormScreen> {
                   child: Column(
                     children: [
                       Text(
-                        widget.criseGastrite == null 
-                            ? 'Crise de gastrite registrada com sucesso!'
-                            : 'Crise de gastrite atualizada com sucesso!',
+                        _isEditing
+                            ? 'Crise de gastrite atualizada com sucesso!'
+                            : 'Crise de gastrite registrada com sucesso!',
                         style: const TextStyle(
                           fontSize: 16,
                           color: Color(0xFF374151),
@@ -642,6 +671,8 @@ class _CriseGastriteFormScreenState extends State<CriseGastriteFormScreen> {
       _intensidadeDor = 0;
       _alivioMedicacao = false;
       _selectedDate = DateTime.now();
+      _criseAtual = null;
+      _isEditing = false;
     });
   }
 

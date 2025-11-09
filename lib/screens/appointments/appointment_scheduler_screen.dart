@@ -528,44 +528,9 @@ class AppointmentSchedulerScreen extends StatelessWidget {
   }
 
   Widget _buildSlotsGrid(AppointmentSchedulerController controller) {
-    final doctor = controller.selectedDoctor;
-    if (doctor == null) {
-      return _buildEmptyState(
-        icon: Icons.access_time,
-        message: 'Escolha um médico para visualizar os horários.',
-      );
-    }
-
-    final slots = controller.getAvailableSlotsForSelectedDoctor();
-    if (slots.isEmpty) {
-      return _buildEmptyState(
-        icon: Icons.schedule,
-        message: 'Nenhum horário disponível nessa data. Escolha outro dia.',
-      );
-    }
-
-    return Wrap(
-      spacing: 12,
-      runSpacing: 12,
-      children: slots.map((slot) {
-        final isSelected = controller.selectedSlot.value == slot;
-        return ChoiceChip(
-          label: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            child: Text(
-              slot,
-              style: TextStyle(
-                color: isSelected ? Colors.white : const Color(0xFF1E293B),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          selected: isSelected,
-          onSelected: (_) => controller.selectSlot(slot),
-          selectedColor: const Color(0xFF00324A),
-          backgroundColor: Colors.grey[100],
-        );
-      }).toList(),
+    return _buildEmptyState(
+      icon: Icons.work_history_outlined,
+      message: 'A seleção de horários está em desenvolvimento. Em breve você poderá escolher aqui.',
     );
   }
 

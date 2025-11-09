@@ -1957,7 +1957,10 @@ class _CriseGastriteHistoryScreenState extends State<CriseGastriteHistoryScreen>
                     child: ElevatedButton.icon(
                       onPressed: () {
                         Navigator.pop(context);
-                        Get.toNamed(Routes.CRISE_GASTRITE_FORM, arguments: crise);
+                        Get.toNamed(
+                          Routes.CRISE_GASTRITE_FORM,
+                          arguments: {'crise': crise, 'isEditing': true},
+                        );
                       },
                       icon: const Icon(Icons.edit_rounded),
                       label: const Text('Editar'),

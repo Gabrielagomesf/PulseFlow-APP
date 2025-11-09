@@ -321,16 +321,8 @@ class AppointmentSchedulerController extends GetxController {
   }
 
   List<String> getAvailableSlotsForSelectedDoctor() {
-    final doctor = selectedDoctor;
-    if (doctor == null) {
-      return const [];
-    }
-    final weekday = selectedDate.value.weekday;
-    final slots = doctor.weeklySlots[weekday];
-    if (slots == null || slots.isEmpty) {
-      return const [];
-    }
-    return slots.where((slot) => _isSlotAvailable(doctor.id, selectedDate.value, slot)).toList();
+    selectedSlot.value = null;
+    return const [];
   }
 
   bool _isSlotAvailable(String doctorId, DateTime date, String slot) {

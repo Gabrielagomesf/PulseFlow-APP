@@ -36,6 +36,10 @@
 	<string>Este app pode salvar dados de saúde para manter um registro completo do seu bem-estar.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Este aplicativo precisa acessar a rede local para conectar com dispositivos de saúde.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_dartobservatory._tcp</string>
+	</array>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Este aplicativo precisa salvar fotos na galeria.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

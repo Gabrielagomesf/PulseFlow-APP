@@ -12,6 +12,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:flutter/services.dart';
 import 'package:open_filex/open_filex.dart';
 import '../../routes/app_routes.dart';
+import '../../widgets/pulse_bottom_navigation.dart';
 
 class EventoClinicoHistoryScreen extends StatefulWidget {
   const EventoClinicoHistoryScreen({super.key});
@@ -142,7 +143,9 @@ class _EventoClinicoHistoryScreenState extends State<EventoClinicoHistoryScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: AppTheme.blueSystemOverlayStyle,
+      child: Scaffold(
       backgroundColor: const Color(0xFF00324A),
       body: Column(
         children: [
@@ -187,8 +190,8 @@ class _EventoClinicoHistoryScreenState extends State<EventoClinicoHistoryScreen>
           ),
         ),
       ),
-      bottomNavigationBar: _buildBottomNavigation(),
-    );
+      bottomNavigationBar: const PulseBottomNavigation(activeItem: PulseNavItem.history),
+    ));
   }
 
   Widget _buildModernHeader() {
@@ -1796,78 +1799,6 @@ class _EventoClinicoHistoryScreenState extends State<EventoClinicoHistoryScreen>
     return '$dd/$mm/$yyyy';
   }
 
-  Widget _buildBottomNavigation() {
-    return SafeArea(
-      top: false,
-      bottom: true,
-      child: Container(
-        height: 80,
-        decoration: const BoxDecoration(
-          color: Color(0xFF00324A),
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildNavItem(Icons.home, 'Início', false, () {
-              Get.offAllNamed(Routes.HOME);
-            }),
-            _buildNavItem(Icons.grid_view, 'Históricos', true, () {
-              Get.toNamed(Routes.HISTORY_SELECTION);
-            }),
-            _buildNavItem(Icons.add, 'Registro', false, () {
-              Get.toNamed(Routes.MENU);
-            }),
-            _buildNavItem(Icons.vpn_key, 'Pulse Key', false, () {
-              Get.toNamed(Routes.PULSE_KEY);
-            }),
-            _buildNavItem(Icons.person, 'Perfil', false, () {
-              Get.toNamed(Routes.PROFILE);
-            }),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(IconData icon, String label, bool isSelected, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.white.withOpacity(0.2) : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? Colors.white : Colors.white.withOpacity(0.6),
-              size: isSelected ? 26 : 24,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? Colors.white : Colors.white.withOpacity(0.6),
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Future<void> _exportEventoToPdf(EventoClinico evento) async {
     try {

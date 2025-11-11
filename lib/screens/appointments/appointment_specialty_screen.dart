@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../../routes/app_routes.dart';
 import '../../theme/app_theme.dart';
 import 'appointment_scheduler_controller.dart';
+import '../../widgets/pulse_bottom_navigation.dart';
 
 class AppointmentSpecialtyScreen extends StatefulWidget {
   const AppointmentSpecialtyScreen({super.key});
@@ -27,7 +29,9 @@ class _AppointmentSpecialtyScreenState extends State<AppointmentSpecialtyScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: AppTheme.blueSystemOverlayStyle,
+      child: Scaffold(
       backgroundColor: const Color(0xFF00324A),
       body: Column(
         children: [
@@ -117,8 +121,8 @@ class _AppointmentSpecialtyScreenState extends State<AppointmentSpecialtyScreen>
           ),
         ],
       ),
-      bottomNavigationBar: _buildBottomNavigation(),
-    );
+      bottomNavigationBar: const PulseBottomNavigation(activeItem: PulseNavItem.menu),
+    ));
   }
 }
 
@@ -266,76 +270,6 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-Widget _buildBottomNavigation() {
-  return SafeArea(
-    top: false,
-    bottom: true,
-    child: Container(
-      height: 80,
-      decoration: const BoxDecoration(
-        color: Color(0xFF00324A),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildNavItem(icon: Icons.home, label: 'Início', route: Routes.HOME),
-          _buildNavItem(icon: Icons.grid_view, label: 'Históricos', route: Routes.HISTORY_SELECTION),
-          _buildNavItem(icon: Icons.add, label: 'Registro', route: Routes.MENU),
-          _buildNavItem(icon: Icons.vpn_key, label: 'Pulse Key', route: Routes.PULSE_KEY),
-          _buildNavItem(icon: Icons.person, label: 'Perfil', route: Routes.PROFILE),
-        ],
-      ),
-    ),
-  );
-}
-
-Widget _buildNavItem({
-  required IconData icon,
-  required String label,
-  required String route,
-}) {
-  final isCurrent = Get.currentRoute == route;
-  return GestureDetector(
-    onTap: () {
-      if (!isCurrent) {
-        Get.offAllNamed(route);
-      }
-    },
-    child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: isCurrent ? Colors.white.withOpacity(0.2) : Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            color: isCurrent ? Colors.white : Colors.white.withOpacity(0.6),
-            size: isCurrent ? 26 : 24,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: isCurrent ? Colors.white : Colors.white.withOpacity(0.6),
-              fontSize: 11,
-              fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    ),
-  );
-}
 
 class _ErrorState extends StatelessWidget {
   final String message;

@@ -9,8 +9,7 @@ import 'paciente_controller.dart'; // Ajuste conforme o caminho
 class LoginController extends GetxController with SafeControllerMixin {
   final AuthService _authService = Get.find<AuthService>();
   final _storage = const FlutterSecureStorage();
-  final formKey = GlobalKey<FormState>();
-  
+
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   
@@ -72,7 +71,6 @@ class LoginController extends GetxController with SafeControllerMixin {
   }
 
   Future<void> login() async {
-    if (!formKey.currentState!.validate()) return;
 
     try {
       isLoading.value = true;

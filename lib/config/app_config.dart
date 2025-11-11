@@ -28,8 +28,26 @@ class AppConfig {
       print('⚠️ [AppConfig] Erro ao ler API_BASE_URL do .env: $e');
     }
     // URL padrão de fallback (desenvolvimento local)
-    print('🔧 [CONFIG] Usando URL padrão: http://localhost:$DEFAULT_BACKEND_PORT');
-    return 'http://localhost:$DEFAULT_BACKEND_PORT';
+    print('🔧 [CONFIG] Usando URL padrão: ${defaultApiBaseUrl}');
+    return defaultApiBaseUrl;
+  }
+
+  static String get defaultApiBaseUrl => 'http://localhost:$DEFAULT_BACKEND_PORT';
+
+  static String? get apiFallbackUrl {
+    try {
+      final fallback = dotenv.env['API_FALLBACK_URL'];
+      if (fallback != null && fallback.isNotEmpty) {
+        final cleanFallback = fallback.endsWith('/')
+            ? fallback.substring(0, fallback.length - 1)
+            : fallback;
+        print('🔧 [CONFIG] Fallback do .env: $cleanFallback');
+        return cleanFallback;
+      }
+    } catch (e) {
+      print('⚠️ [AppConfig] Erro ao ler API_FALLBACK_URL: $e');
+    }
+    return null;
   }
   
   // Configurações do Banco de Dados MongoDB

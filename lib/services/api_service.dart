@@ -62,6 +62,25 @@ class ApiService {
     return headers;
   }
 
+  Future<http.Response> _postAccessCodeRequest({
+    required String base,
+    required Map<String, String> headers,
+    required Map<String, dynamic> requestBody,
+  }) async {
+    print('🔧 [ApiService] Executando POST para base: $base');
+    return _httpClient.post(
+      Uri.parse('$base/api/access-code/gerar'),
+      headers: headers,
+      body: jsonEncode(requestBody),
+    ).timeout(const Duration(seconds: 30));
+  }
+
+  bool _isLocalTunnelUnavailable(http.Response response) {
+    final tunnelStatus = response.headers['x-localtunnel-status'] ?? '';
+    return response.statusCode == 503 &&
+        tunnelStatus.toLowerCase().contains('tunnel unavailable');
+  }
+
   // Enviar código de acesso para o backend
   Future<Map<String, dynamic>> sendAccessCode({
     required String patientId,
@@ -100,12 +119,31 @@ class ApiService {
       print('🔍 [ApiService] Usando cliente HTTP personalizado para SSL');
       print('🔍 [ApiService] Corpo da requisição: ${jsonEncode(requestBody)}');
 
-      final response = await _httpClient.post(
-        Uri.parse(url),
+      var currentBaseUrl = baseUrl;
+      var response = await _postAccessCodeRequest(
+        base: currentBaseUrl,
         headers: headers,
-        body: jsonEncode(requestBody),
-      ).timeout(const Duration(seconds: 30));
-      
+        requestBody: requestBody,
+      );
+
+      if (_isLocalTunnelUnavailable(response)) {
+        final fallbackBase = AppConfig.apiFallbackUrl ?? AppConfig.defaultApiBaseUrl;
+        if (fallbackBase != currentBaseUrl) {
+          print('⚠️ [ApiService] Túnel indisponível. Tentando fallback local: $fallbackBase');
+          currentBaseUrl = fallbackBase;
+          response = await _postAccessCodeRequest(
+            base: currentBaseUrl,
+            headers: headers,
+            requestBody: requestBody,
+          );
+          print('📡 [ApiService] Resultado do fallback - Status: ${response.statusCode}');
+        } else {
+          throw Exception(
+            'Túnel local indisponível. Reinicie o serviço do localtunnel/ngrok ou configure API_FALLBACK_URL com o IP do backend.',
+          );
+        }
+      }
+
       print('✅ [ApiService] Resposta recebida com sucesso');
       
       print('📡 [ApiService] Status code: ${response.statusCode}');
@@ -157,8 +195,15 @@ class ApiService {
           throw Exception('Endpoint não encontrado. Verifique a configuração do servidor.');
         } else if (response.statusCode == 500) {
           throw Exception('Erro interno do servidor. Tente novamente mais tarde.');
+        } else if (response.statusCode == 503) {
+          if (_isLocalTunnelUnavailable(response)) {
+            throw Exception(
+              'Túnel local indisponível (503). Reinicie o túnel ou ajuste API_BASE_URL/API_FALLBACK_URL para uma URL acessível pelo dispositivo.',
+            );
+          }
+          throw Exception('Servidor indisponível (503). Tente novamente em instantes.');
         } else {
-          throw Exception('Erro ao enviar código: ${response.statusCode} - $errorMessage');
+          throw Exception('Erro ao enviar código (${response.statusCode}) em $currentBaseUrl - $errorMessage');
         }
       }
     } on SocketException catch (e) {

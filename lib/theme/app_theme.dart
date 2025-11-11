@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
@@ -125,5 +126,13 @@ class AppTheme {
       Color(0xFFE3F2FD),
       Color(0xFFBBDEFB),
     ],
+  );
+
+  static final SystemUiOverlayStyle blueSystemOverlayStyle = SystemUiOverlayStyle.light.copyWith(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+    statusBarBrightness: Brightness.dark,
+    systemNavigationBarColor: primaryBlue,
+    systemNavigationBarIconBrightness: Brightness.light,
   );
 } 

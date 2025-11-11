@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../models/crise_gastrite.dart';
 import '../../theme/app_theme.dart';
 import '../../services/auth_service.dart';
 import '../../services/database_service.dart';
+import '../../widgets/pulse_bottom_navigation.dart';
 
 class CriseGastriteFormScreen extends StatefulWidget {
   final CriseGastrite? criseGastrite;
@@ -217,7 +219,9 @@ class _CriseGastriteFormScreenState extends State<CriseGastriteFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: AppTheme.blueSystemOverlayStyle,
+      child: Scaffold(
       backgroundColor: const Color(0xFF00324A),
       body: Column(
         children: [
@@ -365,8 +369,8 @@ class _CriseGastriteFormScreenState extends State<CriseGastriteFormScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: _buildBottomNavigation(),
-    );
+      bottomNavigationBar: const PulseBottomNavigation(activeItem: PulseNavItem.menu),
+    ));
   }
 
   Widget _buildHeader() {
@@ -425,72 +429,9 @@ class _CriseGastriteFormScreenState extends State<CriseGastriteFormScreen> {
     );
   }
 
-  Widget _buildBottomNavigation() {
-    return SafeArea(
-      top: false,
-      bottom: true,
-      child: Container(
-        height: 80,
-        decoration: const BoxDecoration(
-          color: Color(0xFF00324A),
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildNavItem(Icons.home, 'Início', false, () {
-              Get.offAllNamed('/home');
-            }),
-            _buildNavItem(Icons.grid_view, 'Históricos', false, () {
-              Get.toNamed('/history-selection');
-            }),
-            _buildNavItem(Icons.add, 'Registro', true, () {}),
-            _buildNavItem(Icons.vpn_key, 'Pulse Key', false, () {
-              Get.toNamed('/pulse-key');
-            }),
-            _buildNavItem(Icons.person, 'Perfil', false, () {
-              Get.toNamed('/profile');
-            }),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _buildBottomNavigation() => const SizedBox.shrink();
 
-  Widget _buildNavItem(IconData icon, String label, bool isSelected, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.white.withOpacity(0.2) : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? Colors.white : Colors.white.withOpacity(0.6),
-              size: isSelected ? 26 : 24,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? Colors.white : Colors.white.withOpacity(0.6),
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _buildNavItem(IconData icon, String label, bool isSelected, VoidCallback onTap) => const SizedBox.shrink();
 
   Widget _buildActionButtons() {
     return Row(

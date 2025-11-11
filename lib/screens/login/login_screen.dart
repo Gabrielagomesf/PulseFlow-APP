@@ -10,6 +10,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin {
+  final _formKey = GlobalKey<FormState>();
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
 
@@ -110,7 +111,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
         ),
       ),
       child: Form(
-        key: Get.find<LoginController>().formKey,
+        key: _formKey,
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           child: Padding(
@@ -356,7 +357,10 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
       child: ElevatedButton(
         onPressed: Get.find<LoginController>().isLoading.value
             ? null
-            : Get.find<LoginController>().login,
+            : () {
+                if (!_formKey.currentState!.validate()) return;
+                Get.find<LoginController>().login();
+              },
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,

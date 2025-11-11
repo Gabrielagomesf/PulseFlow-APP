@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../routes/app_routes.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/pulse_bottom_navigation.dart';
 
 class HistorySelectionScreen extends StatefulWidget {
   const HistorySelectionScreen({Key? key}) : super(key: key);
@@ -36,62 +37,65 @@ class _HistorySelectionScreenState extends State<HistorySelectionScreen> with Si
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF00324A),
-      body: Column(
-        children: [
-          // Header
-          _buildHeader(),
-          
-          // Conteúdo principal
-          Expanded(
-            child: Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(24),
-                  topRight: Radius.circular(24),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: AppTheme.blueSystemOverlayStyle,
+      child: Scaffold(
+        backgroundColor: const Color(0xFF00324A),
+        body: Column(
+          children: [
+            // Header
+            _buildHeader(),
+            
+            // Conteúdo principal
+            Expanded(
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    topRight: Radius.circular(24),
+                  ),
                 ),
-              ),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Título da seção
-                      Text(
-                        'Históricos',
-                        style: AppTheme.titleLarge.copyWith(
-                          color: const Color(0xFF1E293B),
-                          fontWeight: FontWeight.w700,
-                          fontSize: 28,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Título da seção
+                        Text(
+                          'Históricos',
+                          style: AppTheme.titleLarge.copyWith(
+                            color: const Color(0xFF1E293B),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 28,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Escolha o histórico que deseja visualizar',
-                        style: AppTheme.bodyMedium.copyWith(
-                          color: const Color(0xFF64748B),
-                          fontSize: 15,
+                        const SizedBox(height: 8),
+                        Text(
+                          'Escolha o histórico que deseja visualizar',
+                          style: AppTheme.bodyMedium.copyWith(
+                            color: const Color(0xFF64748B),
+                            fontSize: 15,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 32),
-                      
-                      // Lista de históricos
-                      _buildHistoryList(),
-                      
-                      const SizedBox(height: 24),
-                    ],
+                        const SizedBox(height: 32),
+                        
+                        // Lista de históricos
+                        _buildHistoryList(),
+                        
+                        const SizedBox(height: 24),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
+        bottomNavigationBar: const PulseBottomNavigation(activeItem: PulseNavItem.history),
       ),
-      bottomNavigationBar: _buildBottomNavigation(),
     );
   }
 
@@ -330,67 +334,5 @@ class _HistorySelectionScreenState extends State<HistorySelectionScreen> with Si
     );
   }
 
-  Widget _buildBottomNavigation() {
-    return SafeArea(
-      top: false,
-      bottom: true,
-      child: Container(
-        height: 80,
-        decoration: const BoxDecoration(
-          color: Color(0xFF00324A),
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildNavItem(Icons.home, 'Início', false, () {
-              Get.offAllNamed('/home');
-            }),
-            _buildNavItem(Icons.grid_view, 'Históricos', true, () {}),
-            _buildNavItem(Icons.add, 'Registro', false, () {
-              Get.toNamed('/menu');
-            }),
-            _buildNavItem(Icons.vpn_key, 'Pulse Key', false, () {
-              Get.toNamed('/pulse-key');
-            }),
-            _buildNavItem(Icons.person, 'Perfil', false, () {
-              Get.toNamed('/profile');
-            }),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(IconData icon, String label, bool isSelected, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? Colors.white : Colors.white70,
-              size: 24,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? Colors.white : Colors.white70,
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 

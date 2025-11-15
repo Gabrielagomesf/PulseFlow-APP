@@ -13,6 +13,7 @@ import 'package:flutter/services.dart';
 import 'package:open_filex/open_filex.dart';
 import '../../routes/app_routes.dart';
 import '../../widgets/pulse_bottom_navigation.dart';
+import '../../theme/app_theme.dart';
 
 class EventoClinicoHistoryScreen extends StatefulWidget {
   const EventoClinicoHistoryScreen({super.key});

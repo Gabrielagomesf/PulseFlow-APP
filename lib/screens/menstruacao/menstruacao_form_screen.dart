@@ -350,18 +350,11 @@ class _MenstruacaoFormScreenState extends State<MenstruacaoFormScreen> {
       child: Row(
         children: [
           // Botão de voltar
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: IconButton(
-              onPressed: () => Navigator.pop(context),
-              icon: const Icon(
-                Icons.arrow_back_ios_rounded,
-                color: Colors.white,
-                size: 20,
-              ),
+          IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(
+              Icons.arrow_back,
+              color: Colors.white,
             ),
           ),
           const SizedBox(width: 16),
@@ -974,6 +967,11 @@ class _MenstruacaoFormScreenState extends State<MenstruacaoFormScreen> {
     );
   }
 
+  String _capitalizeFirst(String text) {
+    if (text.isEmpty) return text;
+    return text[0].toUpperCase() + text.substring(1);
+  }
+
   Widget _buildModernCalendar() {
     final firstDayOfMonth = DateTime(_currentMonth.year, _currentMonth.month, 1);
     final lastDayOfMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 0);
@@ -982,101 +980,109 @@ class _MenstruacaoFormScreenState extends State<MenstruacaoFormScreen> {
     return Column(
       children: [
         // Header do calendário moderno
-              Container(
-          padding: const EdgeInsets.symmetric(vertical: 20),
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 4),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                          AppTheme.primaryBlue,
-                          AppTheme.primaryBlue.withOpacity(0.8),
-                    ],
-                  ),
-                      borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                          color: AppTheme.primaryBlue.withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _capitalizeFirst(DateFormat('MMMM yyyy', 'pt_BR').format(_currentMonth)),
+                      style: AppTheme.titleLarge.copyWith(
+                        color: AppTheme.textPrimary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 22,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Selecione o período do ciclo',
+                      style: AppTheme.bodySmall.copyWith(
+                        color: AppTheme.textSecondary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),
-                    child: const Icon(
-                      Icons.calendar_month_rounded,
-                      color: Colors.white,
-                      size: 22,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        DateFormat('MMMM yyyy', 'pt_BR').format(_currentMonth),
-                        style: AppTheme.titleLarge.copyWith(
-                          color: AppTheme.textPrimary,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 20,
-                        ),
-                      ),
-                      Text(
-                        'Navegue pelos meses',
-                        style: AppTheme.bodySmall.copyWith(
-                          color: AppTheme.textSecondary,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
               ),
-              Row(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AppTheme.lightBlue,
-                          AppTheme.lightBlue.withOpacity(0.7),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppTheme.secondaryBlue.withOpacity(0.3)),
-                    ),
-                      child: Row(
-                        children: [
-                        IconButton(
-                          onPressed: () {
-                            setState(() {
-                              _currentMonth = DateTime(_currentMonth.year, _currentMonth.month - 1);
-                            });
-                          },
-                          icon: Icon(Icons.chevron_left_rounded, color: AppTheme.primaryBlue),
-                          style: IconButton.styleFrom(
-                            padding: const EdgeInsets.all(10),
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () {
-                            setState(() {
-                              _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + 1);
-                            });
-                          },
-                          icon: Icon(Icons.chevron_right_rounded, color: AppTheme.primaryBlue),
-                          style: IconButton.styleFrom(
-                            padding: const EdgeInsets.all(10),
-                          ),
-                        ),
-                      ],
-                    ),
+              const SizedBox(width: 12),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppTheme.secondaryBlue.withOpacity(0.15),
+                    width: 1.5,
                   ),
-                ],
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryBlue.withOpacity(0.08),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                      spreadRadius: 0,
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          setState(() {
+                            _currentMonth = DateTime(_currentMonth.year, _currentMonth.month - 1);
+                          });
+                        },
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(16),
+                          bottomLeft: Radius.circular(16),
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          child: Icon(
+                            Icons.chevron_left_rounded,
+                            color: AppTheme.primaryBlue,
+                            size: 22,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Container(
+                      width: 1,
+                      height: 32,
+                      color: AppTheme.secondaryBlue.withOpacity(0.15),
+                    ),
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          setState(() {
+                            _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + 1);
+                          });
+                        },
+                        borderRadius: const BorderRadius.only(
+                          topRight: Radius.circular(16),
+                          bottomRight: Radius.circular(16),
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          child: Icon(
+                            Icons.chevron_right_rounded,
+                            color: AppTheme.primaryBlue,
+                            size: 22,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -1085,17 +1091,15 @@ class _MenstruacaoFormScreenState extends State<MenstruacaoFormScreen> {
         const SizedBox(height: 20),
         
         // Dias da semana modernos
-                            Container(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-                              decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                AppTheme.lightBlue,
-                AppTheme.lightBlue.withOpacity(0.7),
-              ],
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 18),
+          decoration: BoxDecoration(
+            color: AppTheme.lightBlue.withOpacity(0.4),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: AppTheme.secondaryBlue.withOpacity(0.2),
+              width: 1.5,
             ),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppTheme.secondaryBlue.withOpacity(0.3)),
           ),
           child: Row(
             children: ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((day) => 
@@ -1105,8 +1109,9 @@ class _MenstruacaoFormScreenState extends State<MenstruacaoFormScreen> {
                     day,
                     style: AppTheme.bodyMedium.copyWith(
                       color: AppTheme.textSecondary,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                      letterSpacing: 0.5,
                     ),
                   ),
                 ),
@@ -1142,54 +1147,58 @@ class _MenstruacaoFormScreenState extends State<MenstruacaoFormScreen> {
                   child: GestureDetector(
                     onTap: () => _onDateSelected(date),
                     child: Container(
-                      height: 50,
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      height: 52,
+                      margin: const EdgeInsets.symmetric(horizontal: 2.5),
                       decoration: BoxDecoration(
                         gradient: isSelectedStart || isSelectedEnd
                             ? LinearGradient(
                                 colors: [
                                   AppTheme.primaryBlue,
-                                  AppTheme.primaryBlue.withOpacity(0.8),
+                                  AppTheme.primaryBlue.withOpacity(0.85),
                                 ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               )
                             : isInRange
                                 ? LinearGradient(
                                     colors: [
-                                      AppTheme.primaryBlue.withOpacity(0.15),
-                                      AppTheme.primaryBlue.withOpacity(0.1),
+                                      AppTheme.primaryBlue.withOpacity(0.12),
+                                      AppTheme.primaryBlue.withOpacity(0.08),
                                     ],
                                   )
                                 : isToday
                                     ? LinearGradient(
                                         colors: [
-                                          AppTheme.primaryBlue.withOpacity(0.1),
-                                          AppTheme.primaryBlue.withOpacity(0.05),
+                                          AppTheme.primaryBlue.withOpacity(0.08),
+                                          AppTheme.primaryBlue.withOpacity(0.04),
                                         ],
                                       )
                                     : null,
                         color: isSelectedStart || isSelectedEnd || isInRange || isToday
                             ? null
                             : Colors.transparent,
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: isSelectedStart || isSelectedEnd
-                              ? AppTheme.primaryBlue
+                              ? AppTheme.primaryBlue.withOpacity(0.3)
                               : isToday
-                                  ? AppTheme.primaryBlue.withOpacity(0.4)
+                                  ? AppTheme.primaryBlue.withOpacity(0.3)
                                   : Colors.transparent,
-                          width: isSelectedStart || isSelectedEnd ? 2.5 : 1.5,
+                          width: isSelectedStart || isSelectedEnd ? 2 : 1.5,
                         ),
                         boxShadow: isSelectedStart || isSelectedEnd ? [
                           BoxShadow(
-                            color: AppTheme.primaryBlue.withOpacity(0.4),
-                            blurRadius: 12,
-                            offset: const Offset(0, 3),
+                            color: AppTheme.primaryBlue.withOpacity(0.35),
+                            blurRadius: 14,
+                            offset: const Offset(0, 4),
+                            spreadRadius: 0,
                           ),
                         ] : isToday ? [
                           BoxShadow(
-                            color: AppTheme.primaryBlue.withOpacity(0.2),
-                            blurRadius: 6,
+                            color: AppTheme.primaryBlue.withOpacity(0.15),
+                            blurRadius: 8,
                             offset: const Offset(0, 2),
+                            spreadRadius: 0,
                           ),
                         ] : null,
                       ),
@@ -1202,10 +1211,13 @@ class _MenstruacaoFormScreenState extends State<MenstruacaoFormScreen> {
                                 : isToday
                                     ? AppTheme.primaryBlue
                                     : AppTheme.textPrimary,
-                            fontWeight: isSelectedStart || isSelectedEnd || isToday
-                                ? FontWeight.w800
-                                : FontWeight.w600,
-                            fontSize: 16,
+                            fontWeight: isSelectedStart || isSelectedEnd
+                                ? FontWeight.w700
+                                : isToday
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                            fontSize: 15,
+                            letterSpacing: -0.3,
                           ),
                         ),
                       ),
@@ -1923,4 +1935,5 @@ class _MenstruacaoFormScreenState extends State<MenstruacaoFormScreen> {
     );
   }
 }
+
 

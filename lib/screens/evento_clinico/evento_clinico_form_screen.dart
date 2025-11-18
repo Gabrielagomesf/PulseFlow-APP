@@ -26,7 +26,6 @@ class _EventoClinicoFormScreenState extends State<EventoClinicoFormScreen> {
   
   String? _selectedTipo;
   int _intensidadeDor = 0;
-  String? _selectedEspecialidade;
   DateTime _selectedDate = DateTime.now();
 
   final List<String> _tipos = [
@@ -34,6 +33,7 @@ class _EventoClinicoFormScreenState extends State<EventoClinicoFormScreen> {
     'Acompanhamento de Condição Crônica',
     'Episódio Psicológico ou Emocional',
     'Evento Relacionado à Medicação',
+    'Outros',
   ];
 
   final List<String> _especialidades = [
@@ -141,44 +141,43 @@ class _EventoClinicoFormScreenState extends State<EventoClinicoFormScreen> {
       value: AppTheme.blueSystemOverlayStyle,
       child: Scaffold(
       backgroundColor: const Color(0xFF00324A),
-      body: Column(
-        children: [
-          // Header azul como outras telas
-          _buildHeader(),
-          
-          // Conteúdo principal
-          Expanded(
-            child: Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(24),
-                  topRight: Radius.circular(24),
+      resizeToAvoidBottomInset: true,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            // Header azul como outras telas
+            _buildHeader(),
+            
+            // Conteúdo principal
+            Expanded(
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    topRight: Radius.circular(24),
+                  ),
                 ),
-              ),
-              child: Form(
-                key: _formKey,
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                        
+                child: Form(
+                  key: _formKey,
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.only(
+                      left: 20,
+                      right: 20,
+                      top: 20,
+                      bottom: 100, // Espaço extra para o bottomNavigationBar
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                          
                         // Campos principais
                         _buildTextField(
                           controller: _tituloController,
                           label: 'Título do Evento',
                           hint: 'Ex: Controle de epilepsia',
-                          isRequired: true,
-                        ),
-                        const SizedBox(height: 12),
-                        
-                        _buildDropdownField(
-                          label: 'Especialidade',
-                          value: _selectedEspecialidade,
-                          items: _especialidades,
-                          onChanged: (value) => setState(() => _selectedEspecialidade = value),
                           isRequired: true,
                         ),
                         const SizedBox(height: 12),
@@ -190,46 +189,47 @@ class _EventoClinicoFormScreenState extends State<EventoClinicoFormScreen> {
                           onChanged: (value) => setState(() => _selectedTipo = value),
                           isRequired: true,
                         ),
-                        const SizedBox(height: 12),
-                        
-                        _buildIntensidadeField(),
-                        const SizedBox(height: 12),
-                        
-                        _buildDateTimeFields(),
-                        const SizedBox(height: 12),
-                        
-                        _buildTextField(
-                          controller: _descricaoController,
-                          label: 'Descrição do Evento',
-                          hint: 'Descreva os sintomas e detalhes',
-                          maxLines: 3,
-                        ),
-                        const SizedBox(height: 12),
-                        
-                        _buildTextField(
-                          controller: _medicacaoController,
-                          label: 'Medicação e Alívio',
-                          hint: 'Medicamentos utilizados',
-                        ),
-                        const SizedBox(height: 12),
-                        
-                        _buildTextField(
-                          controller: _sintomasController,
-                          label: 'Sintomas',
-                          hint: 'Descreva os sintomas apresentados',
-                          maxLines: 2,
-                        ),
-                        const SizedBox(height: 20),
-                        
-                      // Botões de ação
-                      _buildActionButtons(),
-                    ],
+                          const SizedBox(height: 12),
+                          
+                          _buildIntensidadeField(),
+                          const SizedBox(height: 12),
+                          
+                          _buildDateTimeFields(),
+                          const SizedBox(height: 12),
+                          
+                          _buildTextField(
+                            controller: _descricaoController,
+                            label: 'Descrição do Evento',
+                            hint: 'Descreva os sintomas e detalhes',
+                            maxLines: 3,
+                          ),
+                          const SizedBox(height: 12),
+                          
+                          _buildTextField(
+                            controller: _medicacaoController,
+                            label: 'Medicação e Alívio',
+                            hint: 'Medicamentos utilizados',
+                          ),
+                          const SizedBox(height: 12),
+                          
+                          _buildTextField(
+                            controller: _sintomasController,
+                            label: 'Sintomas',
+                            hint: 'Descreva os sintomas apresentados',
+                            maxLines: 2,
+                          ),
+                          const SizedBox(height: 20),
+                          
+                        // Botões de ação
+                        _buildActionButtons(),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       bottomNavigationBar: const PulseBottomNavigation(activeItem: PulseNavItem.menu),
     ));
@@ -238,8 +238,8 @@ class _EventoClinicoFormScreenState extends State<EventoClinicoFormScreen> {
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 16,
+      padding: const EdgeInsets.only(
+        top: 16,
         left: 16,
         right: 16,
         bottom: 20,
@@ -439,7 +439,11 @@ class _EventoClinicoFormScreenState extends State<EventoClinicoFormScreen> {
     required List<String> items,
     required ValueChanged<String?> onChanged,
     bool isRequired = false,
+    double? fontSize,
   }) {
+    final double textSize = fontSize ?? 14.0;
+    final bool isTipoEvento = label == 'Tipo de Evento';
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -469,11 +473,23 @@ class _EventoClinicoFormScreenState extends State<EventoClinicoFormScreen> {
         DropdownButtonFormField<String>(
           value: value,
           onChanged: onChanged,
+          isExpanded: true,
           validator: (value) {
             if (isRequired && value == null) {
               return 'Este campo é obrigatório';
             }
             return null;
+          },
+          selectedItemBuilder: (BuildContext context) {
+            return items.map<Widget>((String item) {
+              return Text(
+                item,
+                style: TextStyle(
+                  fontSize: isTipoEvento ? 13.0 : textSize,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              );
+            }).toList();
           },
           decoration: InputDecoration(
             hintText: 'Selecione uma opção',
@@ -636,7 +652,6 @@ class _EventoClinicoFormScreenState extends State<EventoClinicoFormScreen> {
       _sintomasController.clear();
       _selectedTipo = null;
       _intensidadeDor = 0;
-      _selectedEspecialidade = null;
       _selectedDate = DateTime.now();
     });
   }
@@ -765,7 +780,7 @@ class _EventoClinicoFormScreenState extends State<EventoClinicoFormScreen> {
       final eventoClinico = EventoClinico(
         paciente: widget.pacienteId ?? '68a3b77a5b36b8a11580651f', // ID do paciente correto
         titulo: _tituloController.text.trim(),
-        especialidade: _selectedEspecialidade!,
+        especialidade: '', // Campo removido do formulário
         tipoEvento: _selectedTipo!,
         intensidadeDor: _intensidadeDor.toString(), // Usar o valor direto do slider
         dataHora: _selectedDate,

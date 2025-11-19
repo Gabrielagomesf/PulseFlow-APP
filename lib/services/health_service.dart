@@ -11,13 +11,15 @@ class HealthService {
   // Tipos de dados de saúde que queremos acessar
   static const List<HealthDataType> _healthDataTypes = [
     HealthDataType.HEART_RATE,
-    HealthDataType.SLEEP_IN_BED,
+    HealthDataType.SLEEP_IN_BED, // Tempo na cama (não horário predefinido)
+    HealthDataType.SLEEP_ASLEEP, // Tempo dormindo
     HealthDataType.STEPS,
   ];
 
   // Solicita permissões para acessar dados de saúde
   Future<bool> requestPermissions() async {
     try {
+      print('🔐 [HealthService] Solicitando permissões do HealthKit...');
       
       // Verifica se o HealthKit está disponível (método não disponível na versão 9.0.1)
       // bool isAvailable = await _health.isHealthDataAvailable();
@@ -25,11 +27,14 @@ class HealthService {
       bool requested = await _health.requestAuthorization(_healthDataTypes);
       
       if (requested) {
+        print('✅ [HealthService] Permissões concedidas');
         return true;
       } else {
+        print('❌ [HealthService] Permissões negadas');
         return false;
       }
     } catch (e) {
+      print('❌ [HealthService] Erro ao solicitar permissões: $e');
       return false;
     }
   }
@@ -37,10 +42,10 @@ class HealthService {
   // Busca dados de frequência cardíaca dos últimos 7 dias
   Future<List<FlSpot>> getHeartRateData() async {
     try {
-      
       final now = DateTime.now();
       final weekAgo = now.subtract(const Duration(days: 7));
 
+      print('📊 [HealthService] Buscando dados de frequência cardíaca de ${weekAgo.toString()} até ${now.toString()}');
       
       List<HealthDataPoint> healthData = await _health.getHealthDataFromTypes(
         startTime: weekAgo,
@@ -48,88 +53,134 @@ class HealthService {
         types: [HealthDataType.HEART_RATE],
       );
 
-      
-      if (healthData.isNotEmpty) {
-      }
+      print('📊 [HealthService] Encontrados ${healthData.length} pontos de dados de frequência cardíaca');
 
-      // Agrupa dados por dia e calcula média
-      Map<int, List<double>> dailyData = {};
+      // Agrupa dados por data completa (ano-mês-dia) e calcula média
+      Map<String, List<double>> dailyData = {};
       
       for (var dataPoint in healthData) {
-        final day = dataPoint.dateFrom.day;
+        final dateKey = '${dataPoint.dateFrom.year}-${dataPoint.dateFrom.month}-${dataPoint.dateFrom.day}';
         final value = _getHealthValueAsDouble(dataPoint.value);
         
-        if (dailyData[day] == null) {
-          dailyData[day] = [];
+        if (dailyData[dateKey] == null) {
+          dailyData[dateKey] = [];
         }
-        dailyData[day]!.add(value);
+        dailyData[dateKey]!.add(value);
       }
 
       // Converte para FlSpot (últimos 7 dias)
       List<FlSpot> spots = [];
       for (int i = 6; i >= 0; i--) {
         final date = now.subtract(Duration(days: i));
-        final day = date.day;
+        final dateKey = '${date.year}-${date.month}-${date.day}';
         
-        if (dailyData[day] != null && dailyData[day]!.isNotEmpty) {
+        if (dailyData[dateKey] != null && dailyData[dateKey]!.isNotEmpty) {
           // Calcula média dos valores do dia
-          final average = dailyData[day]!.reduce((a, b) => a + b) / dailyData[day]!.length;
+          final average = dailyData[dateKey]!.reduce((a, b) => a + b) / dailyData[dateKey]!.length;
+          print('📊 [HealthService] Dia ${dateKey}: média de ${average.toStringAsFixed(1)} bpm');
           spots.add(FlSpot(i.toDouble(), average));
         } else {
           // Se não há dados, usa valor padrão
+          print('⚠️ [HealthService] Dia ${dateKey}: sem dados, usando valor padrão');
           spots.add(FlSpot(i.toDouble(), 70.0));
         }
       }
 
       return spots;
     } catch (e) {
+      print('❌ [HealthService] Erro ao buscar dados de frequência cardíaca: $e');
       return _generateFallbackHeartRateData();
     }
   }
 
-  // Busca dados de sono dos últimos 7 dias
+  // Busca dados de sono dos últimos 7 dias (tempo na cama)
   Future<List<FlSpot>> getSleepData() async {
     try {
-      
       final now = DateTime.now();
-      final weekAgo = now.subtract(const Duration(days: 7));
+      // Busca dos últimos 30 dias para ter mais dados disponíveis
+      final startDate = now.subtract(const Duration(days: 30));
 
-      List<HealthDataPoint> healthData = await _health.getHealthDataFromTypes(
-        startTime: weekAgo,
+      print('📊 [HealthService] Buscando dados de sono de ${startDate.toString()} até ${now.toString()}');
+      
+      // Tenta buscar SLEEP_IN_BED primeiro (tempo na cama)
+      List<HealthDataPoint> sleepInBed = await _health.getHealthDataFromTypes(
+        startTime: startDate,
         endTime: now,
         types: [HealthDataType.SLEEP_IN_BED],
       );
 
-
-      // Agrupa dados por dia
-      Map<int, double> dailySleep = {};
+      print('📊 [HealthService] Encontrados ${sleepInBed.length} períodos de SLEEP_IN_BED');
       
-      for (var dataPoint in healthData) {
-        final day = dataPoint.dateFrom.day;
-        final duration = dataPoint.dateTo.difference(dataPoint.dateFrom).inHours.toDouble();
-        
-        if (dailySleep[day] == null) {
-          dailySleep[day] = 0.0;
-        }
-        dailySleep[day] = dailySleep[day]! + duration;
+      // Se não encontrar SLEEP_IN_BED, tenta SLEEP_ASLEEP (tempo dormindo)
+      List<HealthDataPoint> sleepAsleep = [];
+      if (sleepInBed.isEmpty) {
+        print('📊 [HealthService] Tentando buscar SLEEP_ASLEEP como alternativa...');
+        sleepAsleep = await _health.getHealthDataFromTypes(
+          startTime: startDate,
+          endTime: now,
+          types: [HealthDataType.SLEEP_ASLEEP],
+        );
+        print('📊 [HealthService] Encontrados ${sleepAsleep.length} períodos de SLEEP_ASLEEP');
+      }
+      
+      // Combina os dados encontrados (prioriza SLEEP_IN_BED)
+      final allSleepData = sleepInBed.isNotEmpty ? sleepInBed : sleepAsleep;
+      
+      if (allSleepData.isEmpty) {
+        print('⚠️ [HealthService] Nenhum dado de sono encontrado. Executando diagnóstico...');
+        // Tenta diagnosticar o problema
+        await diagnoseHealthData();
+      } else {
+        print('✅ [HealthService] Total de períodos de sono encontrados: ${allSleepData.length}');
       }
 
+      // Agrupa dados por data completa (ano-mês-dia)
+      Map<String, double> dailySleep = {};
+      
+      for (var dataPoint in allSleepData) {
+        // Para dados de sono, calcula a duração em horas com decimais
+        final durationInMinutes = dataPoint.dateTo.difference(dataPoint.dateFrom).inMinutes;
+        final durationInHours = durationInMinutes / 60.0;
+        // Usa a data de início do período para agrupar
+        final dateKey = '${dataPoint.dateFrom.year}-${dataPoint.dateFrom.month}-${dataPoint.dateFrom.day}';
+        
+        print('📊 [HealthService] Período de sono: ${dataPoint.dateFrom.toString()} até ${dataPoint.dateTo.toString()} = ${durationInHours.toStringAsFixed(2)} horas');
+        
+        if (dailySleep[dateKey] == null) {
+          dailySleep[dateKey] = 0.0;
+        }
+        // Soma todas as horas na cama do dia
+        dailySleep[dateKey] = dailySleep[dateKey]! + durationInHours;
+      }
+
+      print('📊 [HealthService] Total de dias com dados de sono: ${dailySleep.length}');
+
       // Converte para FlSpot (últimos 7 dias)
+      // Mapeia os últimos 7 dias com os dados encontrados
       List<FlSpot> spots = [];
       for (int i = 6; i >= 0; i--) {
         final date = now.subtract(Duration(days: i));
-        final day = date.day;
+        final dateKey = '${date.year}-${date.month}-${date.day}';
         
-        if (dailySleep[day] != null && dailySleep[day]! > 0) {
-          spots.add(FlSpot(i.toDouble(), dailySleep[day]!));
+        if (dailySleep[dateKey] != null && dailySleep[dateKey]! > 0) {
+          print('📊 [HealthService] Dia ${dateKey}: ${dailySleep[dateKey]!.toStringAsFixed(1)} horas na cama');
+          spots.add(FlSpot(i.toDouble(), dailySleep[dateKey]!));
         } else {
           // Se não há dados, usa valor padrão
+          print('⚠️ [HealthService] Dia ${dateKey}: sem dados de tempo na cama, usando valor padrão');
           spots.add(FlSpot(i.toDouble(), 7.5));
         }
+      }
+      
+      // Se encontrou dados mas não nos últimos 7 dias, mostra aviso
+      if (dailySleep.isNotEmpty && spots.every((spot) => spot.y == 7.5)) {
+        print('⚠️ [HealthService] Dados de sono encontrados, mas não nos últimos 7 dias');
+        print('💡 [HealthService] Dados mais recentes: ${dailySleep.keys.last}');
       }
 
       return spots;
     } catch (e) {
+      print('❌ [HealthService] Erro ao buscar dados de sono: $e');
       return _generateFallbackSleepData();
     }
   }
@@ -137,10 +188,10 @@ class HealthService {
   // Busca dados de passos dos últimos 7 dias
   Future<List<FlSpot>> getStepsData() async {
     try {
-      
       final now = DateTime.now();
       final weekAgo = now.subtract(const Duration(days: 7));
 
+      print('📊 [HealthService] Buscando dados de passos de ${weekAgo.toString()} até ${now.toString()}');
       
       List<HealthDataPoint> healthData = await _health.getHealthDataFromTypes(
         startTime: weekAgo,
@@ -148,39 +199,40 @@ class HealthService {
         types: [HealthDataType.STEPS],
       );
 
-      
-      if (healthData.isNotEmpty) {
-      }
+      print('📊 [HealthService] Encontrados ${healthData.length} pontos de dados de passos');
 
-      // Agrupa dados por dia
-      Map<int, double> dailySteps = {};
+      // Agrupa dados por data completa (ano-mês-dia)
+      Map<String, double> dailySteps = {};
       
       for (var dataPoint in healthData) {
-        final day = dataPoint.dateFrom.day;
+        final dateKey = '${dataPoint.dateFrom.year}-${dataPoint.dateFrom.month}-${dataPoint.dateFrom.day}';
         final steps = _getHealthValueAsDouble(dataPoint.value);
         
-        if (dailySteps[day] == null) {
-          dailySteps[day] = 0.0;
+        if (dailySteps[dateKey] == null) {
+          dailySteps[dateKey] = 0.0;
         }
-        dailySteps[day] = dailySteps[day]! + steps;
+        dailySteps[dateKey] = dailySteps[dateKey]! + steps;
       }
 
       // Converte para FlSpot (últimos 7 dias)
       List<FlSpot> spots = [];
       for (int i = 6; i >= 0; i--) {
         final date = now.subtract(Duration(days: i));
-        final day = date.day;
+        final dateKey = '${date.year}-${date.month}-${date.day}';
         
-        if (dailySteps[day] != null && dailySteps[day]! > 0) {
-          spots.add(FlSpot(i.toDouble(), dailySteps[day]!));
+        if (dailySteps[dateKey] != null && dailySteps[dateKey]! > 0) {
+          print('📊 [HealthService] Dia ${dateKey}: ${dailySteps[dateKey]!.toStringAsFixed(0)} passos');
+          spots.add(FlSpot(i.toDouble(), dailySteps[dateKey]!));
         } else {
           // Se não há dados, usa valor padrão
+          print('⚠️ [HealthService] Dia ${dateKey}: sem dados de passos, usando valor padrão');
           spots.add(FlSpot(i.toDouble(), 8000.0));
         }
       }
 
       return spots;
     } catch (e) {
+      print('❌ [HealthService] Erro ao buscar dados de passos: $e');
       return _generateFallbackStepsData();
     }
   }
@@ -250,12 +302,17 @@ class HealthService {
       
       // Se result é null, significa que as permissões não foram solicitadas ainda
       if (result == null) {
-        return false;
+        print('⚠️ [HealthService] Permissões ainda não foram solicitadas - solicitando automaticamente...');
+        // Solicita permissões automaticamente se nunca foram solicitadas
+        final granted = await requestPermissions();
+        return granted;
       }
       
       final hasPermission = result;
+      print('🔐 [HealthService] Status de permissões: $hasPermission');
       return hasPermission;
     } catch (e) {
+      print('❌ [HealthService] Erro ao verificar permissões: $e');
       return false;
     }
   }
@@ -263,32 +320,41 @@ class HealthService {
   // Busca todos os dados de saúde de uma vez
   Future<Map<String, List<FlSpot>>> getAllHealthData() async {
     try {
+      print('📊 [HealthService] getAllHealthData() chamado');
       
-      // Verifica permissões primeiro
+      // Verifica permissões primeiro (já solicita automaticamente se necessário)
       final hasPermission = await hasPermissions();
       
       if (!hasPermission) {
+        print('⚠️ [HealthService] Sem permissões, tentando solicitar novamente...');
         final granted = await requestPermissions();
         if (!granted) {
+          print('❌ [HealthService] Permissões negadas, retornando dados de fallback');
+          return _getFallbackData();
         }
       }
       
-      // Sempre tenta buscar dados reais
+      print('✅ [HealthService] Permissões OK, buscando dados reais...');
       
+      // Sempre tenta buscar dados reais
       // Busca dados com logs detalhados
       final heartRateData = await getHeartRateData();
-      
       final sleepData = await getSleepData();
-      
       final stepsData = await getStepsData();
 
+      print('✅ [HealthService] Dados recuperados:');
+      print('  - HeartRate: ${heartRateData.length} pontos');
+      print('  - Sleep: ${sleepData.length} pontos');
+      print('  - Steps: ${stepsData.length} pontos');
       
       return {
         'heartRate': heartRateData,
         'sleep': sleepData,
         'steps': stepsData,
       };
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('❌ [HealthService] Erro em getAllHealthData(): $e');
+      print('❌ [HealthService] Stack trace: $stackTrace');
       return _getFallbackData();
     }
   }
@@ -305,57 +371,85 @@ class HealthService {
   // Método de diagnóstico para verificar dados brutos do Apple Health
   Future<void> diagnoseHealthData() async {
     try {
+      print('🔍 [HealthService] Iniciando diagnóstico de dados do HealthKit...');
       
       // Verifica permissões
       final hasPermission = await hasPermissions();
       
       if (!hasPermission) {
+        print('⚠️ [HealthService] Sem permissões, solicitando...');
         final granted = await requestPermissions();
         if (!granted) {
+          print('❌ [HealthService] Permissões negadas, não é possível diagnosticar');
           return;
         }
       }
 
       final now = DateTime.now();
-      final weekAgo = now.subtract(const Duration(days: 7));
+      // Busca dos últimos 30 dias para diagnóstico
+      final startDate = now.subtract(const Duration(days: 30));
       
+      print('🔍 [HealthService] Diagnosticando dados de ${startDate.toString()} até ${now.toString()}');
       
       // Testa cada tipo de dado individualmente
       try {
+        print('🔍 [HealthService] Testando frequência cardíaca...');
         final heartData = await _health.getHealthDataFromTypes(
-          startTime: weekAgo, 
+          startTime: startDate, 
           endTime: now, 
           types: [HealthDataType.HEART_RATE]
         );
+        print('🔍 [HealthService] Frequência cardíaca: ${heartData.length} pontos encontrados');
         if (heartData.isNotEmpty) {
+          print('  - Primeiro: ${heartData.first.dateFrom} = ${_getHealthValueAsDouble(heartData.first.value)}');
+          print('  - Último: ${heartData.last.dateFrom} = ${_getHealthValueAsDouble(heartData.last.value)}');
         }
       } catch (e) {
+        print('❌ [HealthService] Erro ao buscar frequência cardíaca: $e');
       }
 
       try {
+        print('🔍 [HealthService] Testando tempo na cama (SLEEP_IN_BED)...');
         final sleepData = await _health.getHealthDataFromTypes(
-          startTime: weekAgo, 
+          startTime: startDate, 
           endTime: now, 
           types: [HealthDataType.SLEEP_IN_BED]
         );
+        print('🔍 [HealthService] Tempo na cama: ${sleepData.length} períodos encontrados');
         if (sleepData.isNotEmpty) {
+          for (var i = 0; i < sleepData.length && i < 5; i++) {
+            final data = sleepData[i];
+            final duration = data.dateTo.difference(data.dateFrom).inHours;
+            print('  - Período ${i + 1}: ${data.dateFrom} até ${data.dateTo} = ${duration} horas');
+          }
+        } else {
+          print('⚠️ [HealthService] Nenhum dado de SLEEP_IN_BED encontrado nos últimos 30 dias');
+          print('💡 [HealthService] Dica: Verifique se o Apple Health está registrando dados de sono');
         }
       } catch (e) {
+        print('❌ [HealthService] Erro ao buscar dados de sono: $e');
       }
 
       try {
+        print('🔍 [HealthService] Testando passos...');
         final stepsData = await _health.getHealthDataFromTypes(
-          startTime: weekAgo, 
+          startTime: startDate, 
           endTime: now, 
           types: [HealthDataType.STEPS]
         );
+        print('🔍 [HealthService] Passos: ${stepsData.length} pontos encontrados');
         if (stepsData.isNotEmpty) {
+          print('  - Primeiro: ${stepsData.first.dateFrom} = ${_getHealthValueAsDouble(stepsData.first.value)}');
+          print('  - Último: ${stepsData.last.dateFrom} = ${_getHealthValueAsDouble(stepsData.last.value)}');
         }
       } catch (e) {
+        print('❌ [HealthService] Erro ao buscar passos: $e');
       }
 
-      
-    } catch (e) {
+      print('✅ [HealthService] Diagnóstico concluído');
+    } catch (e, stackTrace) {
+      print('❌ [HealthService] Erro no diagnóstico: $e');
+      print('❌ [HealthService] Stack trace: $stackTrace');
     }
   }
 }

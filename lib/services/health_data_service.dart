@@ -10,34 +10,45 @@ class HealthDataService {
   // Salva dados de saúde do HealthKit no banco de dados
   Future<void> saveHealthDataFromHealthKit(String patientId) async {
     try {
+      print('💾 [HealthDataService] Iniciando salvamento de dados do HealthKit...');
       
       // Verifica se tem permissões
       final hasPermissions = await _healthService.hasPermissions();
       
       if (!hasPermissions) {
+        print('⚠️ [HealthDataService] Sem permissões, solicitando...');
         final granted = await _healthService.requestPermissions();
         if (!granted) {
+          print('❌ [HealthDataService] Permissões negadas, não é possível salvar dados');
           return;
         }
       }
 
       // Busca dados do HealthKit
+      print('💾 [HealthDataService] Buscando dados do HealthKit...');
       final healthData = await _healthService.getAllHealthData();
       
       // Log detalhado de cada tipo de dado
+      print('💾 [HealthDataService] Dados recebidos:');
       healthData.forEach((key, value) {
         if (value.isNotEmpty) {
+          print('  - $key: ${value.length} pontos');
+        } else {
+          print('  - $key: vazio');
         }
       });
       
       // Salva dados nas coleções específicas
-      
+      print('💾 [HealthDataService] Salvando dados nas coleções...');
       await _saveHeartRateData(patientId, healthData);
       await _saveStepsData(patientId, healthData);
       await _saveSleepData(patientId, healthData);
       
+      print('✅ [HealthDataService] Salvamento concluído com sucesso');
       
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('❌ [HealthDataService] Erro ao salvar dados do HealthKit: $e');
+      print('❌ [HealthDataService] Stack trace: $stackTrace');
       rethrow;
     }
   }
@@ -49,29 +60,85 @@ class HealthDataService {
         return;
       }
 
+      print('💾 [HealthDataService] Salvando dados de frequência cardíaca...');
+      
       final collection = await _db.getCollection('batimentos');
       final now = DateTime.now();
+      
+      // Busca dados existentes
+      final existingData = await collection.find({
+        'pacienteId': patientId,
+      }).toList();
+      
+      int savedCount = 0;
+      int updatedCount = 0;
+      int skippedCount = 0;
       
       for (int i = 0; i < healthData['heartRate']!.length; i++) {
         final spot = healthData['heartRate']![i];
         final date = now.subtract(Duration(days: (6 - i)));
         
-        final data = {
-          'pacienteId': patientId,
-          'valor': spot.y,
-          'data': date,
-          'fonte': 'HealthKit',
-          'unidade': 'bpm',
-          'descricao': 'Frequência cardíaca',
-          'createdAt': DateTime.now(),
-          'updatedAt': DateTime.now(),
-        };
+        // Não salva valores padrão (70.0) se não houver dados reais
+        if (spot.y == 70.0) {
+          skippedCount++;
+          continue;
+        }
         
-        await collection.insert(data);
+        final dateKey = DateTime(date.year, date.month, date.day);
+        Map<String, dynamic>? existingRecord;
+        
+        try {
+          existingRecord = existingData.firstWhere(
+            (existing) {
+              final existingDate = existing['data'] as DateTime;
+              final existingDateKey = DateTime(existingDate.year, existingDate.month, existingDate.day);
+              return existingDateKey.isAtSameMomentAs(dateKey);
+            },
+          ) as Map<String, dynamic>?;
+        } catch (e) {
+          existingRecord = null;
+        }
+        
+        if (existingRecord != null) {
+          // Atualiza se o valor mudou
+          final existingValue = existingRecord['valor'] as num?;
+          if (existingValue != spot.y) {
+            await collection.update(
+              {'_id': existingRecord['_id']},
+              {
+                '\$set': {
+                  'valor': spot.y,
+                  'fonte': 'HealthKit',
+                  'updatedAt': DateTime.now(),
+                }
+              },
+            );
+            updatedCount++;
+          } else {
+            skippedCount++;
+          }
+        } else {
+          final data = {
+            'pacienteId': patientId,
+            'valor': spot.y,
+            'data': dateKey,
+            'fonte': 'HealthKit',
+            'unidade': 'bpm',
+            'descricao': 'Frequência cardíaca',
+            'createdAt': DateTime.now(),
+            'updatedAt': DateTime.now(),
+          };
+          
+          await collection.insert(data);
+          savedCount++;
+        }
       }
       
+      print('💾 [HealthDataService] Frequência cardíaca: $savedCount salvos, $updatedCount atualizados, $skippedCount pulados');
       
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('❌ [HealthDataService] Erro ao salvar frequência cardíaca: $e');
+      print('❌ [HealthDataService] Stack trace: $stackTrace');
     }
   }
 
@@ -82,82 +149,189 @@ class HealthDataService {
         return;
       }
 
+      print('💾 [HealthDataService] Salvando dados de passos...');
+      
       final collection = await _db.getCollection('passos');
       final now = DateTime.now();
+      
+      // Busca dados existentes
+      final existingData = await collection.find({
+        'pacienteId': patientId,
+      }).toList();
+      
+      int savedCount = 0;
+      int updatedCount = 0;
+      int skippedCount = 0;
       
       for (int i = 0; i < healthData['steps']!.length; i++) {
         final spot = healthData['steps']![i];
         final date = now.subtract(Duration(days: (6 - i)));
         
-        final data = {
-          'pacienteId': patientId,
-          'valor': spot.y,
-          'data': date,
-          'fonte': 'HealthKit',
-          'unidade': 'passos',
-          'descricao': 'Passos diários',
-          'createdAt': DateTime.now(),
-          'updatedAt': DateTime.now(),
-        };
+        // Não salva valores padrão (8000.0) se não houver dados reais
+        if (spot.y == 8000.0) {
+          skippedCount++;
+          continue;
+        }
         
-        await collection.insert(data);
+        final dateKey = DateTime(date.year, date.month, date.day);
+        Map<String, dynamic>? existingRecord;
+        
+        try {
+          existingRecord = existingData.firstWhere(
+            (existing) {
+              final existingDate = existing['data'] as DateTime;
+              final existingDateKey = DateTime(existingDate.year, existingDate.month, existingDate.day);
+              return existingDateKey.isAtSameMomentAs(dateKey);
+            },
+          ) as Map<String, dynamic>?;
+        } catch (e) {
+          existingRecord = null;
+        }
+        
+        if (existingRecord != null) {
+          // Atualiza se o valor mudou
+          final existingValue = existingRecord['valor'] as num?;
+          if (existingValue != spot.y) {
+            await collection.update(
+              {'_id': existingRecord['_id']},
+              {
+                '\$set': {
+                  'valor': spot.y,
+                  'fonte': 'HealthKit',
+                  'updatedAt': DateTime.now(),
+                }
+              },
+            );
+            updatedCount++;
+          } else {
+            skippedCount++;
+          }
+        } else {
+          final data = {
+            'pacienteId': patientId,
+            'valor': spot.y,
+            'data': dateKey,
+            'fonte': 'HealthKit',
+            'unidade': 'passos',
+            'descricao': 'Passos diários',
+            'createdAt': DateTime.now(),
+            'updatedAt': DateTime.now(),
+          };
+          
+          await collection.insert(data);
+          savedCount++;
+        }
       }
       
+      print('💾 [HealthDataService] Passos: $savedCount salvos, $updatedCount atualizados, $skippedCount pulados');
       
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('❌ [HealthDataService] Erro ao salvar passos: $e');
+      print('❌ [HealthDataService] Stack trace: $stackTrace');
     }
   }
 
-  // Salva dados de sono na coleção 'insonia'
+  // Salva dados de sono na coleção 'insonias'
   Future<void> _saveSleepData(String patientId, Map<String, List<dynamic>> healthData) async {
     try {
+      print('💾 [HealthDataService] Salvando dados de sono...');
       
       if (healthData['sleep'] == null || healthData['sleep']!.isEmpty) {
-        
-        // Dados simulados para teste
-        final collection = await _db.getCollection('insonias');
-        final now = DateTime.now();
-        
-        final testData = {
-          'pacienteId': patientId,
-          'valor': 7.5,
-          'data': now,
-          'fonte': 'Teste',
-          'unidade': 'horas',
-          'descricao': 'Dados de teste - sono',
-          'createdAt': DateTime.now(),
-          'updatedAt': DateTime.now(),
-        };
-        
-        final result = await collection.insert(testData);
-        return;
+        print('⚠️ [HealthDataService] Nenhum dado de sono encontrado para salvar');
+        return; // Não cria dados de teste, apenas retorna
       }
 
+      print('💾 [HealthDataService] Encontrados ${healthData['sleep']!.length} pontos de dados de sono');
+      
       final collection = await _db.getCollection('insonias');
       final now = DateTime.now();
       
+      // Verifica dados existentes para evitar duplicatas
+      final existingData = await collection.find({
+        'pacienteId': patientId,
+      }).toList();
+      
+      int savedCount = 0;
+      int skippedCount = 0;
       
       for (int i = 0; i < healthData['sleep']!.length; i++) {
         final spot = healthData['sleep']![i];
         final date = now.subtract(Duration(days: (6 - i)));
         
+        // Não salva valores padrão (7.5) se não houver dados reais
+        if (spot.y == 7.5) {
+          print('⏭️ [HealthDataService] Valor padrão (7.5) para ${date.toString()}, pulando...');
+          skippedCount++;
+          continue;
+        }
         
+        // Verifica se já existe um registro para esta data
+        final dateKey = DateTime(date.year, date.month, date.day);
+        Map<String, dynamic>? existingRecord;
+        
+        try {
+          existingRecord = existingData.firstWhere(
+            (existing) {
+              final existingDate = existing['data'] as DateTime;
+              final existingDateKey = DateTime(existingDate.year, existingDate.month, existingDate.day);
+              return existingDateKey.isAtSameMomentAs(dateKey);
+            },
+          ) as Map<String, dynamic>?;
+        } catch (e) {
+          // Não encontrado, existingRecord permanece null
+          existingRecord = null;
+        }
+        
+        if (existingRecord != null) {
+          // Se existe e é valor padrão (7.5) ou fonte de teste, atualiza com dados reais
+          final existingValue = existingRecord['valor'] as num?;
+          final existingSource = existingRecord['fonte'] as String?;
+          
+          if (existingValue == 7.5 || existingSource == 'Teste' || existingSource == 'Test') {
+            print('🔄 [HealthDataService] Atualizando dados de sono para ${dateKey.toString()} de $existingValue para ${spot.y} horas');
+            
+            await collection.update(
+              {'_id': existingRecord['_id']},
+              {
+                '\$set': {
+                  'valor': spot.y,
+                  'fonte': 'HealthKit',
+                  'descricao': 'Tempo na cama',
+                  'updatedAt': DateTime.now(),
+                }
+              },
+            );
+            savedCount++;
+            print('✅ [HealthDataService] Dados de sono atualizados: ${dateKey.toString()} = ${spot.y} horas');
+          } else {
+            print('⏭️ [HealthDataService] Dados de sono para ${dateKey.toString()} já existem com valor real ($existingValue), pulando...');
+            skippedCount++;
+          }
+          continue;
+        }
+        
+        // Cria novo registro
         final data = {
           'pacienteId': patientId,
           'valor': spot.y,
-          'data': date,
+          'data': dateKey,
           'fonte': 'HealthKit',
           'unidade': 'horas',
-          'descricao': 'Horas de sono',
+          'descricao': 'Tempo na cama',
           'createdAt': DateTime.now(),
           'updatedAt': DateTime.now(),
         };
         
-        final result = await collection.insert(data);
+        await collection.insert(data);
+        savedCount++;
+        print('✅ [HealthDataService] Dados de sono salvos: ${dateKey.toString()} = ${spot.y} horas');
       }
       
+      print('💾 [HealthDataService] Resumo: $savedCount salvos, $skippedCount pulados');
       
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('❌ [HealthDataService] Erro ao salvar dados de sono: $e');
+      print('❌ [HealthDataService] Stack trace: $stackTrace');
     }
   }
 

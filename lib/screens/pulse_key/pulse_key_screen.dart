@@ -125,6 +125,10 @@ class _PulseKeyScreenState extends State<PulseKeyScreen> {
         if (fullError.contains('Token de autenticação não encontrado') || 
             fullError.contains('Sessão expirada')) {
           errorMessage = 'Sessão expirada. O código está disponível mas não será sincronizado.';
+        } else if (fullError.contains('ngrok está offline') || 
+                   fullError.contains('ERR_NGROK_3200') ||
+                   fullError.contains('Túnel ngrok está offline')) {
+          errorMessage = 'Túnel ngrok está offline.\n\nO código está disponível localmente, mas não será sincronizado até que o túnel seja reiniciado no servidor.';
         } else if (fullError.contains('Servidor não está acessível') ||
                    fullError.contains('URL do servidor inválida') || 
                    fullError.contains('não foi possível conectar ao servidor') ||

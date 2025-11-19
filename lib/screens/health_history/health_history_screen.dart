@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../services/database_service.dart';
 import '../../services/auth_service.dart';
+import '../../services/health_data_service.dart';
 import '../../theme/app_theme.dart';
 import '../../routes/app_routes.dart';
 import '../home/home_controller.dart';
@@ -33,39 +34,36 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
 
   Future<void> _loadHealthData() async {
     try {
+      print('📊 [HealthHistory] Iniciando carregamento de dados...');
       _isLoading.value = true;
       _healthData.clear(); // Limpa dados anteriores
       
-      
       final currentUser = _authService.currentUser;
       if (currentUser == null) {
+        print('⚠️ [HealthHistory] Usuário não encontrado');
         return;
       }
       
+      print('📊 [HealthHistory] Carregando dados para paciente: ${currentUser.id}');
       
       // Busca dados das coleções específicas
       await _loadCollectionData('batimentos', 'heartRate');
       await _loadCollectionData('passos', 'steps');
       await _loadCollectionData('insonias', 'sleep');
       
-      
-      // Se não há dados, cria dados de teste
-      if (_healthData.isEmpty) {
-        _createTestData();
-      }
-      
-      _healthData.forEach((data) {
-      });
+      print('📊 [HealthHistory] Total de dados carregados: ${_healthData.length}');
       
       // Calcula estatísticas
       _calculateStats();
       
-      // Força atualização da UI
-      _isLoading.value = false;
-      _isLoading.value = true;
-      _isLoading.value = false;
+      print('✅ [HealthHistory] Dados carregados com sucesso');
       
-    } catch (e) {
+      // Força atualização da UI
+      setState(() {});
+      
+    } catch (e, stackTrace) {
+      print('❌ [HealthHistory] Erro ao carregar dados: $e');
+      print('❌ [HealthHistory] Stack trace: $stackTrace');
       Get.snackbar(
         'Erro',
         'Erro ao carregar dados de saúde: $e',
@@ -79,23 +77,40 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
 
   Future<void> _loadCollectionData(String collectionName, String dataType) async {
     try {
+      print('📊 [HealthHistory] Carregando dados da coleção: $collectionName (tipo: $dataType)');
       
       final collection = await _db.getCollection(collectionName);
       final endDate = DateTime.now();
       final startDate = endDate.subtract(Duration(days: _selectedPeriod.value));
       
+      print('📊 [HealthHistory] Buscando dados de ${startDate.toString()} até ${endDate.toString()}');
       
-      final data = await collection.find({
+      // Busca todos os dados do paciente primeiro (sem filtro de data para debug)
+      final allData = await collection.find({
         'pacienteId': _authService.currentUser!.id!,
-        'data': {
-          '\$gte': startDate,
-          '\$lte': endDate,
-        }
       }).toList();
       
+      print('📊 [HealthHistory] Total de registros na coleção $collectionName: ${allData.length}');
+      
+      // Filtra por data manualmente (mais confiável que query MongoDB)
+      final filteredData = allData.where((item) {
+        if (item['data'] == null) return false;
+        final itemDate = item['data'] as DateTime;
+        return itemDate.isAfter(startDate.subtract(const Duration(days: 1))) && 
+               itemDate.isBefore(endDate.add(const Duration(days: 1)));
+      }).toList();
+      
+      print('📊 [HealthHistory] Registros filtrados por período: ${filteredData.length}');
+      
+      if (filteredData.isNotEmpty) {
+        print('📊 [HealthHistory] Primeiro registro: ${filteredData.first}');
+        print('📊 [HealthHistory] Último registro: ${filteredData.last}');
+      }
       
       // Agrupa dados por semana
-      final weeklyData = _groupDataByWeek(data);
+      final weeklyData = _groupDataByWeek(filteredData);
+      
+      print('📊 [HealthHistory] Dados agrupados em ${weeklyData.length} semanas');
       
       for (final weekData in weeklyData) {
         _healthData.add({
@@ -109,7 +124,11 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
         });
       }
       
-    } catch (e) {
+      print('✅ [HealthHistory] Dados da coleção $collectionName processados');
+      
+    } catch (e, stackTrace) {
+      print('❌ [HealthHistory] Erro ao carregar dados da coleção $collectionName: $e');
+      print('❌ [HealthHistory] Stack trace: $stackTrace');
     }
   }
 
@@ -118,6 +137,8 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
     final List<Map<String, dynamic>> weeklyAverages = [];
     final now = DateTime.now();
     
+    print('📊 [HealthHistory] Agrupando ${data.length} registros em semanas');
+    
     for (int weekIndex = 0; weekIndex < 8; weekIndex++) {
       // Calcula o início da semana (8 semanas atrás até agora)
       final weekStart = now.subtract(Duration(days: (7 - weekIndex) * 7));
@@ -125,23 +146,47 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
       
       // Filtra dados desta semana específica
       final weekData = data.where((item) {
+        if (item['data'] == null) return false;
         final itemDate = item['data'] as DateTime;
-        return itemDate.isAfter(weekStart.subtract(const Duration(days: 1))) && 
-               itemDate.isBefore(weekEnd.add(const Duration(days: 1)));
+        // Normaliza as datas para comparar apenas dia/mês/ano
+        final itemDateNormalized = DateTime(itemDate.year, itemDate.month, itemDate.day);
+        final weekStartNormalized = DateTime(weekStart.year, weekStart.month, weekStart.day);
+        final weekEndNormalized = DateTime(weekEnd.year, weekEnd.month, weekEnd.day);
+        
+        return itemDateNormalized.isAtSameMomentAs(weekStartNormalized) ||
+               (itemDateNormalized.isAfter(weekStartNormalized) && 
+                itemDateNormalized.isBefore(weekEndNormalized.add(const Duration(days: 1))));
       }).toList();
       
       if (weekData.isNotEmpty) {
         // Calcula média dos dados da semana
-        final values = weekData.map((item) => (item['valor'] as num).toDouble()).toList();
-        final average = values.reduce((a, b) => a + b) / values.length;
+        final values = weekData.map((item) {
+          final valor = item['valor'];
+          if (valor == null) return 0.0;
+          return (valor as num).toDouble();
+        }).where((v) => v > 0).toList();
         
-        weeklyAverages.add({
-          'weekNumber': weekIndex,
-          'average': average,
-          'weekStart': weekStart,
-          'count': values.length,
-          'hasData': true,
-        });
+        if (values.isNotEmpty) {
+          final average = values.reduce((a, b) => a + b) / values.length;
+          
+          print('📊 [HealthHistory] Semana ${weekIndex + 1}: ${values.length} registros, média = ${average.toStringAsFixed(2)}');
+          
+          weeklyAverages.add({
+            'weekNumber': weekIndex,
+            'average': average,
+            'weekStart': weekStart,
+            'count': values.length,
+            'hasData': true,
+          });
+        } else {
+          weeklyAverages.add({
+            'weekNumber': weekIndex,
+            'average': 0.0,
+            'weekStart': weekStart,
+            'count': 0,
+            'hasData': false,
+          });
+        }
       } else {
         // Semana sem dados
         weeklyAverages.add({
@@ -153,6 +198,9 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
         });
       }
     }
+    
+    final weeksWithData = weeklyAverages.where((w) => w['hasData'] == true).length;
+    print('📊 [HealthHistory] Total de semanas com dados: $weeksWithData de 8');
     
     return weeklyAverages;
   }
@@ -251,7 +299,11 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
         backgroundColor: const Color(0xFF00324A),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: Colors.white,
+            size: 20,
+          ),
           onPressed: () => Get.back(),
         ),
         title: const Text(
@@ -309,8 +361,56 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
             );
           }),
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: _loadHealthData,
+            icon: const Icon(Icons.sync, color: Colors.white),
+            onPressed: () async {
+              // Força sincronização com HealthKit antes de recarregar
+              final authService = Get.find<AuthService>();
+              final healthDataService = Get.find<HealthDataService>();
+              
+              if (authService.currentUser?.id != null) {
+                try {
+                  Get.snackbar(
+                    'Sincronizando',
+                    'Atualizando dados do Apple Health...',
+                    backgroundColor: Colors.blue,
+                    colorText: Colors.white,
+                    duration: const Duration(seconds: 2),
+                  );
+                  
+                  print('🔄 [HealthHistory] Sincronizando dados do HealthKit...');
+                  await healthDataService.saveHealthDataFromHealthKit(authService.currentUser!.id!);
+                  
+                  print('✅ [HealthHistory] Sincronização concluída, aguardando salvamento...');
+                  // Aguarda mais tempo para garantir que os dados foram salvos no banco
+                  await Future.delayed(const Duration(milliseconds: 1000));
+                  
+                  print('🔄 [HealthHistory] Recarregando dados do banco...');
+                  // Limpa os dados antes de recarregar
+                  _healthData.clear();
+                  // Recarrega os dados
+                  await _loadHealthData();
+                  
+                  print('✅ [HealthHistory] Recarregamento concluído. Total de dados: ${_healthData.length}');
+                  
+                  Get.snackbar(
+                    'Sucesso',
+                    'Dados atualizados com sucesso!',
+                    backgroundColor: Colors.green,
+                    colorText: Colors.white,
+                    duration: const Duration(seconds: 2),
+                  );
+                } catch (e) {
+                  Get.snackbar(
+                    'Erro',
+                    'Erro ao sincronizar dados: $e',
+                    backgroundColor: Colors.red,
+                    colorText: Colors.white,
+                  );
+                }
+              } else {
+                _loadHealthData();
+              }
+            },
           ),
         ],
       ),

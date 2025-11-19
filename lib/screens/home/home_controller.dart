@@ -201,16 +201,30 @@ class HomeController extends GetxController {
   Map<String, dynamic> getEnxaquecaStats() {
     if (_enxaquecaData.isEmpty) return {};
     
+    final sorted = List<Enxaqueca>.from(_enxaquecaData)..sort((a, b) => b.data.compareTo(a.data));
+    final ultimaCrise = sorted.first;
     final intensidades = _enxaquecaData.map((e) => int.tryParse(e.intensidade) ?? 0).toList();
     final maior = intensidades.reduce((a, b) => a > b ? a : b);
     final menor = intensidades.reduce((a, b) => a < b ? a : b);
     final media = intensidades.reduce((a, b) => a + b) / intensidades.length;
     
+    // Calcular frequência (crises nos últimos 30 dias)
+    final now = DateTime.now();
+    final ultimos30Dias = now.subtract(const Duration(days: 30));
+    final crisesUltimos30Dias = _enxaquecaData.where((e) => e.data.isAfter(ultimos30Dias)).length;
+    
+    // Dias desde última crise
+    final diasDesdeUltima = now.difference(ultimaCrise.data).inDays;
+    
     return {
       'maior': maior,
       'menor': menor,
-      'media': media,
+      'media': media.round(),
       'total': intensidades.length,
+      'ultimaCrise': ultimaCrise.data,
+      'diasDesdeUltima': diasDesdeUltima,
+      'frequencia30Dias': crisesUltimos30Dias,
+      'ultimaIntensidade': int.tryParse(ultimaCrise.intensidade) ?? 0,
     };
   }
 
@@ -218,16 +232,52 @@ class HomeController extends GetxController {
   Map<String, dynamic> getDiabetesStats() {
     if (_diabetesData.isEmpty) return {};
     
+    final sorted = List<Diabetes>.from(_diabetesData)..sort((a, b) => b.data.compareTo(a.data));
+    final ultimaMedicao = sorted.first;
     final glicoses = _diabetesData.map((d) => d.glicemia).toList();
     final maior = glicoses.reduce((a, b) => a > b ? a : b);
     final menor = glicoses.reduce((a, b) => a < b ? a : b);
     final media = glicoses.reduce((a, b) => a + b) / glicoses.length;
     
+    // Status baseado na última medição (mg/dL)
+    String status = 'Normal';
+    if (ultimaMedicao.unidade == 'mg/dL') {
+      if (ultimaMedicao.glicemia < 70) {
+        status = 'Baixa';
+      } else if (ultimaMedicao.glicemia > 180) {
+        status = 'Alta';
+      }
+    } else {
+      // mmol/L
+      if (ultimaMedicao.glicemia < 3.9) {
+        status = 'Baixa';
+      } else if (ultimaMedicao.glicemia > 10.0) {
+        status = 'Alta';
+      }
+    }
+    
+    // Dias desde última medição
+    final now = DateTime.now();
+    final diasDesdeUltima = now.difference(ultimaMedicao.data).inDays;
+    
+    // Média dos últimos 7 dias
+    final ultimos7Dias = now.subtract(const Duration(days: 7));
+    final medicoes7Dias = _diabetesData.where((d) => d.data.isAfter(ultimos7Dias)).toList();
+    final media7Dias = medicoes7Dias.isEmpty 
+        ? null 
+        : medicoes7Dias.map((d) => d.glicemia).reduce((a, b) => a + b) / medicoes7Dias.length;
+    
     return {
       'maior': maior,
       'menor': menor,
-      'media': media,
+      'media': media.round(),
       'total': glicoses.length,
+      'ultimaMedicao': ultimaMedicao.data,
+      'ultimaGlicemia': ultimaMedicao.glicemia.round(),
+      'unidade': ultimaMedicao.unidade,
+      'status': status,
+      'diasDesdeUltima': diasDesdeUltima,
+      'media7Dias': media7Dias?.round(),
     };
   }
 
@@ -235,16 +285,30 @@ class HomeController extends GetxController {
   Map<String, dynamic> getGastriteStats() {
     if (_gastriteData.isEmpty) return {};
     
+    final sorted = List<CriseGastrite>.from(_gastriteData)..sort((a, b) => b.data.compareTo(a.data));
+    final ultimaCrise = sorted.first;
     final intensidades = _gastriteData.map((g) => g.intensidadeDor).toList();
     final maior = intensidades.reduce((a, b) => a > b ? a : b);
     final menor = intensidades.reduce((a, b) => a < b ? a : b);
     final media = intensidades.reduce((a, b) => a + b) / intensidades.length;
     
+    // Calcular frequência (crises nos últimos 30 dias)
+    final now = DateTime.now();
+    final ultimos30Dias = now.subtract(const Duration(days: 30));
+    final crisesUltimos30Dias = _gastriteData.where((e) => e.data.isAfter(ultimos30Dias)).length;
+    
+    // Dias desde última crise
+    final diasDesdeUltima = now.difference(ultimaCrise.data).inDays;
+    
     return {
       'maior': maior,
       'menor': menor,
-      'media': media,
+      'media': media.round(),
       'total': intensidades.length,
+      'ultimaCrise': ultimaCrise.data,
+      'diasDesdeUltima': diasDesdeUltima,
+      'frequencia30Dias': crisesUltimos30Dias,
+      'ultimaIntensidade': ultimaCrise.intensidadeDor,
     };
   }
 
@@ -253,9 +317,17 @@ class HomeController extends GetxController {
     if (_eventoClinicoData.isEmpty) return {};
     
     final now = DateTime.now();
+    final sorted = List<EventoClinico>.from(_eventoClinicoData)..sort((a, b) => b.dataHora.compareTo(a.dataHora));
+    final ultimoEvento = sorted.first;
+    
+    // Eventos futuros
+    final eventosFuturos = _eventoClinicoData.where((e) => e.dataHora.isAfter(now)).toList()
+      ..sort((a, b) => a.dataHora.compareTo(b.dataHora));
+    final proximoEvento = eventosFuturos.isNotEmpty ? eventosFuturos.first : null;
+    
+    // Eventos deste mês
     final thisMonth = DateTime(now.year, now.month);
     final lastMonth = DateTime(now.year, now.month - 1);
-    
     final thisMonthEvents = _eventoClinicoData.where((e) {
       final eventDate = e.dataHora;
       return eventDate.isAfter(lastMonth) && eventDate.isBefore(thisMonth.add(const Duration(days: 31)));
@@ -264,6 +336,9 @@ class HomeController extends GetxController {
     return {
       'total': _eventoClinicoData.length,
       'este_mes': thisMonthEvents,
+      'ultimoEvento': ultimoEvento.dataHora,
+      'proximoEvento': proximoEvento?.dataHora,
+      'totalFuturos': eventosFuturos.length,
     };
   }
 
@@ -271,16 +346,47 @@ class HomeController extends GetxController {
   Map<String, dynamic> getMenstruacaoStats() {
     if (_menstruacaoData.isEmpty) return {};
     
+    final sorted = List<Menstruacao>.from(_menstruacaoData)..sort((a, b) => b.dataInicio.compareTo(a.dataInicio));
+    final ultimaMenstruacao = sorted.first;
+    
     final duracoes = _menstruacaoData.map((m) => m.duracaoEmDias).toList();
     final maior = duracoes.reduce((a, b) => a > b ? a : b);
     final menor = duracoes.reduce((a, b) => a < b ? a : b);
     final media = duracoes.reduce((a, b) => a + b) / duracoes.length;
     
+    // Calcular ciclo médio (dias entre menstruações)
+    int? cicloMedio;
+    if (sorted.length > 1) {
+      final ciclos = <int>[];
+      for (int i = 0; i < sorted.length - 1; i++) {
+        final dias = sorted[i].dataInicio.difference(sorted[i + 1].dataInicio).inDays;
+        ciclos.add(dias);
+      }
+      if (ciclos.isNotEmpty) {
+        cicloMedio = (ciclos.reduce((a, b) => a + b) / ciclos.length).round();
+      }
+    }
+    
+    // Próximo ciclo esperado
+    DateTime? proximoCiclo;
+    if (cicloMedio != null) {
+      proximoCiclo = ultimaMenstruacao.dataInicio.add(Duration(days: cicloMedio));
+    }
+    
+    // Dias desde última menstruação
+    final now = DateTime.now();
+    final diasDesdeUltima = now.difference(ultimaMenstruacao.dataInicio).inDays;
+    
     return {
       'maior': maior,
       'menor': menor,
-      'media': media,
+      'media': media.round(),
       'total': duracoes.length,
+      'ultimaMenstruacao': ultimaMenstruacao.dataInicio,
+      'diasDesdeUltima': diasDesdeUltima,
+      'cicloMedio': cicloMedio,
+      'proximoCiclo': proximoCiclo,
+      'duracaoAtual': ultimaMenstruacao.duracaoEmDias,
     };
   }
 

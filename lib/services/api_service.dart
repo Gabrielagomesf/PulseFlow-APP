@@ -150,8 +150,17 @@ class ApiService {
       print('📡 [ApiService] Response body (primeiros 200 chars): ${response.body.length > 200 ? response.body.substring(0, 200) : response.body}');
       print('📡 [ApiService] Response headers: ${response.headers}');
       
-      // Verificar se o ngrok está bloqueando (retornando HTML em vez de JSON)
+      // Verificar se o ngrok está offline (ERR_NGROK_3200)
+      final ngrokErrorCode = response.headers['ngrok-error-code'] ?? '';
       final contentType = response.headers['content-type'] ?? '';
+      if (ngrokErrorCode == 'ERR_NGROK_3200' || 
+          (response.body.contains('is offline') && baseUrl.contains('ngrok'))) {
+        print('⚠️ [ApiService] Ngrok está offline (ERR_NGROK_3200). O túnel não está ativo.');
+        print('⚠️ [ApiService] Solução: Reinicie o túnel ngrok no servidor backend.');
+        throw Exception('Túnel ngrok está offline. O servidor backend não está acessível através do túnel. Reinicie o ngrok no servidor.');
+      }
+      
+      // Verificar se o ngrok está bloqueando (retornando HTML em vez de JSON)
       if (contentType.contains('text/html') && baseUrl.contains('ngrok')) {
         print('⚠️ [ApiService] Ngrok está retornando página HTML (bloqueio). A página de aviso pode estar ativa.');
         print('⚠️ [ApiService] Solução: Visite a URL no navegador uma vez para desbloquear: $baseUrl');
@@ -192,6 +201,12 @@ class ApiService {
           print('⚠️ [ApiService] Verifique: 1) Se o token JWT é válido, 2) Se o usuário tem permissão para acessar este endpoint, 3) Se o backend está verificando corretamente o token');
           throw Exception('Acesso negado (403). $detailMessage');
         } else if (response.statusCode == 404) {
+          // Verificar se é erro do ngrok offline (já tratado acima, mas garantir)
+          if (baseUrl.contains('ngrok') && 
+              (response.body.contains('is offline') || 
+               response.headers['ngrok-error-code'] == 'ERR_NGROK_3200')) {
+            throw Exception('Túnel ngrok está offline. Reinicie o ngrok no servidor backend.');
+          }
           throw Exception('Endpoint não encontrado. Verifique a configuração do servidor.');
         } else if (response.statusCode == 500) {
           throw Exception('Erro interno do servidor. Tente novamente mais tarde.');

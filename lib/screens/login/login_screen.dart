@@ -49,6 +49,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
               ),
             ),
             child: SafeArea(
+              bottom: false, // Permite que o conteúdo chegue até o final
               child: FadeTransition(
                 opacity: _fadeAnimation,
                 child: _buildContent(isLandscape, size),
@@ -103,6 +104,8 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
 
   Widget _buildFormSection(Size size) {
     return Container(
+      width: double.infinity,
+      height: double.infinity, // Garante que ocupe todo o espaço disponível
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
@@ -115,9 +118,11 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: size.width * 0.08,
-              vertical: 32,
+            padding: EdgeInsets.only(
+              left: size.width * 0.08,
+              right: size.width * 0.08,
+              top: 32,
+              bottom: MediaQuery.of(Get.context!).padding.bottom + 32, // Padding para área segura inferior
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,

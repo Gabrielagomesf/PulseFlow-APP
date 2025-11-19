@@ -53,12 +53,19 @@ class HomeScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Card de Agendamento (sempre visível)
+                          _buildScheduleConsultationCard(),
+                          const SizedBox(height: 24),
+                          
                           // Seção Favorito
                           _buildFavoriteSection(controller),
                           const SizedBox(height: 24),
                           
                           // Seção Atalhos
                           _buildShortcutsSection(controller),
+                          
+                          // Padding extra no final para evitar corte
+                          SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
                         ],
                       ),
                     ),
@@ -221,8 +228,6 @@ class HomeScreen extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildScheduleConsultationCard(),
-            const SizedBox(height: 16),
             _buildNoDataMessage(),
           ],
         );
@@ -374,6 +379,662 @@ class HomeScreen extends StatelessWidget {
     final itemData = _getFavoriteItemData(item);
     final stats = _getStatsForItem(controller, item);
     
+    if (stats.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.withOpacity(0.2)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  itemData['icon'],
+                  color: itemData['color'],
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  itemData['title'],
+                  style: AppTheme.titleMedium.copyWith(
+                    color: const Color(0xFF1E293B),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              height: 80,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.withOpacity(0.2)),
+              ),
+              child: const Center(
+                child: Text(
+                  'Nenhum dado disponível',
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    // Visualizações específicas por tipo
+    switch (item) {
+      case 'enxaqueca':
+        return _buildEnxaquecaCard(itemData, stats);
+      case 'diabetes':
+        return _buildDiabetesCard(itemData, stats);
+      case 'crise_gastrite':
+        return _buildGastriteCard(itemData, stats);
+      case 'evento_clinico':
+        return _buildEventoClinicoCard(itemData, stats);
+      case 'menstruacao':
+        return _buildMenstruacaoCard(itemData, stats);
+      default:
+        return _buildDefaultCard(itemData, stats);
+    }
+  }
+  
+  Widget _buildEnxaquecaCard(Map<String, dynamic> itemData, Map<String, dynamic> stats) {
+    final diasDesdeUltima = stats['diasDesdeUltima'] as int? ?? 0;
+    final frequencia30Dias = stats['frequencia30Dias'] as int? ?? 0;
+    final ultimaIntensidade = stats['ultimaIntensidade'] as int? ?? 0;
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: itemData['color'].withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  itemData['icon'],
+                  color: itemData['color'],
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      itemData['title'],
+                      style: AppTheme.titleMedium.copyWith(
+                        color: const Color(0xFF1E293B),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      diasDesdeUltima == 0 
+                          ? 'Hoje' 
+                          : diasDesdeUltima == 1 
+                              ? 'Há 1 dia' 
+                              : 'Há $diasDesdeUltima dias',
+                      style: AppTheme.bodySmall.copyWith(
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildInfoBox(
+                  'Última Intensidade',
+                  '$ultimaIntensidade/10',
+                  itemData['color'],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildInfoBox(
+                  'Últimos 30 dias',
+                  '$frequencia30Dias crises',
+                  Colors.orange,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildStatItem('Média', '${stats['media'] ?? 0}/10', Colors.blue),
+              _buildStatItem('Total', '${stats['total'] ?? 0}', Colors.grey[600]!),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildDiabetesCard(Map<String, dynamic> itemData, Map<String, dynamic> stats) {
+    final ultimaGlicemia = stats['ultimaGlicemia'] as int? ?? 0;
+    final unidade = stats['unidade'] as String? ?? 'mg/dL';
+    final status = stats['status'] as String? ?? 'Normal';
+    final diasDesdeUltima = stats['diasDesdeUltima'] as int? ?? 0;
+    final media7Dias = stats['media7Dias'] as int?;
+    
+    Color statusColor = Colors.green;
+    if (status == 'Alta') statusColor = Colors.red;
+    if (status == 'Baixa') statusColor = Colors.orange;
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: itemData['color'].withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  itemData['icon'],
+                  color: itemData['color'],
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      itemData['title'],
+                      style: AppTheme.titleMedium.copyWith(
+                        color: const Color(0xFF1E293B),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      diasDesdeUltima == 0 
+                          ? 'Hoje' 
+                          : diasDesdeUltima == 1 
+                              ? 'Há 1 dia' 
+                              : 'Há $diasDesdeUltima dias',
+                      style: AppTheme.bodySmall.copyWith(
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: statusColor.withOpacity(0.3)),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        '$ultimaGlicemia',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: statusColor,
+                        ),
+                      ),
+                      Text(
+                        unidade,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: statusColor,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          status,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (media7Dias != null) ...[
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildInfoBox(
+                    'Média 7 dias',
+                    '$media7Dias $unidade',
+                    Colors.blue,
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildStatItem('Média Geral', '${stats['media'] ?? 0} $unidade', Colors.blue),
+              _buildStatItem('Total', '${stats['total'] ?? 0}', Colors.grey[600]!),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildGastriteCard(Map<String, dynamic> itemData, Map<String, dynamic> stats) {
+    final diasDesdeUltima = stats['diasDesdeUltima'] as int? ?? 0;
+    final frequencia30Dias = stats['frequencia30Dias'] as int? ?? 0;
+    final ultimaIntensidade = stats['ultimaIntensidade'] as int? ?? 0;
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: itemData['color'].withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  itemData['icon'],
+                  color: itemData['color'],
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      itemData['title'],
+                      style: AppTheme.titleMedium.copyWith(
+                        color: const Color(0xFF1E293B),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      diasDesdeUltima == 0 
+                          ? 'Hoje' 
+                          : diasDesdeUltima == 1 
+                              ? 'Há 1 dia' 
+                              : 'Há $diasDesdeUltima dias',
+                      style: AppTheme.bodySmall.copyWith(
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildInfoBox(
+                  'Última Intensidade',
+                  '$ultimaIntensidade/10',
+                  itemData['color'],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildInfoBox(
+                  'Últimos 30 dias',
+                  '$frequencia30Dias crises',
+                  Colors.orange,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildStatItem('Média', '${stats['media'] ?? 0}/10', Colors.blue),
+              _buildStatItem('Total', '${stats['total'] ?? 0}', Colors.grey[600]!),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildEventoClinicoCard(Map<String, dynamic> itemData, Map<String, dynamic> stats) {
+    final totalFuturos = stats['totalFuturos'] as int? ?? 0;
+    final proximoEvento = stats['proximoEvento'] as DateTime?;
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: itemData['color'].withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  itemData['icon'],
+                  color: itemData['color'],
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  itemData['title'],
+                  style: AppTheme.titleMedium.copyWith(
+                    color: const Color(0xFF1E293B),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildInfoBox(
+                  'Próximos',
+                  '$totalFuturos eventos',
+                  Colors.green,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildInfoBox(
+                  'Este mês',
+                  '${stats['este_mes'] ?? 0} eventos',
+                  Colors.blue,
+                ),
+              ),
+            ],
+          ),
+          if (proximoEvento != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.orange.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.calendar_today, color: Colors.orange, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Próximo evento',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        Text(
+                          _formatDate(proximoEvento),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange[700],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          _buildStatItem('Total', '${stats['total'] ?? 0}', Colors.grey[600]!),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildMenstruacaoCard(Map<String, dynamic> itemData, Map<String, dynamic> stats) {
+    final diasDesdeUltima = stats['diasDesdeUltima'] as int? ?? 0;
+    final cicloMedio = stats['cicloMedio'] as int?;
+    final proximoCiclo = stats['proximoCiclo'] as DateTime?;
+    
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: itemData['color'].withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  itemData['icon'],
+                  color: itemData['color'],
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      itemData['title'],
+                      style: AppTheme.titleMedium.copyWith(
+                        color: const Color(0xFF1E293B),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      'Dia $diasDesdeUltima do ciclo',
+                      style: AppTheme.bodySmall.copyWith(
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              if (cicloMedio != null)
+                Expanded(
+                  child: _buildInfoBox(
+                    'Ciclo médio',
+                    '$cicloMedio dias',
+                    Colors.purple,
+                  ),
+                ),
+              if (cicloMedio != null) const SizedBox(width: 12),
+              Expanded(
+                child: _buildInfoBox(
+                  'Duração média',
+                  '${stats['media'] ?? 0} dias',
+                  Colors.pink,
+                ),
+              ),
+            ],
+          ),
+          if (proximoCiclo != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.pink.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.pink.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.calendar_today, color: Colors.pink, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Próximo ciclo esperado',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        Text(
+                          _formatDate(proximoCiclo),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.pink[700],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          _buildStatItem('Total registros', '${stats['total'] ?? 0}', Colors.grey[600]!),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildDefaultCard(Map<String, dynamic> itemData, Map<String, dynamic> stats) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -410,48 +1071,61 @@ class HomeScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          // Estatísticas
-          if (stats.isNotEmpty) ...[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildStatItem('Maior', stats['maior']?.toString() ?? 'N/A', Colors.red),
-                _buildStatItem('Menor', stats['menor']?.toString() ?? 'N/A', Colors.green),
-                _buildStatItem('Média', stats['media']?.toStringAsFixed(1) ?? 'N/A', Colors.blue),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildStatItem('Total', stats['total']?.toString() ?? '0', Colors.grey[600]!),
-                if (stats['este_mes'] != null)
-                  _buildStatItem('Este Mês', stats['este_mes']?.toString() ?? '0', Colors.orange),
-              ],
-            ),
-          ] else ...[
-            Container(
-              height: 100,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.withOpacity(0.2)),
-              ),
-              child: const Center(
-                child: Text(
-                  'Nenhum dado disponível',
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ),
-          ],
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildStatItem('Maior', stats['maior']?.toString() ?? 'N/A', Colors.red),
+              _buildStatItem('Menor', stats['menor']?.toString() ?? 'N/A', Colors.green),
+              _buildStatItem('Média', stats['media']?.toString() ?? 'N/A', Colors.blue),
+            ],
+          ),
         ],
       ),
     );
+  }
+  
+  Widget _buildInfoBox(String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = date.difference(now).inDays;
+    
+    if (difference == 0) return 'Hoje';
+    if (difference == 1) return 'Amanhã';
+    if (difference == -1) return 'Ontem';
+    if (difference > 0 && difference <= 7) return 'Em $difference dias';
+    
+    return '${date.day}/${date.month}/${date.year}';
   }
 
   // Obtém estatísticas para um item específico
@@ -1183,6 +1857,9 @@ class HomeScreen extends StatelessWidget {
   Widget _buildScheduleConsultationCard() {
     return Container(
       width: double.infinity,
+      constraints: BoxConstraints(
+        minHeight: 180, // Altura mínima para garantir que não seja cortado
+      ),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -1201,6 +1878,7 @@ class HomeScreen extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             children: [
@@ -1217,6 +1895,7 @@ class HomeScreen extends StatelessWidget {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       'Agende sua consulta',
@@ -1224,6 +1903,8 @@ class HomeScreen extends StatelessWidget {
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 6),
                     Text(
@@ -1231,6 +1912,8 @@ class HomeScreen extends StatelessWidget {
                       style: AppTheme.bodyMedium.copyWith(
                         color: Colors.white.withOpacity(0.8),
                       ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),

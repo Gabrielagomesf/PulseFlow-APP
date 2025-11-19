@@ -2307,10 +2307,18 @@ class _Sidebar extends StatelessWidget {
               child: const Padding(
                 padding: EdgeInsets.symmetric(vertical: 8.0),
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.logout, color: Colors.white70, size: 18),
+                    Icon(Icons.logout, color: Colors.red, size: 18),
                     SizedBox(width: 8),
-                    Text('Sair', style: TextStyle(color: Colors.white70)),
+                    Text(
+                      'Sair',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ],
                 ),
               ),

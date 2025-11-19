@@ -464,49 +464,79 @@ class ProfileController extends GetxController {
   // Carrega dados de saúde do HealthKit
   Future<void> _loadHealthData() async {
     try {
+      print('📱 [ProfileController] Iniciando carregamento de dados do HealthKit...');
+      
       // Verifica se tem permissões
       final hasPermissions = await _healthService.hasPermissions();
+      print('📱 [ProfileController] Permissões: $hasPermissions');
       
       if (!hasPermissions) {
+        print('📱 [ProfileController] Solicitando permissões...');
         final granted = await _healthService.requestPermissions();
         if (!granted) {
+          print('⚠️ [ProfileController] Permissões negadas pelo usuário');
           // Usa dados simulados mas ainda tenta salvar
         }
       }
 
       // Busca dados reais do HealthKit
+      print('📱 [ProfileController] Buscando dados do HealthKit...');
       final healthData = await _healthService.getAllHealthData();
       
-      // Extrai dados de frequência cardíaca (último valor)
+      print('📱 [ProfileController] Dados recebidos:');
+      print('  - HeartRate: ${healthData['heartRate']?.length ?? 0} pontos');
+      print('  - Sleep: ${healthData['sleep']?.length ?? 0} pontos');
+      print('  - Steps: ${healthData['steps']?.length ?? 0} pontos');
+      
+      // Extrai dados de frequência cardíaca (último valor = mais recente)
       if (healthData['heartRate'] != null && healthData['heartRate']!.isNotEmpty) {
         final lastHeartRate = healthData['heartRate']!.last.y;
+        print('📱 [ProfileController] Última frequência cardíaca: $lastHeartRate bpm');
         _heartRate.value = lastHeartRate;
+      } else {
+        print('⚠️ [ProfileController] Nenhum dado de frequência cardíaca encontrado');
       }
       
-      // Extrai dados de sono (último valor)
+      // Extrai dados de sono (último valor = mais recente)
       if (healthData['sleep'] != null && healthData['sleep']!.isNotEmpty) {
         final lastSleep = healthData['sleep']!.last.y;
-        _sleepQuality.value = lastSleep * 10; // Converte horas para percentual
+        print('📱 [ProfileController] Últimas horas de sono: $lastSleep horas');
+        _sleepQuality.value = lastSleep * 10; // Converte horas para percentual (assumindo 10h = 100%)
+      } else {
+        print('⚠️ [ProfileController] Nenhum dado de sono encontrado');
       }
       
-      // Extrai dados de passos (último valor)
+      // Extrai dados de passos (último valor = mais recente)
       if (healthData['steps'] != null && healthData['steps']!.isNotEmpty) {
         final lastSteps = healthData['steps']!.last.y;
+        print('📱 [ProfileController] Últimos passos: $lastSteps');
         _dailySteps.value = lastSteps.round();
+      } else {
+        print('⚠️ [ProfileController] Nenhum dado de passos encontrado');
       }
       
+      print('📱 [ProfileController] Valores finais:');
+      print('  - HeartRate: ${_heartRate.value} bpm');
+      print('  - Sleep: ${_sleepQuality.value}%');
+      print('  - Steps: ${_dailySteps.value}');
       
       // Salva dados no banco de dados
       if (_patient.value != null) {
         try {
+          print('📱 [ProfileController] Salvando dados no banco...');
           await _healthDataService.saveHealthDataFromHealthKit(_patient.value!.id!);
+          print('✅ [ProfileController] Dados salvos com sucesso');
         } catch (e) {
+          print('❌ [ProfileController] Erro ao salvar dados no banco: $e');
           // Não falha o carregamento se não conseguir salvar no banco
         }
       } else {
+        print('⚠️ [ProfileController] Paciente não encontrado, não é possível salvar dados');
       }
       
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('❌ [ProfileController] Erro ao carregar dados do HealthKit: $e');
+      print('❌ [ProfileController] Stack trace: $stackTrace');
       // Em caso de erro, usa dados simulados
       _heartRate.value = 72.0;
       _sleepQuality.value = 85.0;
@@ -582,8 +612,8 @@ class ProfileController extends GetxController {
         return;
       }
 
-      // Sincroniza dados
-      await _healthDataService.syncHealthData(_patient.value!.id!);
+      // Sincroniza dados (salva dados do HealthKit no banco)
+      await _healthDataService.saveHealthDataFromHealthKit(_patient.value!.id!);
       
       // Recarrega dados
       await _loadHealthData();
@@ -598,7 +628,7 @@ class ProfileController extends GetxController {
     } catch (e) {
       Get.snackbar(
         'Erro',
-        'Erro ao sincronizar dados de saúde',
+        'Erro ao sincronizar dados de saúde: $e',
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );

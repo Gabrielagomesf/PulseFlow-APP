@@ -5,6 +5,8 @@ import 'package:get/get.dart';
 import '../../theme/app_theme.dart';
 import 'profile_controller.dart';
 import '../../widgets/pulse_bottom_navigation.dart';
+import '../../services/auth_service.dart';
+import '../../routes/app_routes.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -66,6 +68,10 @@ class ProfileScreen extends StatelessWidget {
                         // Botão de salvar
                         _buildSaveButton(controller),
                         const SizedBox(height: 20),
+                        
+                        // Botão de sair
+                        _buildLogoutButton(),
+                        const SizedBox(height: 20),
                       ],
                     ),
                   );
@@ -98,20 +104,16 @@ class ProfileScreen extends StatelessWidget {
       child: Row(
         children: [
           // Botão de voltar
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
+          IconButton(
+            icon: const Icon(
+              Icons.arrow_back_ios_new,
+              color: Colors.white,
+              size: 20,
             ),
-            child: IconButton(
-              icon: const Icon(
-                Icons.arrow_back_ios_new,
-                color: Colors.white,
-                size: 20,
-              ),
-              onPressed: () => Get.back(),
-            ),
+            onPressed: () => Get.back(),
           ),
+          
+          const SizedBox(width: 16),
           
           // Logo centralizado
           Expanded(
@@ -675,46 +677,49 @@ class ProfileScreen extends StatelessWidget {
           
           const SizedBox(height: 16),
           
-          // Botões de ação
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    controller.syncHealthData();
-                  },
-                  icon: const Icon(Icons.sync, size: 18),
-                  label: const Text('Sincronizar'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF059669),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+          // Botão de ação
+          Obx(() {
+            final isLoading = controller.isRequestingHealthPermissions;
+            return SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: isLoading
+                    ? null
+                    : () {
+                        controller.syncHealthData();
+                      },
+                icon: isLoading
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Icon(Icons.sync, size: 20),
+                label: Text(
+                  isLoading
+                      ? 'Sincronizando...'
+                      : 'Sincronizar Dados',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF059669),
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: const Color(0xFF059669).withOpacity(0.6),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    controller.testHealthDataIntegration();
-                  },
-                  icon: const Icon(Icons.bug_report, size: 18),
-                  label: const Text('Testar'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6B7280),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+            );
+          }),
         ],
       ),
     );
@@ -839,6 +844,39 @@ class ProfileScreen extends StatelessWidget {
         ),
       ),
     ));
+  }
+
+  Widget _buildLogoutButton() {
+    return Container(
+      padding: const EdgeInsets.all(16.0),
+      child: InkWell(
+        onTap: () async {
+          try {
+            await AuthService.instance.logout();
+          } catch (_) {}
+          Get.offAllNamed(Routes.LOGIN);
+        },
+        borderRadius: BorderRadius.circular(8),
+        child: const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.logout, color: Colors.red, size: 18),
+              SizedBox(width: 8),
+              Text(
+                'Sair',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _showPhotoOptions(ProfileController controller) {

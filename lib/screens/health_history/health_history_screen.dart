@@ -4,6 +4,8 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../services/database_service.dart';
 import '../../services/auth_service.dart';
 import '../../theme/app_theme.dart';
+import '../../routes/app_routes.dart';
+import '../home/home_controller.dart';
 
 class HealthHistoryScreen extends StatefulWidget {
   const HealthHistoryScreen({super.key});
@@ -261,6 +263,51 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
           ),
         ),
         actions: [
+          Obx(() {
+            final homeController = Get.find<HomeController>();
+            return IconButton(
+              icon: Stack(
+                children: [
+                  const Icon(Icons.notifications_outlined, color: Colors.white),
+                  if (homeController.unreadNotificationsCount.value > 0)
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          homeController.unreadNotificationsCount.value > 9 
+                              ? '9+' 
+                              : homeController.unreadNotificationsCount.value.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              onPressed: () async {
+                await Get.toNamed(Routes.NOTIFICATIONS);
+                try {
+                  final homeController = Get.find<HomeController>();
+                  await homeController.loadNotificationsCount();
+                } catch (e) {
+                }
+              },
+            );
+          }),
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: _loadHealthData,

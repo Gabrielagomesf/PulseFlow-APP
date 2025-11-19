@@ -32,5 +32,6 @@ abstract class Routes {
   static const EXAME_LIST = '/exame-list';
   static const HORMONAL = '/hormonal';
   static const HISTORY_SELECTION = '/history-selection';
+  static const NOTIFICATIONS = '/notifications';
 
 } 

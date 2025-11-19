@@ -91,12 +91,61 @@ class HomeScreen extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Top row com logo centralizado
+          // Top row com logo centralizado e notificação
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Logo do PulseFlow
+              const SizedBox(width: 48),
               _buildPulseFlowLogo(),
+              Obx(() => IconButton(
+                icon: Stack(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.notifications_outlined,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    if (controller.unreadNotificationsCount.value > 0)
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 16,
+                            minHeight: 16,
+                          ),
+                          child: Text(
+                            controller.unreadNotificationsCount.value > 9 
+                                ? '9+' 
+                                : controller.unreadNotificationsCount.value.toString(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                onPressed: () async {
+                  await Get.toNamed(Routes.NOTIFICATIONS);
+                  controller.loadNotificationsCount();
+                },
+              )),
             ],
           ),
           const SizedBox(height: 20),

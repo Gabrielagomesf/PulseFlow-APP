@@ -33,6 +33,7 @@ import '../screens/history_selection/history_selection_screen.dart';
 import '../screens/appointments/appointment_specialty_screen.dart';
 import '../screens/appointments/appointment_doctor_list_screen.dart';
 import '../screens/appointments/appointment_scheduler_screen.dart';
+import '../screens/notifications/notifications_screen.dart';
 import '../services/auth_service.dart';
 
 import  'app_routes.dart';
@@ -220,6 +221,12 @@ class AppPages {
     GetPage(
       name: Routes.APPOINTMENT_SCHEDULER,
       page: () => const AppointmentSchedulerScreen(),
+      transition: Transition.rightToLeft,
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: Routes.NOTIFICATIONS,
+      page: () => const NotificationsScreen(),
       transition: Transition.rightToLeft,
       middlewares: [AuthMiddleware()],
     ),

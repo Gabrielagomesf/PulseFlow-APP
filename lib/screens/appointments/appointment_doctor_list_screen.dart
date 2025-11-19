@@ -88,15 +88,21 @@ class AppointmentDoctorListScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 20),
-                        if (controller.filteredDoctors.isEmpty)
-                          _EmptyState(
-                            icon: Icons.search_off_rounded,
-                            message: controller.doctorQuery.value.isEmpty
-                                ? 'Nenhum médico cadastrado para esta especialidade.'
-                                : 'Não encontramos médicos que contenham "${controller.doctorQuery.value}".',
-                          )
-                        else
-                          ...controller.filteredDoctors.map((doctor) {
+                        Obx(() {
+                          final filteredDoctors = controller.filteredDoctors;
+                          final doctorQuery = controller.doctorQuery.value;
+                          
+                          if (filteredDoctors.isEmpty) {
+                            return _EmptyState(
+                              icon: Icons.search_off_rounded,
+                              message: doctorQuery.isEmpty
+                                  ? 'Nenhum médico cadastrado para esta especialidade.'
+                                  : 'Não encontramos médicos que contenham "$doctorQuery".',
+                            );
+                          }
+                          
+                          return Column(
+                            children: filteredDoctors.map((doctor) {
                             final suggestions = _nextAvailableThreeSlots(controller, doctor.id);
                             return _DoctorCard(
                               doctorName: doctor.name,
@@ -109,7 +115,9 @@ class AppointmentDoctorListScreen extends StatelessWidget {
                                 Get.toNamed(Routes.APPOINTMENT_SCHEDULER);
                               },
                             );
-                          }),
+                            }).toList(),
+                          );
+                        }),
                       ],
                     ),
                   );
@@ -284,27 +292,7 @@ class _DoctorCard extends StatelessWidget {
             style: AppTheme.bodySmall.copyWith(color: Colors.grey[600]),
           ),
           const SizedBox(height: 12),
-          if (suggestions.isEmpty)
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.info_outline, color: Colors.grey[600], size: 18),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Sem horários próximos. Toque em "Ver agenda" para ver outras datas.',
-                      style: AppTheme.bodySmall.copyWith(color: Colors.grey[600]),
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else
+          if (suggestions.isNotEmpty)
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

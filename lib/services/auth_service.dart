@@ -83,16 +83,23 @@ class AuthService extends GetxController {
       'typ': 'JWT',
     };
 
-    final encodedHeader = base64Url.encode(utf8.encode(json.encode(header)));
-    final encodedPayload = base64Url.encode(utf8.encode(json.encode(payload)));
+    String base64UrlEncode(List<int> bytes) {
+      final base64 = base64Encode(bytes);
+      return base64
+          .replaceAll('+', '-')
+          .replaceAll('/', '_')
+          .replaceAll('=', '');
+    }
     
-    // Usar JWT secret do .env ou uma chave padrão para desenvolvimento
+    final encodedHeader = base64UrlEncode(utf8.encode(json.encode(header)));
+    final encodedPayload = base64UrlEncode(utf8.encode(json.encode(payload)));
+    
     final jwtSecret = AppConfig.jwtSecret;
     
     final signature = Hmac(sha256, utf8.encode(jwtSecret))
         .convert(utf8.encode('$encodedHeader.$encodedPayload'))
         .bytes;
-    final encodedSignature = base64Url.encode(signature);
+    final encodedSignature = base64UrlEncode(signature);
 
     final token = '$encodedHeader.$encodedPayload.$encodedSignature';
     

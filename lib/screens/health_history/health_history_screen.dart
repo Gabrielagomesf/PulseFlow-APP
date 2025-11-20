@@ -229,11 +229,13 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
                   
                   print('🔄 [HealthHistory] Recarregando dados do banco...');
                   // Limpa os dados antes de recarregar
-                  _healthData.clear();
+                  setState(() {
+                    _dailyData.clear();
+                  });
                   // Recarrega os dados
                   await _loadHealthData();
                   
-                  print('✅ [HealthHistory] Recarregamento concluído. Total de dados: ${_healthData.length}');
+                  print('✅ [HealthHistory] Recarregamento concluído. Total de dados: ${_dailyData.length}');
                   
                   Get.snackbar(
                     'Sucesso',
@@ -265,40 +267,58 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
             topRight: Radius.circular(24),
           ),
         ),
-        child: Obx(() {
-          if (_isLoading.value) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00324A)),
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    'Carregando dados...',
-                    style: TextStyle(
-                      color: Color(0xFF64748B),
-                      fontSize: 16,
+        child: _isLoading
+            ? const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00324A)),
                     ),
-                  ),
-                ],
-              ),
-            );
-          }
+                    SizedBox(height: 16),
+                    Text(
+                      'Carregando dados...',
+                      style: TextStyle(
+                        color: Color(0xFF64748B),
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : _error != null
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Erro: $_error',
+                          style: const TextStyle(color: Colors.red),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  )
+                : _buildContent(),
+      ),
+    );
+  }
 
   Widget _buildContent() {
-    return Column(
-      children: [
-        // Filtros
-        _buildFilters(),
-        const SizedBox(height: 16),
-        
-        // Lista de dados
-        Expanded(
-          child: _buildDataList(),
-        ),
-      ],
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          // Filtros
+          _buildFilters(),
+          const SizedBox(height: 16),
+          
+          // Lista de dados
+          _buildDataList(),
+          const SizedBox(height: 16),
+        ],
+      ),
     );
   }
 

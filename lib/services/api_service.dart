@@ -201,23 +201,15 @@ class ApiService {
           print('⚠️ [ApiService] Verifique: 1) Se o token JWT é válido, 2) Se o usuário tem permissão para acessar este endpoint, 3) Se o backend está verificando corretamente o token');
           throw Exception('Acesso negado (403). $detailMessage');
         } else if (response.statusCode == 404) {
-<<<<<<< Updated upstream
-          // Verificar se é erro do ngrok offline (já tratado acima, mas garantir)
-          if (baseUrl.contains('ngrok') && 
-              (response.body.contains('is offline') || 
-               response.headers['ngrok-error-code'] == 'ERR_NGROK_3200')) {
-            throw Exception('Túnel ngrok está offline. Reinicie o ngrok no servidor backend.');
-=======
           // Verificar se é erro específico do ngrok offline
           final responseBody = response.body.toLowerCase();
           if (responseBody.contains('err_ngrok_3200') || 
-              responseBody.contains('endpoint') && responseBody.contains('offline') ||
+              (responseBody.contains('endpoint') && responseBody.contains('offline')) ||
               response.headers.containsKey('ngrok-error-code')) {
             final ngrokError = response.headers['ngrok-error-code'] ?? 'ERR_NGROK_3200';
             print('❌ [ApiService] Ngrok está offline: $ngrokError');
             print('⚠️ [ApiService] O túnel ngrok não está ativo. Inicie o ngrok novamente.');
             throw Exception('Túnel ngrok offline. O servidor não está acessível. Verifique se o ngrok está rodando e atualize a URL no arquivo .env.');
->>>>>>> Stashed changes
           }
           throw Exception('Endpoint não encontrado. Verifique a configuração do servidor.');
         } else if (response.statusCode == 500) {

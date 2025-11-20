@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/database_service.dart';
 import '../../models/patient.dart';
@@ -34,6 +35,9 @@ class HomeController extends GetxController {
   final _eventoClinicoData = <EventoClinico>[].obs;
   final _menstruacaoData = <Menstruacao>[].obs;
   
+  // Contador de notificações
+  final RxInt unreadNotificationsCount = 0.obs;
+  
   // Getters
   Patient? get currentPatient => _currentPatient.value;
   bool get isLoading => _isLoading.value;
@@ -53,6 +57,17 @@ class HomeController extends GetxController {
     super.onInit();
     _loadPatientData();
     _loadAvailableData();
+    loadNotificationsCount();
+  }
+  
+  Future<void> loadNotificationsCount() async {
+    try {
+      final apiService = ApiService();
+      final count = await apiService.buscarContadorNotificacoesNaoLidas();
+      unreadNotificationsCount.value = count;
+    } catch (e) {
+      unreadNotificationsCount.value = 0;
+    }
   }
   
   // Carrega os dados do paciente logado
@@ -103,6 +118,7 @@ class HomeController extends GetxController {
       await _authService.init();
       _currentPatient.value = _authService.currentUser;
       await _loadAvailableData();
+      await loadNotificationsCount();
     } catch (e) {
       Get.snackbar(
         'Erro',

@@ -368,43 +368,46 @@ class AppointmentSchedulerScreen extends StatelessWidget {
   }
 
   Widget _buildDoctorList(AppointmentSchedulerController controller) {
-    final doctors = controller.filteredDoctors;
-    if (controller.selectedSpecialtyId.value == null) {
-      return _buildEmptyState(
-        icon: Icons.info_outline,
-        message: 'Selecione uma especialidade para listar os médicos.',
-      );
-    }
-    if (doctors.isEmpty) {
-      return _buildEmptyState(
-        icon: Icons.search_off_rounded,
-        message: 'Nenhum médico encontrado para esta especialidade.',
-      );
-    }
+    return Obx(() {
+      final doctors = controller.filteredDoctors;
+      if (controller.selectedSpecialtyId.value == null) {
+        return _buildEmptyState(
+          icon: Icons.info_outline,
+          message: 'Selecione uma especialidade para listar os médicos.',
+        );
+      }
+      if (doctors.isEmpty) {
+        return _buildEmptyState(
+          icon: Icons.search_off_rounded,
+          message: controller.doctorQuery.value.isEmpty
+              ? 'Nenhum médico encontrado para esta especialidade.'
+              : 'Não encontramos médicos que contenham "${controller.doctorQuery.value}".',
+        );
+      }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        TextField(
-          controller: controller.doctorSearchController,
-          onChanged: controller.updateDoctorSearch,
-          decoration: InputDecoration(
-            hintText: 'Pesquise pelo médico',
-            prefixIcon: const Icon(Icons.search_rounded),
-            filled: true,
-            fillColor: Colors.grey[100],
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: Colors.grey.withOpacity(0.2)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Color(0xFF00324A), width: 1.5),
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            controller: controller.doctorSearchController,
+            onChanged: controller.updateDoctorSearch,
+            decoration: InputDecoration(
+              hintText: 'Pesquise pelo médico',
+              prefixIcon: const Icon(Icons.search_rounded),
+              filled: true,
+              fillColor: Colors.grey[100],
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: Colors.grey.withOpacity(0.2)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(color: Color(0xFF00324A), width: 1.5),
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 16),
-        ...doctors.map((doctor) {
+          const SizedBox(height: 16),
+          ...doctors.map((doctor) {
           final isSelected = controller.selectedDoctorId.value == doctor.id;
           return Container(
             margin: const EdgeInsets.only(bottom: 12),
@@ -456,82 +459,151 @@ class AppointmentSchedulerScreen extends StatelessWidget {
             ),
           );
         }).toList(),
-      ],
-    );
+        ],
+      );
+    });
   }
 
   Widget _buildDateSelector(AppointmentSchedulerController controller) {
+    return Obx(() {
+      if (controller.selectedDoctor == null) {
+        return _buildEmptyState(
+          icon: Icons.calendar_today_rounded,
+          message: 'Selecione um médico para visualizar as datas disponíveis.',
+        );
+      }
+
+      final availableDates = controller.availableDates;
+      
+      if (availableDates.isEmpty) {
+        return _buildEmptyState(
+          icon: Icons.event_busy_rounded,
+          message: 'Este médico não possui horários disponíveis cadastrados.',
+        );
+      }
+
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: availableDates.map((date) {
+            final isSelected = DateUtils.isSameDay(date, controller.selectedDate.value);
+            final isToday = DateUtils.isSameDay(date, DateTime.now());
+
+            return Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: GestureDetector(
+                onTap: () => controller.selectDate(date),
+                child: Container(
+                  width: 72,
+                  decoration: BoxDecoration(
+                    color: isSelected ? const Color(0xFF00324A) : Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isSelected ? const Color(0xFF00324A) : Colors.grey.shade300,
+                    ),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        DateFormat('E', 'pt_BR').format(date).toUpperCase(),
+                        style: TextStyle(
+                          color: isSelected ? Colors.white70 : Colors.grey[600],
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        DateFormat('dd/MM').format(date),
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : const Color(0xFF1E293B),
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        isToday ? 'Hoje' : DateFormat('MMM', 'pt_BR').format(date),
+                        style: TextStyle(
+                          color: isSelected ? Colors.white70 : Colors.grey[500],
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      );
+    });
+  }
+
+  Widget _buildSlotsGrid(AppointmentSchedulerController controller) {
     if (controller.selectedDoctor == null) {
       return _buildEmptyState(
-        icon: Icons.calendar_today_rounded,
-        message: 'Selecione um médico para visualizar as datas disponíveis.',
+        icon: Icons.work_history_outlined,
+        message: 'Selecione um médico para visualizar os horários disponíveis.',
       );
     }
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: controller.availableDates.map((date) {
-          final isSelected = DateUtils.isSameDay(date, controller.selectedDate.value);
-          final isToday = DateUtils.isSameDay(date, DateTime.now());
+    return Obx(() {
+      final date = controller.selectedDate.value;
+      final dataKey = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      final estaCarregando = controller.carregandoHorarios.contains(dataKey);
+      final horariosPorDataValue = controller.horariosPorData.value;
+      
+      if (estaCarregando) {
+        return const Center(
+          child: Padding(
+            padding: EdgeInsets.all(24.0),
+            child: CircularProgressIndicator(),
+          ),
+        );
+      }
 
-          return Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: GestureDetector(
-              onTap: () => controller.selectDate(date),
-              child: Container(
-                width: 72,
-                decoration: BoxDecoration(
-                  color: isSelected ? const Color(0xFF00324A) : Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isSelected ? const Color(0xFF00324A) : Colors.grey.shade300,
-                  ),
+      final availableSlots = controller.getAvailableSlotsForSelectedDoctor();
+    
+      if (availableSlots.isEmpty) {
+        return _buildEmptyState(
+          icon: Icons.event_busy_rounded,
+          message: 'Não há horários disponíveis para esta data. Selecione outra data.',
+        );
+      }
+
+      return Wrap(
+        spacing: 12,
+        runSpacing: 12,
+        children: availableSlots.map((slot) {
+          final isSelected = controller.selectedSlot.value == slot;
+          return GestureDetector(
+            onTap: () => controller.selectSlot(slot),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              decoration: BoxDecoration(
+                color: isSelected ? const Color(0xFF00324A) : Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isSelected ? const Color(0xFF00324A) : Colors.grey.shade300,
+                  width: isSelected ? 2 : 1,
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      DateFormat('E', 'pt_BR').format(date).toUpperCase(),
-                      style: TextStyle(
-                        color: isSelected ? Colors.white70 : Colors.grey[600],
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      DateFormat('dd/MM').format(date),
-                      style: TextStyle(
-                        color: isSelected ? Colors.white : const Color(0xFF1E293B),
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      isToday ? 'Hoje' : DateFormat('MMM', 'pt_BR').format(date),
-                      style: TextStyle(
-                        color: isSelected ? Colors.white70 : Colors.grey[500],
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
+              ),
+              child: Text(
+                slot,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : const Color(0xFF1E293B),
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                  fontSize: 14,
                 ),
               ),
             ),
           );
         }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildSlotsGrid(AppointmentSchedulerController controller) {
-    return _buildEmptyState(
-      icon: Icons.work_history_outlined,
-      message: 'A seleção de horários está em desenvolvimento. Em breve você poderá escolher aqui.',
-    );
+      );
+    });
   }
 
   Widget _buildSummaryCard(AppointmentSchedulerController controller, HomeController homeController) {
@@ -697,6 +769,31 @@ class AppointmentSchedulerScreen extends StatelessWidget {
                       ),
                     ],
                   ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.cancel_outlined, color: Colors.red),
+                  onPressed: () async {
+                    final confirm = await Get.dialog<bool>(
+                      AlertDialog(
+                        title: const Text('Cancelar consulta'),
+                        content: const Text('Tem certeza que deseja cancelar esta consulta?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Get.back(result: false),
+                            child: const Text('Não'),
+                          ),
+                          TextButton(
+                            onPressed: () => Get.back(result: true),
+                            style: TextButton.styleFrom(foregroundColor: Colors.red),
+                            child: const Text('Sim, cancelar'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirm == true) {
+                      await controller.cancelarAgendamento(booking.id);
+                    }
+                  },
                 ),
               ],
             ),

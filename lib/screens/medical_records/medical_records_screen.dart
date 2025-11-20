@@ -475,6 +475,38 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
       ),
       actions: [
         IconButton(
+          icon: Stack(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.3),
+                  ),
+                ),
+                child: const Icon(Icons.notifications_outlined, color: Colors.white, size: 20),
+              ),
+              Positioned(
+                right: 6,
+                top: 6,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          onPressed: () {
+            Get.toNamed(Routes.NOTIFICATIONS);
+          },
+        ),
+        IconButton(
           icon: Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(

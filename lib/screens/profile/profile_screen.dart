@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../theme/app_theme.dart';
+import '../../routes/app_routes.dart';
 import 'profile_controller.dart';
 import '../../widgets/pulse_bottom_navigation.dart';
 import '../../services/auth_service.dart';
@@ -122,8 +123,40 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
           
-          // Espaçador para balancear o layout
-          const SizedBox(width: 48),
+          // Ícone de notificação
+          IconButton(
+            icon: Stack(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.notifications_outlined,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            onPressed: () {
+              Get.toNamed(Routes.NOTIFICATIONS);
+            },
+          ),
         ],
       ),
     );

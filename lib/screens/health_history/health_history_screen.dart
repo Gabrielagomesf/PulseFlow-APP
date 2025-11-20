@@ -6,7 +6,8 @@ import '../../services/database_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/health_data_service.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/pulse_bottom_navigation.dart';
+import '../../routes/app_routes.dart';
+import '../home/home_controller.dart';
 
 class HealthHistoryScreen extends StatefulWidget {
   const HealthHistoryScreen({super.key});
@@ -135,129 +136,156 @@ class _HealthHistoryScreenState extends State<HealthHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: AppTheme.blueSystemOverlayStyle,
-      child: Scaffold(
+    return Scaffold(
+      backgroundColor: const Color(0xFF00324A),
+      appBar: AppBar(
         backgroundColor: const Color(0xFF00324A),
-        body: Column(
-          children: [
-            _buildHeader(),
-            Expanded(
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(24),
-                    topRight: Radius.circular(24),
-                  ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: _isLoading
-                      ? _buildLoadingState()
-                      : _error != null
-                          ? _buildErrorState()
-                          : _dailyData.isEmpty
-                              ? _buildEmptyState()
-                              : _buildContent(),
-                ),
-              ),
-            ),
-          ],
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: Colors.white,
+            size: 20,
+          ),
+          onPressed: () => Get.back(),
         ),
-        bottomNavigationBar: const PulseBottomNavigation(activeItem: PulseNavItem.history),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 16,
-        left: 16,
-        right: 16,
-        bottom: 16,
-      ),
-      decoration: const BoxDecoration(
-        color: Color(0xFF00324A),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () => Get.back(),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Histórico de Saúde',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+        title: const Text(
+          'Histórico de Saúde',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        actions: [
+          Obx(() {
+            final homeController = Get.find<HomeController>();
+            return IconButton(
+              icon: Stack(
+                children: [
+                  const Icon(Icons.notifications_outlined, color: Colors.white),
+                  if (homeController.unreadNotificationsCount.value > 0)
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          homeController.unreadNotificationsCount.value > 9 
+                              ? '9+' 
+                              : homeController.unreadNotificationsCount.value.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${_dailyData.length} registros',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
+                ],
               ),
-              IconButton(
-                icon: const Icon(Icons.sync, color: Colors.white),
-                onPressed: () async {
-                  final authService = Get.find<AuthService>();
-                  final healthDataService = HealthDataService();
+              onPressed: () async {
+                await Get.toNamed(Routes.NOTIFICATIONS);
+                try {
+                  final homeController = Get.find<HomeController>();
+                  await homeController.loadNotificationsCount();
+                } catch (e) {
+                }
+              },
+            );
+          }),
+          IconButton(
+            icon: const Icon(Icons.sync, color: Colors.white),
+            onPressed: () async {
+              // Força sincronização com HealthKit antes de recarregar
+              final authService = Get.find<AuthService>();
+              final healthDataService = Get.find<HealthDataService>();
+              
+              if (authService.currentUser?.id != null) {
+                try {
+                  Get.snackbar(
+                    'Sincronizando',
+                    'Atualizando dados do Apple Health...',
+                    backgroundColor: Colors.blue,
+                    colorText: Colors.white,
+                    duration: const Duration(seconds: 2),
+                  );
                   
-                  if (authService.currentUser?.id != null) {
-                    try {
-                      Get.snackbar(
-                        'Sincronizando',
-                        'Atualizando dados do Apple Health...',
-                        backgroundColor: Colors.blue,
-                        colorText: Colors.white,
-                        duration: const Duration(seconds: 2),
-                      );
-                      
-                      await healthDataService.saveHealthDataFromHealthKit(authService.currentUser!.id!);
-                      await Future.delayed(const Duration(milliseconds: 1000));
-                      await _loadHealthData();
-                      
-                      Get.snackbar(
-                        'Sucesso',
-                        'Dados atualizados com sucesso!',
-                        backgroundColor: Colors.green,
-                        colorText: Colors.white,
-                        duration: const Duration(seconds: 2),
-                      );
-                    } catch (e) {
-                      Get.snackbar(
-                        'Erro',
-                        'Erro ao sincronizar dados: $e',
-                        backgroundColor: Colors.red,
-                        colorText: Colors.white,
-                      );
-                    }
-                  }
-                },
-              ),
-            ],
+                  print('🔄 [HealthHistory] Sincronizando dados do HealthKit...');
+                  await healthDataService.saveHealthDataFromHealthKit(authService.currentUser!.id!);
+                  
+                  print('✅ [HealthHistory] Sincronização concluída, aguardando salvamento...');
+                  // Aguarda mais tempo para garantir que os dados foram salvos no banco
+                  await Future.delayed(const Duration(milliseconds: 1000));
+                  
+                  print('🔄 [HealthHistory] Recarregando dados do banco...');
+                  // Limpa os dados antes de recarregar
+                  _healthData.clear();
+                  // Recarrega os dados
+                  await _loadHealthData();
+                  
+                  print('✅ [HealthHistory] Recarregamento concluído. Total de dados: ${_healthData.length}');
+                  
+                  Get.snackbar(
+                    'Sucesso',
+                    'Dados atualizados com sucesso!',
+                    backgroundColor: Colors.green,
+                    colorText: Colors.white,
+                    duration: const Duration(seconds: 2),
+                  );
+                } catch (e) {
+                  Get.snackbar(
+                    'Erro',
+                    'Erro ao sincronizar dados: $e',
+                    backgroundColor: Colors.red,
+                    colorText: Colors.white,
+                  );
+                }
+              } else {
+                _loadHealthData();
+              }
+            },
           ),
         ],
       ),
-    );
-  }
+      body: Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
+          ),
+        ),
+        child: Obx(() {
+          if (_isLoading.value) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00324A)),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Carregando dados...',
+                    style: TextStyle(
+                      color: Color(0xFF64748B),
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
 
   Widget _buildContent() {
     return Column(

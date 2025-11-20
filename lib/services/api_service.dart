@@ -48,16 +48,16 @@ class ApiService {
       final authService = Get.find<AuthService>();
       // Obter token do storage diretamente se o token.value estiver vazio
       String token = authService.token;
+      
       if (token.isEmpty) {
-        // Tentar obter token do storage diretamente
         final storage = const FlutterSecureStorage();
         token = await storage.read(key: 'auth_token') ?? '';
       }
+      
       if (token.isNotEmpty) {
         headers['Authorization'] = 'Bearer $token';
       }
     } catch (e) {
-      // Se não conseguir obter o AuthService, retorna headers sem autenticação
     }
     return headers;
   }
@@ -405,6 +405,493 @@ class ApiService {
       return response.statusCode == 200;
     } catch (e) {
       return false;
+    }
+  }
+
+  Future<Map<String, dynamic>> criarAgendamento({
+    required String medicoId,
+    required DateTime dataHora,
+    required String tipoConsulta,
+    required String motivoConsulta,
+    String? observacoes,
+    int? duracao,
+    Map<String, dynamic>? endereco,
+    String? linkVideochamada,
+  }) async {
+    try {
+      final headers = await _getAuthHeaders();
+      
+      if (!headers.containsKey('Authorization')) {
+        throw Exception('Token de autenticação não encontrado. Faça login novamente.');
+      }
+
+      final requestBody = {
+        'medicoId': medicoId,
+        'dataHora': dataHora.toIso8601String(),
+        'tipoConsulta': tipoConsulta,
+        'motivoConsulta': motivoConsulta,
+        if (observacoes != null && observacoes.isNotEmpty) 'observacoes': observacoes,
+        if (duracao != null) 'duracao': duracao,
+        if (endereco != null) 'endereco': endereco,
+        if (linkVideochamada != null && linkVideochamada.isNotEmpty) 'linkVideochamada': linkVideochamada,
+      };
+      
+      final response = await _httpClient.post(
+        Uri.parse('$baseUrl/api/agendamentos-paciente'),
+        headers: headers,
+        body: jsonEncode(requestBody),
+      ).timeout(const Duration(seconds: 30));
+      
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return Map<String, dynamic>.from(data);
+      } else {
+        String errorMessage = 'Erro desconhecido';
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMessage = errorData['message'] ?? errorMessage;
+          
+          if (errorMessage.toLowerCase().contains('token inválido') || 
+              errorMessage.toLowerCase().contains('token expirado') ||
+              response.statusCode == 401 || response.statusCode == 400) {
+            final authService = Get.find<AuthService>();
+            await authService.logout();
+            throw Exception('Sua sessão expirou ou o token é inválido. Por favor, faça login novamente.');
+          }
+        } catch (e) {
+          if (e.toString().contains('Sua sessão expirou')) {
+            rethrow;
+          }
+          errorMessage = 'Erro ao criar agendamento: ${response.statusCode}';
+        }
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> cancelarAgendamento({
+    required String agendamentoId,
+    String? motivoCancelamento,
+  }) async {
+    try {
+      final headers = await _getAuthHeaders();
+      
+      if (!headers.containsKey('Authorization')) {
+        throw Exception('Token de autenticação não encontrado. Faça login novamente.');
+      }
+
+      final requestBody = {
+        if (motivoCancelamento != null && motivoCancelamento.isNotEmpty) 'motivoCancelamento': motivoCancelamento,
+      };
+
+      final response = await _httpClient.patch(
+        Uri.parse('$baseUrl/api/agendamentos-paciente/$agendamentoId/cancelar'),
+        headers: headers,
+        body: jsonEncode(requestBody),
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return Map<String, dynamic>.from(data);
+      } else {
+        String errorMessage = 'Erro desconhecido';
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMessage = errorData['message'] ?? errorMessage;
+        } catch (_) {
+          errorMessage = 'Erro ao cancelar agendamento: ${response.statusCode}';
+        }
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> buscarAgendamentosPaciente({
+    String? status,
+    DateTime? dataInicio,
+    DateTime? dataFim,
+    String? medicoId,
+  }) async {
+    try {
+      final headers = await _getAuthHeaders();
+      
+      if (!headers.containsKey('Authorization')) {
+        throw Exception('Token de autenticação não encontrado. Faça login novamente.');
+      }
+
+      final queryParams = <String, String>{};
+      if (status != null && status.isNotEmpty) {
+        queryParams['status'] = status;
+      }
+      if (dataInicio != null) {
+        queryParams['dataInicio'] = dataInicio.toIso8601String();
+      }
+      if (dataFim != null) {
+        queryParams['dataFim'] = dataFim.toIso8601String();
+      }
+      if (medicoId != null && medicoId.isNotEmpty) {
+        queryParams['medicoId'] = medicoId;
+      }
+
+      final uri = Uri.parse('$baseUrl/api/agendamentos-paciente')
+          .replace(queryParameters: queryParams);
+
+      final response = await _httpClient.get(
+        uri,
+        headers: headers,
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return List<Map<String, dynamic>>.from(data['agendamentos'] ?? []);
+      } else {
+        String errorMessage = 'Erro desconhecido';
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMessage = errorData['message'] ?? errorMessage;
+        } catch (_) {
+          errorMessage = 'Erro ao buscar agendamentos: ${response.statusCode}';
+        }
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> buscarAgendamentosMedico({
+    required String medicoId,
+    DateTime? dataInicio,
+    DateTime? dataFim,
+  }) async {
+    try {
+      final headers = await _getAuthHeaders();
+      
+      if (!headers.containsKey('Authorization')) {
+        throw Exception('Token de autenticação não encontrado. Faça login novamente.');
+      }
+
+      final queryParams = <String, String>{};
+      if (dataInicio != null) {
+        queryParams['dataInicio'] = dataInicio.toIso8601String();
+      }
+      if (dataFim != null) {
+        queryParams['dataFim'] = dataFim.toIso8601String();
+      }
+
+      final uri = Uri.parse('$baseUrl/api/agendamentos-paciente/medico/$medicoId')
+          .replace(queryParameters: queryParams);
+
+      final response = await _httpClient.get(
+        uri,
+        headers: headers,
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return List<Map<String, dynamic>>.from(data['agendamentos'] ?? []);
+      } else {
+        String errorMessage = 'Erro desconhecido';
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMessage = errorData['message'] ?? errorMessage;
+        } catch (_) {
+          errorMessage = 'Erro ao buscar agendamentos: ${response.statusCode}';
+        }
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> obterHorariosDisponiveis({
+    required String medicoId,
+    required DateTime data,
+  }) async {
+    try {
+      final headers = _defaultHeaders;
+      
+      final dataFormatada = '${data.year}-${data.month.toString().padLeft(2, '0')}-${data.day.toString().padLeft(2, '0')}';
+      
+      final uri = Uri.parse('$baseUrl/api/horarios-disponibilidade/disponiveis/$medicoId')
+          .replace(queryParameters: {'data': dataFormatada});
+
+      final response = await _httpClient.get(
+        uri,
+        headers: headers,
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return Map<String, dynamic>.from(data);
+      } else {
+        String errorMessage = 'Erro desconhecido';
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMessage = errorData['message'] ?? errorMessage;
+        } catch (_) {
+          errorMessage = 'Erro ao obter horários disponíveis: ${response.statusCode}';
+        }
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> listarHorariosMedico({
+    required String medicoId,
+  }) async {
+    try {
+      final headers = _defaultHeaders;
+      
+      final uri = Uri.parse('$baseUrl/api/horarios-disponibilidade/medico/$medicoId');
+
+      final response = await _httpClient.get(
+        uri,
+        headers: headers,
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return List<Map<String, dynamic>>.from(data['horarios'] ?? []);
+      } else {
+        String errorMessage = 'Erro desconhecido';
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMessage = errorData['message'] ?? errorMessage;
+        } catch (_) {
+          errorMessage = 'Erro ao listar horários do médico: ${response.statusCode}';
+        }
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> buscarNotificacoes({bool? archived}) async {
+    try {
+      final headers = await _getAuthHeaders();
+      
+      if (!headers.containsKey('Authorization')) {
+        throw Exception('Token de autenticação não encontrado. Faça login novamente.');
+      }
+
+      String url = '$baseUrl/api/notificacoes-paciente';
+      if (archived != null) {
+        url += '?archived=$archived';
+      }
+
+      final response = await _httpClient.get(
+        Uri.parse(url),
+        headers: headers,
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final notifications = List<Map<String, dynamic>>.from(data);
+        return notifications;
+      } else {
+        String errorMessage = 'Erro desconhecido';
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMessage = errorData['message'] ?? errorMessage;
+        } catch (_) {
+          errorMessage = 'Erro ao buscar notificações: ${response.statusCode}';
+        }
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<int> buscarContadorNotificacoesNaoLidas() async {
+    try {
+      final headers = await _getAuthHeaders();
+      
+      if (!headers.containsKey('Authorization')) {
+        return 0;
+      }
+
+      final response = await _httpClient.get(
+        Uri.parse('$baseUrl/api/notificacoes-paciente/unread-count'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['count'] as int? ?? 0;
+      }
+      return 0;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  Future<void> marcarNotificacaoComoLida(String notificacaoId) async {
+    try {
+      final headers = await _getAuthHeaders();
+      
+      if (!headers.containsKey('Authorization')) {
+        throw Exception('Token de autenticação não encontrado. Faça login novamente.');
+      }
+
+      final response = await _httpClient.patch(
+        Uri.parse('$baseUrl/api/notificacoes-paciente/$notificacaoId/read'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode != 200) {
+        String errorMessage = 'Erro desconhecido';
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMessage = errorData['message'] ?? errorMessage;
+        } catch (_) {
+          errorMessage = 'Erro ao marcar notificação como lida: ${response.statusCode}';
+        }
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> marcarTodasNotificacoesComoLidas() async {
+    try {
+      final headers = await _getAuthHeaders();
+      
+      if (!headers.containsKey('Authorization')) {
+        throw Exception('Token de autenticação não encontrado. Faça login novamente.');
+      }
+
+      final response = await _httpClient.patch(
+        Uri.parse('$baseUrl/api/notificacoes-paciente/mark-all-read'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode != 200) {
+        String errorMessage = 'Erro desconhecido';
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMessage = errorData['message'] ?? errorMessage;
+        } catch (_) {
+          errorMessage = 'Erro ao marcar notificações como lidas: ${response.statusCode}';
+        }
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> excluirNotificacao(String notificacaoId) async {
+    try {
+      final headers = await _getAuthHeaders();
+      
+      if (!headers.containsKey('Authorization')) {
+        throw Exception('Token de autenticação não encontrado. Faça login novamente.');
+      }
+
+      final response = await _httpClient.delete(
+        Uri.parse('$baseUrl/api/notificacoes-paciente/$notificacaoId'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode != 200) {
+        String errorMessage = 'Erro desconhecido';
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMessage = errorData['message'] ?? errorMessage;
+        } catch (_) {
+          errorMessage = 'Erro ao excluir notificação: ${response.statusCode}';
+        }
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> arquivarNotificacao(String notificacaoId) async {
+    try {
+      final headers = await _getAuthHeaders();
+      
+      if (!headers.containsKey('Authorization')) {
+        throw Exception('Token de autenticação não encontrado. Faça login novamente.');
+      }
+
+      final response = await _httpClient.patch(
+        Uri.parse('$baseUrl/api/notificacoes-paciente/$notificacaoId/archive'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode != 200) {
+        String errorMessage = 'Erro desconhecido';
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMessage = errorData['message'] ?? errorMessage;
+        } catch (_) {
+          errorMessage = 'Erro ao arquivar notificação: ${response.statusCode}';
+        }
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> desarquivarNotificacao(String notificacaoId) async {
+    try {
+      final headers = await _getAuthHeaders();
+      
+      if (!headers.containsKey('Authorization')) {
+        throw Exception('Token de autenticação não encontrado. Faça login novamente.');
+      }
+
+      final response = await _httpClient.patch(
+        Uri.parse('$baseUrl/api/notificacoes-paciente/$notificacaoId/unarchive'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode != 200) {
+        String errorMessage = 'Erro desconhecido';
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMessage = errorData['message'] ?? errorMessage;
+        } catch (_) {
+          errorMessage = 'Erro ao desarquivar notificação: ${response.statusCode}';
+        }
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> criarNotificacaoPerfilAtualizado() async {
+    try {
+      final headers = await _getAuthHeaders();
+      
+      if (!headers.containsKey('Authorization')) {
+        return;
+      }
+
+      final response = await _httpClient.post(
+        Uri.parse('$baseUrl/api/notificacoes-paciente/criar-perfil-atualizado'),
+        headers: headers,
+        body: jsonEncode({}),
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+      }
+    } catch (e) {
     }
   }
 }

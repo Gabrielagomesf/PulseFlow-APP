@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import '../../services/smartwatch_service.dart';
 import '../../theme/app_theme.dart';
+import '../../routes/app_routes.dart';
 
 class SmartwatchScreen extends StatelessWidget {
   const SmartwatchScreen({super.key});
@@ -23,6 +24,30 @@ class SmartwatchScreen extends StatelessWidget {
         backgroundColor: AppTheme.primaryBlue,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          IconButton(
+            icon: Stack(
+              children: [
+                const Icon(Icons.notifications_outlined, color: Colors.white),
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            onPressed: () {
+              Get.toNamed(Routes.NOTIFICATIONS);
+            },
+          ),
+        ],
       ),
       body: GetX<SmartwatchService>(
         builder: (smartwatchService) {

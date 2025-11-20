@@ -7,6 +7,7 @@ import 'package:mongo_dart/mongo_dart.dart';
 import '../../models/patient.dart';
 import '../../services/auth_service.dart';
 import '../../services/database_service.dart';
+import '../../services/api_service.dart';
 import '../../services/health_service.dart';
 import '../../services/health_data_service.dart';
 import '../../services/health_data_test_service.dart';
@@ -388,6 +389,13 @@ class ProfileController extends GetxController {
 
     // Atualiza no banco de dados em background (sem bloquear a UI)
     _updateDatabaseInBackground(currentPatient.id!, updatedPatient);
+
+    // Cria notificação de perfil atualizado
+    try {
+      final apiService = ApiService();
+      await apiService.criarNotificacaoPerfilAtualizado();
+    } catch (e) {
+    }
 
     Get.snackbar(
       'Sucesso',

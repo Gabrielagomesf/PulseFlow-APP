@@ -5,6 +5,8 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../../services/database_service.dart';
+import '../../services/api_service.dart';
+import '../../services/auth_service.dart';
 
 class SpecialtyInfo {
   final String id;
@@ -112,13 +114,75 @@ class AppointmentSchedulerController extends GetxController {
 
   final RxBool isLoading = false.obs;
   final RxString loadError = ''.obs;
+  final RxList<Map<String, dynamic>> agendamentosServidor = <Map<String, dynamic>>[].obs;
+  final RxList<Map<String, dynamic>> horariosDisponiveis = <Map<String, dynamic>>[].obs;
+  final RxMap<String, List<Map<String, dynamic>>> horariosPorData = <String, List<Map<String, dynamic>>>{}.obs;
+  final RxList<String> carregandoHorarios = <String>[].obs;
 
   bool _hasLoaded = false;
 
-  List<DateTime> get availableDates => List.generate(
+  List<DateTime> get availableDates {
+    final doctor = selectedDoctor;
+    final horarios = horariosDisponiveis.value;
+    
+    if (doctor == null || horarios.isEmpty) {
+      return List.generate(
         14,
         (index) => DateTime.now().add(Duration(days: index))._copyWithTime(0, 0),
       );
+    }
+
+    final horariosAtivos = horarios.where((h) {
+      final ativo = h['ativo'];
+      return ativo == true || ativo == 'true';
+    }).toList();
+    
+    final datasDisponiveis = <DateTime>{};
+    final hoje = DateTime.now();
+    final hojeNormalizado = hoje._copyWithTime(0, 0);
+    
+    for (final h in horariosAtivos) {
+      final tipo = h['tipo']?.toString() ?? 'recorrente';
+      
+      if (tipo == 'especifico') {
+        final dataEspecifica = h['dataEspecifica'];
+        if (dataEspecifica != null) {
+          try {
+            final data = DateTime.parse(dataEspecifica.toString())._copyWithTime(0, 0);
+            if (data.isAfter(hojeNormalizado.subtract(const Duration(days: 1))) || 
+                data.isAtSameMomentAs(hojeNormalizado)) {
+              datasDisponiveis.add(data);
+            }
+          } catch (e) {
+          }
+        }
+      } else {
+        final diaSemana = h['diaSemana'];
+        if (diaSemana != null) {
+          final dia = diaSemana is int ? diaSemana : (diaSemana as num).toInt();
+          
+          for (int i = 0; i < 60; i++) {
+            final data = hojeNormalizado.add(Duration(days: i));
+            final weekdayDart = data.weekday;
+            final diaSemanaData = weekdayDart == 7 ? 0 : weekdayDart;
+            
+            if (diaSemanaData == dia) {
+              datasDisponiveis.add(data);
+            }
+            
+            if (datasDisponiveis.length >= 14) {
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    final listaDatas = datasDisponiveis.toList()..sort();
+    final datasLimitadas = listaDatas.take(14).toList();
+
+    return datasLimitadas;
+  }
 
   SpecialtyInfo? get selectedSpecialty => specialties.firstWhereOrNull((s) => s.id == selectedSpecialtyId.value);
 
@@ -128,6 +192,7 @@ class AppointmentSchedulerController extends GetxController {
   void onInit() {
     super.onInit();
     ensureDataLoaded();
+    _carregarAgendamentosPaciente();
   }
 
   Future<void> ensureDataLoaded({bool force = false}) async {
@@ -298,7 +363,9 @@ class AppointmentSchedulerController extends GetxController {
   }
 
   void selectDoctor(String doctorId) {
-    if (selectedDoctorId.value == doctorId) return;
+    if (selectedDoctorId.value == doctorId) {
+      return;
+    }
     selectedDoctorId.value = doctorId;
     selectedSlot.value = null;
     selectedDate.value = DateTime.now();
@@ -307,13 +374,229 @@ class AppointmentSchedulerController extends GetxController {
       doctorSearchController.text = doctor.name;
       doctorSearchController.selection = TextSelection.collapsed(offset: doctor.name.length);
       doctorQuery.value = doctor.name;
+      _carregarAgendamentosMedico(doctorId);
+      _carregarHorariosDisponiveis(doctorId);
     }
   }
 
-  void selectDate(DateTime date) {
+  Future<void> _carregarAgendamentosPaciente() async {
+    try {
+      final apiService = ApiService();
+      final dataInicio = DateTime.now().subtract(const Duration(days: 1));
+      final dataFim = dataInicio.add(const Duration(days: 60));
+      
+      final agendamentos = await apiService.buscarAgendamentosPaciente(
+        dataInicio: dataInicio,
+        dataFim: dataFim,
+      );
+      
+      final appointmentsList = <AppointmentBooking>[];
+      
+      for (final agendamento in agendamentos) {
+        try {
+          final id = agendamento['_id']?.toString() ?? '';
+          final medicoId = agendamento['medicoId']?.toString() ?? 
+                          agendamento['medicoId']?['_id']?.toString() ?? '';
+          final medicoNome = agendamento['medicoId']?['nome']?.toString() ?? 
+                            'Médico não informado';
+          final areaAtuacao = agendamento['medicoId']?['areaAtuacao']?.toString() ?? 
+                             'Especialidade não informada';
+          final dataHora = agendamento['dataHora']?.toString() ?? 
+                          agendamento['dataHora']?['\$date']?.toString() ?? '';
+          final duracao = agendamento['duracao'] as int? ?? 30;
+          
+          if (id.isEmpty || medicoId.isEmpty || dataHora.isEmpty) {
+            continue;
+          }
+          
+          final startTime = DateTime.parse(dataHora);
+          final specialtyId = _normalizeSpecialtyId(areaAtuacao);
+          
+          appointmentsList.add(AppointmentBooking(
+            id: id,
+            doctorId: medicoId,
+            doctorName: medicoNome,
+            specialtyId: specialtyId,
+            specialtyName: areaAtuacao,
+            startTime: startTime,
+            duration: Duration(minutes: duracao),
+          ));
+        } catch (e) {
+        }
+      }
+      
+      appointments.value = appointmentsList;
+      appointments.refresh();
+    } catch (e) {
+      appointments.value = [];
+    }
+  }
+
+  Future<void> _carregarAgendamentosMedico(String medicoId) async {
+    try {
+      final apiService = ApiService();
+      final dataInicio = DateTime.now();
+      final dataFim = dataInicio.add(const Duration(days: 14));
+      
+      final agendamentos = await apiService.buscarAgendamentosMedico(
+        medicoId: medicoId,
+        dataInicio: dataInicio,
+        dataFim: dataFim,
+      );
+      
+      agendamentosServidor.value = agendamentos;
+    } catch (e) {
+      agendamentosServidor.value = [];
+    }
+  }
+
+  Future<void> _carregarHorariosDisponiveis(String medicoId) async {
+    try {
+      final apiService = ApiService();
+      final horarios = await apiService.listarHorariosMedico(medicoId: medicoId);
+      
+      horariosDisponiveis.value = horarios;
+      horariosDisponiveis.refresh();
+      
+      horariosPorData.clear();
+      horariosPorData.refresh();
+      
+      update();
+      
+      if (horarios.isEmpty) {
+        selectedDate.value = DateTime.now();
+      } else {
+        final hoje = DateTime.now();
+        final primeiroDiaDisponivel = _encontrarProximoDiaDisponivel(hoje);
+        if (primeiroDiaDisponivel != null) {
+          selectedDate.value = primeiroDiaDisponivel;
+          await _carregarHorariosDisponiveisParaData(medicoId, primeiroDiaDisponivel);
+        }
+      }
+      
+      update();
+    } catch (e) {
+      horariosDisponiveis.value = [];
+    }
+  }
+
+  DateTime? _encontrarProximoDiaDisponivel(DateTime dataInicial) {
+    final horariosAtivos = horariosDisponiveis.where((h) {
+      final ativo = h['ativo'];
+      return ativo == true || ativo == 'true';
+    }).toList();
+    
+    final datasEspecificas = <DateTime>[];
+    final diasSemanaComHorarios = <int>{};
+    
+    final dataInicialNormalizada = dataInicial._copyWithTime(0, 0);
+    
+    for (final h in horariosAtivos) {
+      final tipo = h['tipo']?.toString() ?? 'recorrente';
+      
+      if (tipo == 'especifico') {
+        final dataEspecifica = h['dataEspecifica'];
+        if (dataEspecifica != null) {
+          try {
+            final data = DateTime.parse(dataEspecifica.toString())._copyWithTime(0, 0);
+            if (data.isAfter(dataInicialNormalizada.subtract(const Duration(days: 1))) || 
+                data.isAtSameMomentAs(dataInicialNormalizada)) {
+              datasEspecificas.add(data);
+            }
+          } catch (e) {
+          }
+        }
+      } else {
+        final diaSemana = h['diaSemana'];
+        if (diaSemana != null) {
+          final dia = diaSemana is int ? diaSemana : (diaSemana as num).toInt();
+          diasSemanaComHorarios.add(dia);
+        }
+      }
+    }
+
+    if (datasEspecificas.isEmpty && diasSemanaComHorarios.isEmpty) {
+      return null;
+    }
+
+    final todasDatas = <DateTime>{};
+    
+    if (datasEspecificas.isNotEmpty) {
+      todasDatas.addAll(datasEspecificas);
+    }
+    
+    if (diasSemanaComHorarios.isNotEmpty) {
+      for (int i = 0; i < 60; i++) {
+        final data = dataInicialNormalizada.add(Duration(days: i));
+        final weekdayDart = data.weekday;
+        final diaSemana = weekdayDart == 7 ? 0 : weekdayDart;
+        
+        if (diasSemanaComHorarios.contains(diaSemana)) {
+          todasDatas.add(data);
+        }
+      }
+    }
+
+    if (todasDatas.isEmpty) {
+      return null;
+    }
+
+    final proximaData = todasDatas.where((d) => 
+      d.isAfter(dataInicialNormalizada.subtract(const Duration(days: 1))) || 
+      d.isAtSameMomentAs(dataInicialNormalizada)
+    ).toList()..sort();
+    
+    if (proximaData.isNotEmpty) {
+      return proximaData.first;
+    }
+
+    return null;
+  }
+
+  Future<void> _carregarHorariosDisponiveisParaData(String medicoId, DateTime data) async {
+    final dataKey = '${data.year}-${data.month.toString().padLeft(2, '0')}-${data.day.toString().padLeft(2, '0')}';
+    
+    final horariosDataMap = horariosPorData.value;
+    if (horariosDataMap.containsKey(dataKey) || carregandoHorarios.contains(dataKey)) {
+      return;
+    }
+
+    try {
+      carregandoHorarios.add(dataKey);
+      carregandoHorarios.refresh();
+      horariosPorData[dataKey] = [];
+
+      final apiService = ApiService();
+      final resultado = await apiService.obterHorariosDisponiveis(
+        medicoId: medicoId,
+        data: data,
+      );
+      
+      final horarios = List<Map<String, dynamic>>.from(resultado['horariosDisponiveis'] ?? []);
+      
+      horariosPorData[dataKey] = horarios;
+      horariosPorData.refresh();
+      
+      update();
+    } catch (e) {
+      horariosPorData[dataKey] = [];
+      horariosPorData.refresh();
+    } finally {
+      carregandoHorarios.remove(dataKey);
+      carregandoHorarios.refresh();
+    }
+  }
+
+  void selectDate(DateTime date) async {
     final normalized = date._copyWithTime(0, 0);
     selectedDate.value = normalized;
     selectedSlot.value = null;
+    
+    if (selectedDoctorId.value != null) {
+      _carregarAgendamentosMedico(selectedDoctorId.value!);
+      await _carregarHorariosDisponiveisParaData(selectedDoctorId.value!, normalized);
+      update();
+    }
   }
 
   void selectSlot(String slot) {
@@ -321,18 +604,65 @@ class AppointmentSchedulerController extends GetxController {
   }
 
   List<String> getAvailableSlotsForSelectedDoctor() {
-    selectedSlot.value = null;
-    return const [];
+    final doctor = selectedDoctor;
+    final date = selectedDate.value;
+    
+    if (doctor == null) {
+      return [];
+    }
+
+    final dataKey = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    final horariosDataMap = horariosPorData.value;
+    
+    final horariosData = horariosDataMap[dataKey] ?? [];
+    
+    final slots = horariosData
+        .where((h) {
+          final disponivel = h['disponivel'];
+          final isDisponivel = disponivel == true || disponivel == 'true';
+          return isDisponivel;
+        })
+        .map((h) {
+          final hora = h['hora'];
+          return hora?.toString() ?? '';
+        })
+        .where((hora) => hora.isNotEmpty)
+        .toList();
+
+    return slots;
   }
 
   bool _isSlotAvailable(String doctorId, DateTime date, String slot) {
-    return !appointments.any((booking) {
+    final slotDateTime = combineDateAndSlot(date, slot);
+    
+    final conflitoLocal = appointments.any((booking) {
       if (booking.doctorId != doctorId) return false;
       return booking.startTime.year == date.year &&
           booking.startTime.month == date.month &&
           booking.startTime.day == date.day &&
           DateFormat('HH:mm').format(booking.startTime) == slot;
     });
+    
+    if (conflitoLocal) return false;
+    
+    final conflitoServidor = agendamentosServidor.any((agendamento) {
+      try {
+        final dataHora = DateTime.parse(agendamento['dataHora'].toString());
+        final duracao = agendamento['duracao'] as int? ?? 30;
+        
+        final inicioAgendamento = dataHora;
+        final fimAgendamento = dataHora.add(Duration(minutes: duracao));
+        
+        final inicioSlot = slotDateTime;
+        final fimSlot = slotDateTime.add(const Duration(minutes: 30));
+        
+        return (inicioSlot.isBefore(fimAgendamento) && fimSlot.isAfter(inicioAgendamento));
+      } catch (e) {
+        return false;
+      }
+    });
+    
+    return !conflitoServidor;
   }
 
   Future<bool> confirmAppointment() async {
@@ -351,22 +681,185 @@ class AppointmentSchedulerController extends GetxController {
       return false;
     }
 
-    final startTime = combineDateAndSlot(selectedDate.value, slot);
-    selectedSlot.value = null;
+    try {
+      final authService = Get.find<AuthService>();
+      final patient = authService.currentUser;
+      
+      if (patient == null || patient.id == null) {
+        Get.snackbar(
+          'Erro',
+          'Não foi possível identificar o paciente. Faça login novamente.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.shade100,
+          colorText: const Color(0xFF1E293B),
+        );
+        return false;
+      }
 
-    Get.snackbar(
-      'Consulta agendada',
-      'Seu horário com ${doctor.name} foi reservado.',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.green.shade100,
-      colorText: const Color(0xFF1E293B),
-    );
-    return true;
+      final dataKey = '${selectedDate.value.year}-${selectedDate.value.month.toString().padLeft(2, '0')}-${selectedDate.value.day.toString().padLeft(2, '0')}';
+      final horariosData = horariosPorData[dataKey] ?? [];
+      final horarioSelecionado = horariosData.firstWhereOrNull((h) => h['hora'] == slot);
+      final duracaoConsulta = horarioSelecionado?['duracao'] as int? ?? 30;
+      
+      final startTime = combineDateAndSlot(selectedDate.value, slot);
+      
+      if (startTime.isBefore(DateTime.now())) {
+        Get.snackbar(
+          'Data inválida',
+          'A data e horário da consulta deve ser futura.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.orange.shade100,
+          colorText: const Color(0xFF1E293B),
+        );
+        return false;
+      }
+
+      if (!_isSlotAvailable(doctor.id, selectedDate.value, slot)) {
+        Get.snackbar(
+          'Horário indisponível',
+          'Este horário já foi reservado. Por favor, escolha outro horário.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.orange.shade100,
+          colorText: const Color(0xFF1E293B),
+        );
+        return false;
+      }
+
+      final apiService = ApiService();
+      
+      Get.dialog(
+        const Center(child: CircularProgressIndicator()),
+        barrierDismissible: false,
+      );
+
+      final resultado = await apiService.criarAgendamento(
+        medicoId: doctor.id,
+        dataHora: startTime,
+        tipoConsulta: 'presencial',
+        motivoConsulta: 'Consulta agendada pelo paciente',
+        duracao: duracaoConsulta,
+      );
+
+      Get.back();
+
+      final novoAgendamento = AppointmentBooking(
+        id: resultado['agendamento']?['_id'] ?? resultado['agendamento']?['id'] ?? '',
+        doctorId: doctor.id,
+        doctorName: doctor.name,
+        specialtyId: specialty.id,
+        specialtyName: specialty.name,
+        startTime: startTime,
+      );
+
+      appointments.add(novoAgendamento);
+      
+      final agendamentoData = {
+        'dataHora': startTime.toIso8601String(),
+        'duracao': duracaoConsulta,
+        'status': 'agendada',
+      };
+      agendamentosServidor.add(agendamentoData);
+      
+      selectedSlot.value = null;
+
+      await _carregarAgendamentosPaciente();
+
+      Get.snackbar(
+        'Consulta agendada',
+        'Seu horário com ${doctor.name} foi reservado com sucesso.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green.shade100,
+        colorText: const Color(0xFF1E293B),
+        duration: const Duration(seconds: 3),
+      );
+
+      return true;
+    } catch (e) {
+      Get.back();
+      
+      String errorMessage = e.toString().replaceAll('Exception: ', '');
+      
+      if (errorMessage.toLowerCase().contains('já existe') || 
+          errorMessage.toLowerCase().contains('horário') ||
+          errorMessage.toLowerCase().contains('conflito')) {
+        errorMessage = 'Este horário já foi reservado. Por favor, escolha outro horário.';
+      } else if (errorMessage.toLowerCase().contains('token') || 
+                 errorMessage.toLowerCase().contains('sessão')) {
+        errorMessage = 'Sua sessão expirou. Por favor, faça login novamente.';
+      } else if (errorMessage.toLowerCase().contains('data') && 
+                 errorMessage.toLowerCase().contains('futura')) {
+        errorMessage = 'A data e horário da consulta deve ser futura.';
+      }
+      
+      Get.snackbar(
+        'Erro ao agendar',
+        errorMessage,
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: const Color(0xFF1E293B),
+        duration: const Duration(seconds: 4),
+      );
+      return false;
+    }
   }
 
   List<AppointmentBooking> get upcomingAppointments {
     final now = DateTime.now().subtract(const Duration(minutes: 30));
     return appointments.where((booking) => booking.startTime.isAfter(now)).toList();
+  }
+
+  Future<bool> cancelarAgendamento(String agendamentoId, {String? motivo}) async {
+    try {
+      final apiService = ApiService();
+      
+      Get.dialog(
+        const Center(child: CircularProgressIndicator()),
+        barrierDismissible: false,
+      );
+
+      await apiService.cancelarAgendamento(
+        agendamentoId: agendamentoId,
+        motivoCancelamento: motivo,
+      );
+
+      Get.back();
+
+      appointments.removeWhere((booking) => booking.id == agendamentoId);
+      
+      await _carregarAgendamentosPaciente();
+
+      Get.snackbar(
+        'Consulta cancelada',
+        'Seu agendamento foi cancelado com sucesso.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green.shade100,
+        colorText: const Color(0xFF1E293B),
+        duration: const Duration(seconds: 3),
+      );
+
+      return true;
+    } catch (e) {
+      Get.back();
+      
+      String errorMessage = e.toString().replaceAll('Exception: ', '');
+      
+      if (errorMessage.toLowerCase().contains('token') || 
+          errorMessage.toLowerCase().contains('sessão')) {
+        errorMessage = 'Sua sessão expirou. Por favor, faça login novamente.';
+      } else if (errorMessage.toLowerCase().contains('não encontrado')) {
+        errorMessage = 'Agendamento não encontrado. Pode já ter sido cancelado.';
+      }
+      
+      Get.snackbar(
+        'Erro ao cancelar',
+        errorMessage,
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.shade100,
+        colorText: const Color(0xFF1E293B),
+        duration: const Duration(seconds: 4),
+      );
+      return false;
+    }
   }
 
   @override

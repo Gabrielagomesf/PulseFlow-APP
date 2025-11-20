@@ -767,6 +767,32 @@ class AppointmentSchedulerScreen extends StatelessWidget {
                           Text('$dateStr • $timeStr', style: AppTheme.bodySmall.copyWith(color: Colors.grey[600])),
                         ],
                       ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: booking.status == 'cancelada' 
+                            ? Colors.red.withOpacity(0.1)
+                            : Colors.green.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: booking.status == 'cancelada'
+                              ? Colors.red.withOpacity(0.3)
+                              : Colors.green.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          booking.status == 'cancelada' ? 'Cancelado' : 'Agendado',
+                          style: AppTheme.bodySmall.copyWith(
+                            color: booking.status == 'cancelada' 
+                              ? Colors.red[700]
+                              : Colors.green[700],
+                            fontWeight: FontWeight.w600,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),

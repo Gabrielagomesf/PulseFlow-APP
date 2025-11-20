@@ -417,9 +417,18 @@ class ApiService {
         throw Exception('Token de autenticação não encontrado. Faça login novamente.');
       }
 
+      final dataHoraUtc = DateTime.utc(
+        dataHora.year,
+        dataHora.month,
+        dataHora.day,
+        dataHora.hour,
+        dataHora.minute,
+        dataHora.second,
+      );
+
       final requestBody = {
         'medicoId': medicoId,
-        'dataHora': dataHora.toIso8601String(),
+        'dataHora': dataHoraUtc.toIso8601String(),
         'tipoConsulta': tipoConsulta,
         'motivoConsulta': motivoConsulta,
         if (observacoes != null && observacoes.isNotEmpty) 'observacoes': observacoes,

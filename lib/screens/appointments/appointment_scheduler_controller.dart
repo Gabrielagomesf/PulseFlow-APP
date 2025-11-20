@@ -50,6 +50,7 @@ class AppointmentBooking {
   final String specialtyName;
   final DateTime startTime;
   final Duration duration;
+  final String status;
 
   AppointmentBooking({
     required this.id,
@@ -59,6 +60,7 @@ class AppointmentBooking {
     required this.specialtyName,
     required this.startTime,
     this.duration = const Duration(minutes: 30),
+    this.status = 'agendada',
   });
 }
 
@@ -411,6 +413,7 @@ class AppointmentSchedulerController extends GetxController {
           
           final startTime = DateTime.parse(dataHora);
           final specialtyId = _normalizeSpecialtyId(areaAtuacao);
+          final status = agendamento['status']?.toString() ?? 'agendada';
           
           appointmentsList.add(AppointmentBooking(
             id: id,
@@ -420,6 +423,7 @@ class AppointmentSchedulerController extends GetxController {
             specialtyName: areaAtuacao,
             startTime: startTime,
             duration: Duration(minutes: duracao),
+            status: status,
           ));
         } catch (e) {
         }
@@ -749,6 +753,7 @@ class AppointmentSchedulerController extends GetxController {
         specialtyId: specialty.id,
         specialtyName: specialty.name,
         startTime: startTime,
+        status: resultado['agendamento']?['status']?.toString() ?? 'agendada',
       );
 
       appointments.add(novoAgendamento);

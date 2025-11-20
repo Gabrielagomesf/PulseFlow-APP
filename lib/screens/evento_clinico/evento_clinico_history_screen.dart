@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:pulseflow_app/theme/app_theme.dart';
 import '../../models/evento_clinico.dart';
 import '../../services/auth_service.dart';
 import '../../services/database_service.dart';

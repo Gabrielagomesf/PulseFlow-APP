@@ -105,12 +105,12 @@ class ProfileScreen extends StatelessWidget {
         children: [
           // Botão de voltar
           IconButton(
-            icon: const Icon(
-              Icons.arrow_back_ios_new,
-              color: Colors.white,
-              size: 20,
-            ),
-            onPressed: () => Get.back(),
+              icon: const Icon(
+                Icons.arrow_back_ios_new,
+                color: Colors.white,
+                size: 20,
+              ),
+              onPressed: () => Get.back(),
           ),
           
           const SizedBox(width: 16),
@@ -682,12 +682,12 @@ class ProfileScreen extends StatelessWidget {
             final isLoading = controller.isRequestingHealthPermissions;
             return SizedBox(
               width: double.infinity,
-              child: ElevatedButton.icon(
+                child: ElevatedButton.icon(
                 onPressed: isLoading
                     ? null
                     : () {
-                        controller.syncHealthData();
-                      },
+                    controller.syncHealthData();
+                  },
                 icon: isLoading
                     ? const SizedBox(
                         width: 18,
@@ -707,17 +707,17 @@ class ProfileScreen extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                style: ElevatedButton.styleFrom(
+                  style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF059669),
-                  foregroundColor: Colors.white,
+                    foregroundColor: Colors.white,
                   disabledBackgroundColor: const Color(0xFF059669).withOpacity(0.6),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   elevation: 2,
-                  shape: RoundedRectangleBorder(
+                    shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
-              ),
             );
           }),
         ],
@@ -994,5 +994,4 @@ class ProfileScreen extends StatelessWidget {
           '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
     }
   }
-
 }

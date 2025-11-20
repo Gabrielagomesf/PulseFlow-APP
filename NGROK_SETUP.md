@@ -76,3 +76,4 @@ API_BASE_URL=https://intractable-nonimplemental-garnet.ngrok-free.dev
 
 Se precisar alterar, edite o arquivo `.env` na raiz do projeto.
 
+

@@ -331,42 +331,42 @@ class HomeScreen extends StatelessWidget {
     final stats = _getStatsForItem(controller, item);
     
     if (stats.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.withOpacity(0.2)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              spreadRadius: 1,
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  itemData['icon'],
-                  color: itemData['color'],
-                  size: 24,
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                itemData['icon'],
+                color: itemData['color'],
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                itemData['title'],
+                style: AppTheme.titleMedium.copyWith(
+                  color: const Color(0xFF1E293B),
+                  fontWeight: FontWeight.bold,
                 ),
-                const SizedBox(width: 12),
-                Text(
-                  itemData['title'],
-                  style: AppTheme.titleMedium.copyWith(
-                    color: const Color(0xFF1E293B),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
             Container(
               height: 80,
               width: double.infinity,
@@ -431,7 +431,7 @@ class HomeScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            children: [
+              children: [
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -489,12 +489,12 @@ class HomeScreen extends StatelessWidget {
                   Colors.orange,
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
+              children: [
               _buildStatItem('Média', '${stats['media'] ?? 0}/10', Colors.blue),
               _buildStatItem('Total', '${stats['total'] ?? 0}', Colors.grey[600]!),
             ],
@@ -528,16 +528,16 @@ class HomeScreen extends StatelessWidget {
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
-        ],
-      ),
+              ],
+            ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
+            Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
+              decoration: BoxDecoration(
                   color: itemData['color'].withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -582,7 +582,7 @@ class HomeScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: statusColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: statusColor.withOpacity(0.3)),
                   ),
                   child: Column(
@@ -657,7 +657,7 @@ class HomeScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                border: Border.all(color: Colors.grey.withOpacity(0.2)),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.1),
@@ -666,7 +666,7 @@ class HomeScreen extends StatelessWidget {
             offset: const Offset(0, 2),
           ),
         ],
-      ),
+              ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -831,7 +831,7 @@ class HomeScreen extends StatelessWidget {
                       children: [
                         Text(
                           'Próximo evento',
-                          style: TextStyle(
+                  style: TextStyle(
                             fontSize: 11,
                             color: Colors.grey[600],
                           ),
@@ -839,15 +839,15 @@ class HomeScreen extends StatelessWidget {
                         Text(
                           _formatDate(proximoEvento),
                           style: TextStyle(
-                            fontSize: 14,
+                    fontSize: 14,
                             fontWeight: FontWeight.bold,
                             color: Colors.orange[700],
-                          ),
-                        ),
-                      ],
-                    ),
                   ),
-                ],
+                ),
+                      ],
+              ),
+            ),
+          ],
               ),
             ),
           ],

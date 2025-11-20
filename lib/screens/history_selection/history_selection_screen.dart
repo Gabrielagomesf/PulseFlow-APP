@@ -57,35 +57,16 @@ class _HistorySelectionScreenState extends State<HistorySelectionScreen> with Si
                   ),
                 ),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
+                  padding: const EdgeInsets.all(20.0),
                   child: FadeTransition(
                     opacity: _fadeAnimation,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Título da seção
-                        Text(
-                          'Históricos',
-                          style: AppTheme.titleLarge.copyWith(
-                            color: const Color(0xFF1E293B),
-                            fontWeight: FontWeight.w700,
-                            fontSize: 28,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Escolha o histórico que deseja visualizar',
-                          style: AppTheme.bodyMedium.copyWith(
-                            color: const Color(0xFF64748B),
-                            fontSize: 15,
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-                        
-                        // Lista de históricos
+                        _buildSectionHeader('Históricos Disponíveis'),
+                        const SizedBox(height: 16),
                         _buildHistoryList(),
-                        
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 32),
                       ],
                     ),
                   ),
@@ -108,26 +89,37 @@ class _HistorySelectionScreenState extends State<HistorySelectionScreen> with Si
         right: 16,
         bottom: 16,
       ),
-      child: Row(
+      decoration: const BoxDecoration(
+        color: Color(0xFF00324A),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
+        ),
+      ),
+      child: Column(
         children: [
-          // Botão de voltar
-          IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Get.back(),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildPulseFlowLogo(),
+            ],
           ),
-          const SizedBox(width: 8),
-          
-          // Logo
-          _buildPulseFlowLogo(),
-          
-          const Spacer(),
+          const SizedBox(height: 20),
+          const Text(
+            'Históricos',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildPulseFlowLogo() {
-    return Container(
+    return SizedBox(
       width: 140,
       height: 45,
       child: Image.asset(
@@ -152,6 +144,17 @@ class _HistorySelectionScreenState extends State<HistorySelectionScreen> with Si
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        color: Color(0xFF1E293B),
       ),
     );
   }
@@ -213,6 +216,48 @@ class _HistorySelectionScreenState extends State<HistorySelectionScreen> with Si
           onPressed: () {
             HapticFeedback.mediumImpact();
             Get.toNamed(Routes.MENSTRUACAO_HISTORY);
+          },
+        ),
+        const SizedBox(height: 16),
+        _buildHistoryCard(
+          icon: Icons.favorite_rounded,
+          title: 'Frequência Cardíaca',
+          subtitle: 'Histórico de batimentos cardíacos',
+          gradientColors: [
+            const Color(0xFF00324A),
+            const Color(0xFF004A6B),
+          ],
+          onPressed: () {
+            HapticFeedback.mediumImpact();
+            Get.toNamed(Routes.HEART_RATE_HISTORY);
+          },
+        ),
+        const SizedBox(height: 16),
+        _buildHistoryCard(
+          icon: Icons.directions_walk_rounded,
+          title: 'Passos',
+          subtitle: 'Histórico de passos diários',
+          gradientColors: [
+            const Color(0xFF00324A),
+            const Color(0xFF004A6B),
+          ],
+          onPressed: () {
+            HapticFeedback.mediumImpact();
+            Get.toNamed(Routes.STEPS_HISTORY);
+          },
+        ),
+        const SizedBox(height: 16),
+        _buildHistoryCard(
+          icon: Icons.bedtime_rounded,
+          title: 'Insônia / Sono',
+          subtitle: 'Histórico de tempo na cama',
+          gradientColors: [
+            const Color(0xFF00324A),
+            const Color(0xFF004A6B),
+          ],
+          onPressed: () {
+            HapticFeedback.mediumImpact();
+            Get.toNamed(Routes.SLEEP_HISTORY);
           },
         ),
       ],

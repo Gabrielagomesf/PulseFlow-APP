@@ -142,6 +142,10 @@ class _PulseKeyScreenState extends State<PulseKeyScreen> {
           errorMessage = 'Sessão expirada. O código está disponível mas não será sincronizado.';
         } else if (fullError.contains('403') || fullError.contains('Forbidden')) {
           errorMessage = 'Acesso negado. O código está disponível localmente.';
+        } else if (fullError.contains('ngrok offline') || 
+                   fullError.contains('Túnel ngrok offline') ||
+                   fullError.contains('ERR_NGROK_3200')) {
+          errorMessage = 'Túnel ngrok offline. O código está disponível localmente.\n\nPara sincronizar, inicie o ngrok e atualize a URL no arquivo .env.';
         } else if (fullError.contains('404') || fullError.contains('not found')) {
           errorMessage = 'Endpoint não encontrado. O código está disponível localmente.';
         } else if (fullError.contains('500') || fullError.contains('Internal Server Error')) {

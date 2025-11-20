@@ -101,7 +101,7 @@ class HealthService {
       final startDate = now.subtract(const Duration(days: 30));
 
       print('📊 [HealthService] Buscando dados de sono de ${startDate.toString()} até ${now.toString()}');
-      
+
       // Tenta buscar SLEEP_IN_BED primeiro (tempo na cama)
       List<HealthDataPoint> sleepInBed = await _health.getHealthDataFromTypes(
         startTime: startDate,

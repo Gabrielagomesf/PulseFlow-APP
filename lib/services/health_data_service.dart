@@ -61,7 +61,7 @@ class HealthDataService {
       }
 
       print('💾 [HealthDataService] Salvando dados de frequência cardíaca...');
-      
+
       final collection = await _db.getCollection('batimentos');
       final now = DateTime.now();
       
@@ -118,18 +118,18 @@ class HealthDataService {
             skippedCount++;
           }
         } else {
-          final data = {
-            'pacienteId': patientId,
-            'valor': spot.y,
+        final data = {
+          'pacienteId': patientId,
+          'valor': spot.y,
             'data': dateKey,
-            'fonte': 'HealthKit',
-            'unidade': 'bpm',
-            'descricao': 'Frequência cardíaca',
-            'createdAt': DateTime.now(),
-            'updatedAt': DateTime.now(),
-          };
-          
-          await collection.insert(data);
+          'fonte': 'HealthKit',
+          'unidade': 'bpm',
+          'descricao': 'Frequência cardíaca',
+          'createdAt': DateTime.now(),
+          'updatedAt': DateTime.now(),
+        };
+        
+        await collection.insert(data);
           savedCount++;
         }
       }
@@ -150,7 +150,7 @@ class HealthDataService {
       }
 
       print('💾 [HealthDataService] Salvando dados de passos...');
-      
+
       final collection = await _db.getCollection('passos');
       final now = DateTime.now();
       
@@ -207,18 +207,18 @@ class HealthDataService {
             skippedCount++;
           }
         } else {
-          final data = {
-            'pacienteId': patientId,
-            'valor': spot.y,
+        final data = {
+          'pacienteId': patientId,
+          'valor': spot.y,
             'data': dateKey,
-            'fonte': 'HealthKit',
-            'unidade': 'passos',
-            'descricao': 'Passos diários',
-            'createdAt': DateTime.now(),
-            'updatedAt': DateTime.now(),
-          };
-          
-          await collection.insert(data);
+          'fonte': 'HealthKit',
+          'unidade': 'passos',
+          'descricao': 'Passos diários',
+          'createdAt': DateTime.now(),
+          'updatedAt': DateTime.now(),
+        };
+        
+        await collection.insert(data);
           savedCount++;
         }
       }
@@ -242,7 +242,7 @@ class HealthDataService {
       }
 
       print('💾 [HealthDataService] Encontrados ${healthData['sleep']!.length} pontos de dados de sono');
-      
+
       final collection = await _db.getCollection('insonias');
       final now = DateTime.now();
       

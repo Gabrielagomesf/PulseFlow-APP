@@ -402,7 +402,9 @@ class ApiService {
 
   Future<Map<String, dynamic>> criarAgendamento({
     required String medicoId,
-    required DateTime dataHora,
+    required DateTime data,
+    required String horaInicio,
+    required String horaFim,
     required String tipoConsulta,
     required String motivoConsulta,
     String? observacoes,
@@ -417,18 +419,13 @@ class ApiService {
         throw Exception('Token de autenticação não encontrado. Faça login novamente.');
       }
 
-      final dataHoraUtc = DateTime.utc(
-        dataHora.year,
-        dataHora.month,
-        dataHora.day,
-        dataHora.hour,
-        dataHora.minute,
-        dataHora.second,
-      );
+      final dataStr = '${data.year.toString().padLeft(4, '0')}-${data.month.toString().padLeft(2, '0')}-${data.day.toString().padLeft(2, '0')}';
 
       final requestBody = {
         'medicoId': medicoId,
-        'dataHora': dataHoraUtc.toIso8601String(),
+        'data': dataStr,
+        'horaInicio': horaInicio,
+        'horaFim': horaFim,
         'tipoConsulta': tipoConsulta,
         'motivoConsulta': motivoConsulta,
         if (observacoes != null && observacoes.isNotEmpty) 'observacoes': observacoes,

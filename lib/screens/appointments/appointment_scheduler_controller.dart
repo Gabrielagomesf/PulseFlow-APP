@@ -150,10 +150,35 @@ class AppointmentSchedulerController extends GetxController {
         final dataEspecifica = h['dataEspecifica'];
         if (dataEspecifica != null) {
           try {
-            final data = DateTime.parse(dataEspecifica.toString())._copyWithTime(0, 0);
-            if (data.isAfter(hojeNormalizado.subtract(const Duration(days: 1))) || 
-                data.isAtSameMomentAs(hojeNormalizado)) {
-              datasDisponiveis.add(data);
+            String dateStr;
+            
+            if (dataEspecifica is Map && dataEspecifica.containsKey('\$date')) {
+              dateStr = dataEspecifica['\$date'].toString();
+            } else if (dataEspecifica is Map && dataEspecifica.containsKey('date')) {
+              dateStr = dataEspecifica['date'].toString();
+            } else {
+              dateStr = dataEspecifica.toString();
+              
+              if (dateStr.contains('\$date')) {
+                final match = RegExp(r'"\$date"\s*:\s*"([^"]+)"').firstMatch(dateStr);
+                if (match == null) {
+                  final match2 = RegExp(r"'\$date'\s*:\s*'([^']+)'").firstMatch(dateStr);
+                  if (match2 != null) {
+                    dateStr = match2.group(1)!;
+                  }
+                } else {
+                  dateStr = match.group(1)!;
+                }
+              }
+            }
+            
+            if (dateStr.isNotEmpty) {
+              final data = AppointmentSchedulerController._parseDateIgnoringTimezone(dateStr);
+              final dataNormalizada = data._copyWithTime(0, 0);
+              if (dataNormalizada.isAfter(hojeNormalizado.subtract(const Duration(days: 1))) || 
+                  dataNormalizada.isAtSameMomentAs(hojeNormalizado)) {
+                datasDisponiveis.add(dataNormalizada);
+              }
             }
           } catch (e) {
           }
@@ -403,15 +428,35 @@ class AppointmentSchedulerController extends GetxController {
                             'Médico não informado';
           final areaAtuacao = agendamento['medicoId']?['areaAtuacao']?.toString() ?? 
                              'Especialidade não informada';
-          final dataHora = agendamento['dataHora']?.toString() ?? 
-                          agendamento['dataHora']?['\$date']?.toString() ?? '';
-          final duracao = agendamento['duracao'] as int? ?? 30;
           
-          if (id.isEmpty || medicoId.isEmpty || dataHora.isEmpty) {
+          DateTime startTime;
+          int duracao;
+          
+          if (agendamento['data'] != null && agendamento['horaInicio'] != null) {
+            final dataStr = agendamento['data']?.toString() ?? '';
+            final horaInicio = agendamento['horaInicio']?.toString() ?? '00:00';
+            final parts = horaInicio.split(':');
+            final ano = int.parse(dataStr.split('-')[0]);
+            final mes = int.parse(dataStr.split('-')[1]);
+            final dia = int.parse(dataStr.split('-')[2].split('T')[0]);
+            final hora = int.parse(parts[0]);
+            final minuto = int.parse(parts[1]);
+            startTime = DateTime(ano, mes, dia, hora, minuto);
+            duracao = agendamento['duracao'] as int? ?? 30;
+          } else {
+            final dataHora = agendamento['dataHora']?.toString() ?? 
+                            agendamento['dataHora']?['\$date']?.toString() ?? '';
+            if (dataHora.isEmpty) {
+              continue;
+            }
+            startTime = DateTime.parse(dataHora);
+            duracao = agendamento['duracao'] as int? ?? 30;
+          }
+          
+          if (id.isEmpty || medicoId.isEmpty) {
             continue;
           }
           
-          final startTime = DateTime.parse(dataHora);
           final specialtyId = _normalizeSpecialtyId(areaAtuacao);
           final status = agendamento['status']?.toString() ?? 'agendada';
           
@@ -502,10 +547,35 @@ class AppointmentSchedulerController extends GetxController {
         final dataEspecifica = h['dataEspecifica'];
         if (dataEspecifica != null) {
           try {
-            final data = DateTime.parse(dataEspecifica.toString())._copyWithTime(0, 0);
-            if (data.isAfter(dataInicialNormalizada.subtract(const Duration(days: 1))) || 
-                data.isAtSameMomentAs(dataInicialNormalizada)) {
-              datasEspecificas.add(data);
+            String dateStr;
+            
+            if (dataEspecifica is Map && dataEspecifica.containsKey('\$date')) {
+              dateStr = dataEspecifica['\$date'].toString();
+            } else if (dataEspecifica is Map && dataEspecifica.containsKey('date')) {
+              dateStr = dataEspecifica['date'].toString();
+            } else {
+              dateStr = dataEspecifica.toString();
+              
+              if (dateStr.contains('\$date')) {
+                final match = RegExp(r'"\$date"\s*:\s*"([^"]+)"').firstMatch(dateStr);
+                if (match == null) {
+                  final match2 = RegExp(r"'\$date'\s*:\s*'([^']+)'").firstMatch(dateStr);
+                  if (match2 != null) {
+                    dateStr = match2.group(1)!;
+                  }
+                } else {
+                  dateStr = match.group(1)!;
+                }
+              }
+            }
+            
+            if (dateStr.isNotEmpty) {
+              final data = AppointmentSchedulerController._parseDateIgnoringTimezone(dateStr);
+              final dataNormalizada = data._copyWithTime(0, 0);
+              if (dataNormalizada.isAfter(dataInicialNormalizada.subtract(const Duration(days: 1))) || 
+                  dataNormalizada.isAtSameMomentAs(dataInicialNormalizada)) {
+                datasEspecificas.add(dataNormalizada);
+              }
             }
           } catch (e) {
           }
@@ -651,11 +721,30 @@ class AppointmentSchedulerController extends GetxController {
     
     final conflitoServidor = agendamentosServidor.any((agendamento) {
       try {
-        final dataHora = DateTime.parse(agendamento['dataHora'].toString());
-        final duracao = agendamento['duracao'] as int? ?? 30;
+        DateTime inicioAgendamento, fimAgendamento;
         
-        final inicioAgendamento = dataHora;
-        final fimAgendamento = dataHora.add(Duration(minutes: duracao));
+        if (agendamento['data'] != null && agendamento['horaInicio'] != null && agendamento['horaFim'] != null) {
+          final dataStr = agendamento['data']?.toString() ?? '';
+          final horaInicio = agendamento['horaInicio']?.toString() ?? '00:00';
+          final horaFim = agendamento['horaFim']?.toString() ?? '00:00';
+          
+          final partsInicio = horaInicio.split(':');
+          final partsFim = horaFim.split(':');
+          
+          final ano = int.parse(dataStr.split('-')[0]);
+          final mes = int.parse(dataStr.split('-')[1]);
+          final dia = int.parse(dataStr.split('-')[2].split('T')[0]);
+          
+          inicioAgendamento = DateTime(ano, mes, dia, int.parse(partsInicio[0]), int.parse(partsInicio[1]));
+          fimAgendamento = DateTime(ano, mes, dia, int.parse(partsFim[0]), int.parse(partsFim[1]));
+        } else if (agendamento['dataHora'] != null) {
+          final dataHora = DateTime.parse(agendamento['dataHora'].toString());
+          final duracao = agendamento['duracao'] as int? ?? 30;
+          inicioAgendamento = dataHora;
+          fimAgendamento = dataHora.add(Duration(minutes: duracao));
+        } else {
+          return false;
+        }
         
         final inicioSlot = slotDateTime;
         final fimSlot = slotDateTime.add(const Duration(minutes: 30));
@@ -705,6 +794,13 @@ class AppointmentSchedulerController extends GetxController {
       final horarioSelecionado = horariosData.firstWhereOrNull((h) => h['hora'] == slot);
       final duracaoConsulta = horarioSelecionado?['duracao'] as int? ?? 30;
       
+      final horaInicio = slot;
+      final parts = horaInicio.split(':');
+      final horaInicioH = int.parse(parts[0]);
+      final minutoInicioM = int.parse(parts[1]);
+      final horaFimTime = DateTime(selectedDate.value.year, selectedDate.value.month, selectedDate.value.day, horaInicioH, minutoInicioM).add(Duration(minutes: duracaoConsulta));
+      final horaFim = '${horaFimTime.hour.toString().padLeft(2, '0')}:${horaFimTime.minute.toString().padLeft(2, '0')}';
+      
       final startTime = combineDateAndSlot(selectedDate.value, slot);
       
       if (startTime.isBefore(DateTime.now())) {
@@ -738,7 +834,9 @@ class AppointmentSchedulerController extends GetxController {
 
       final resultado = await apiService.criarAgendamento(
         medicoId: doctor.id,
-        dataHora: startTime,
+        data: selectedDate.value,
+        horaInicio: horaInicio,
+        horaFim: horaFim,
         tipoConsulta: 'presencial',
         motivoConsulta: 'Consulta agendada pelo paciente',
         duracao: duracaoConsulta,
@@ -759,7 +857,7 @@ class AppointmentSchedulerController extends GetxController {
       appointments.add(novoAgendamento);
       
       final agendamentoData = {
-        'dataHora': startTime.toIso8601String(),
+        'dataHora': '${startTime.year.toString().padLeft(4, '0')}-${startTime.month.toString().padLeft(2, '0')}-${startTime.day.toString().padLeft(2, '0')}T${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}:00.000',
         'duracao': duracaoConsulta,
         'status': 'agendada',
       };
@@ -879,6 +977,50 @@ class AppointmentSchedulerController extends GetxController {
     final hour = int.parse(parts[0]);
     final minute = int.parse(parts[1]);
     return DateTime(date.year, date.month, date.day, hour, minute);
+  }
+
+  static DateTime _parseDateIgnoringTimezone(String dateString) {
+    try {
+      String cleanedDate = dateString.trim();
+      
+      if (cleanedDate.contains('\$date')) {
+        final match = RegExp(r'"\$date"\s*:\s*"([^"]+)"').firstMatch(cleanedDate);
+        if (match == null) {
+          final match2 = RegExp(r"'\$date'\s*:\s*'([^']+)'").firstMatch(cleanedDate);
+          if (match2 != null) {
+            cleanedDate = match2.group(1)!;
+          }
+        } else {
+          cleanedDate = match.group(1)!;
+        }
+      }
+      
+      final dateMatch = RegExp(r'(\d{4})-(\d{1,2})-(\d{1,2})').firstMatch(cleanedDate);
+      if (dateMatch != null) {
+        final year = int.parse(dateMatch.group(1)!);
+        final month = int.parse(dateMatch.group(2)!);
+        final day = int.parse(dateMatch.group(3)!);
+        return DateTime(year, month, day, 0, 0);
+      }
+      
+      cleanedDate = cleanedDate.replaceAll('T', ' ').split('.')[0].split('Z')[0].split('+')[0].trim();
+      
+      final parts = cleanedDate.split(RegExp(r'[\s\-:]'));
+      if (parts.length >= 3) {
+        final year = int.parse(parts[0]);
+        final month = int.parse(parts[1]);
+        final day = int.parse(parts[2]);
+        return DateTime(year, month, day, 0, 0);
+      }
+    } catch (e) {
+    }
+    
+    try {
+      final parsed = DateTime.parse(dateString);
+      return DateTime(parsed.year, parsed.month, parsed.day, 0, 0);
+    } catch (e) {
+      return DateTime.now();
+    }
   }
 }
 

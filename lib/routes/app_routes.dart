@@ -9,6 +9,7 @@ abstract class Routes {
   static const APPOINTMENTS_SPECIALTY = '/appointments-specialty';
   static const APPOINTMENTS_DOCTORS = '/appointments-doctors';
   static const APPOINTMENT_SCHEDULER = '/appointments-scheduler';
+  static const UPCOMING_APPOINTMENTS = '/upcoming-appointments';
   static const MEDICAL_RECORDS = '/medical-records';
   static const PRESCRIPTIONS = '/prescriptions';
   static const SETTINGS = '/settings';

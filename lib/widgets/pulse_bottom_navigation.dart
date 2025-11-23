@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 
 import '../theme/app_theme.dart';
 
-enum PulseNavItem { home, history, menu, pulseKey, profile }
+enum PulseNavItem { home, history, menu, appointments, pulseKey, profile }
 
 class PulseBottomNavigation extends StatelessWidget {
   const PulseBottomNavigation({
@@ -29,6 +29,9 @@ class PulseBottomNavigation extends StatelessWidget {
         break;
       case PulseNavItem.menu:
         Get.toNamed('/menu');
+        break;
+      case PulseNavItem.appointments:
+        Get.offAllNamed('/upcoming-appointments');
         break;
       case PulseNavItem.pulseKey:
         Get.toNamed('/pulse-key');
@@ -60,11 +63,13 @@ class PulseBottomNavigation extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: PulseNavItem.values.map((item) {
-          return _PulseBottomNavItem(
-            icon: _iconFor(item),
-            label: _labelFor(item),
-            isActive: _isActive(item),
-            onTap: () => _handleTap(item),
+          return Expanded(
+            child: _PulseBottomNavItem(
+              icon: _iconFor(item),
+              label: _labelFor(item),
+              isActive: _isActive(item),
+              onTap: () => _handleTap(item),
+            ),
           );
         }).toList(),
       ),
@@ -79,6 +84,8 @@ class PulseBottomNavigation extends StatelessWidget {
         return Icons.grid_view;
       case PulseNavItem.menu:
         return Icons.add;
+      case PulseNavItem.appointments:
+        return Icons.calendar_today;
       case PulseNavItem.pulseKey:
         return Icons.vpn_key;
       case PulseNavItem.profile:
@@ -94,6 +101,8 @@ class PulseBottomNavigation extends StatelessWidget {
         return 'Históricos';
       case PulseNavItem.menu:
         return 'Registro';
+      case PulseNavItem.appointments:
+        return 'Consultas';
       case PulseNavItem.pulseKey:
         return 'Pulse Key';
       case PulseNavItem.profile:
@@ -120,7 +129,7 @@ class _PulseBottomNavItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
         decoration: BoxDecoration(
           color: isActive ? Colors.white.withOpacity(0.2) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
@@ -132,15 +141,20 @@ class _PulseBottomNavItem extends StatelessWidget {
             Icon(
               icon,
               color: isActive ? Colors.white : Colors.white.withOpacity(0.6),
-              size: isActive ? 26 : 24,
+              size: isActive ? 22 : 20,
             ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: isActive ? Colors.white : Colors.white.withOpacity(0.6),
-                fontSize: 11,
-                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+            const SizedBox(height: 2),
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: isActive ? Colors.white : Colors.white.withOpacity(0.6),
+                  fontSize: 9,
+                  fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],

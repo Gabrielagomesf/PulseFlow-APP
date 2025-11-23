@@ -36,7 +36,7 @@ class UpcomingAppointmentsController extends GetxController {
   final Rxn<DateTime> dataInicioFiltro = Rxn<DateTime>();
   final Rxn<DateTime> dataFimFiltro = Rxn<DateTime>();
   
-  final List<String> statusOptions = ['Todos', 'Agendada', 'Confirmada', 'Cancelada', 'Concluída'];
+  final List<String> statusOptions = ['Todos', 'Agendada', 'Cancelada', 'Concluída'];
 
   @override
   void onInit() {
@@ -137,7 +137,6 @@ class UpcomingAppointmentsController extends GetxController {
     if (selectedStatus.value != 'Todos') {
       final statusMap = {
         'Agendada': 'agendada',
-        'Confirmada': 'confirmada',
         'Cancelada': 'cancelada',
         'Concluída': 'concluida',
       };

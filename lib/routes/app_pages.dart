@@ -38,6 +38,7 @@ import '../screens/appointments/appointment_doctor_list_screen.dart';
 import '../screens/appointments/appointment_scheduler_screen.dart';
 import '../screens/appointments/upcoming_appointments_screen.dart';
 import '../screens/notifications/notifications_screen.dart';
+import '../screens/access_history/access_history_screen.dart';
 import '../services/auth_service.dart';
 
 import  'app_routes.dart';
@@ -327,6 +328,12 @@ class AppPages {
     GetPage(
       name: Routes.NOTIFICATIONS,
       page: () => const NotificationsScreen(),
+      transition: Transition.rightToLeft,
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: Routes.ACCESS_HISTORY,
+      page: () => const AccessHistoryScreen(),
       transition: Transition.rightToLeft,
       middlewares: [AuthMiddleware()],
     ),

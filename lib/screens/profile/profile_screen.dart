@@ -66,6 +66,10 @@ class ProfileScreen extends StatelessWidget {
                         _buildHealthDataSection(controller),
                         const SizedBox(height: 20),
                         
+                        // Seção de privacidade e segurança
+                        _buildPrivacySection(),
+                        const SizedBox(height: 20),
+                        
                         // Botão de salvar
                         _buildSaveButton(controller),
                         const SizedBox(height: 20),
@@ -877,6 +881,57 @@ class ProfileScreen extends StatelessWidget {
         ),
       ),
     ));
+  }
+
+  Widget _buildPrivacySection() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        children: [
+          ListTile(
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF00324A).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.history_outlined,
+                color: Color(0xFF00324A),
+                size: 24,
+              ),
+            ),
+            title: const Text(
+              'Histórico de Acessos',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF212121),
+              ),
+            ),
+            subtitle: const Text(
+              'Veja quem acessou seu prontuário',
+              style: TextStyle(
+                fontSize: 13,
+                color: Color(0xFF757575),
+              ),
+            ),
+            trailing: const Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Color(0xFF757575),
+            ),
+            onTap: () {
+              Get.toNamed(Routes.ACCESS_HISTORY);
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildLogoutButton() {

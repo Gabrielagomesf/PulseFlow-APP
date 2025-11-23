@@ -27,13 +27,31 @@ class Exame {
   }
 
   factory Exame.fromMap(Map<String, dynamic> map) {
+    String? extractId(dynamic idValue) {
+      if (idValue == null) return null;
+      if (idValue is String) return idValue;
+      if (idValue is Map && idValue['\$oid'] != null) {
+        return idValue['\$oid'].toString();
+      }
+      return idValue.toString();
+    }
+
+    String extractPaciente(dynamic pacienteValue) {
+      if (pacienteValue == null) return '';
+      if (pacienteValue is String) return pacienteValue;
+      if (pacienteValue is Map && pacienteValue['\$oid'] != null) {
+        return pacienteValue['\$oid'].toString();
+      }
+      return pacienteValue.toString();
+    }
+
     return Exame(
-      id: map['_id']?.toString(),
+      id: extractId(map['_id']),
       nome: map['nome']?.toString() ?? '',
       categoria: map['categoria']?.toString() ?? '',
       data: DateTime.tryParse(map['data']?.toString() ?? '') ?? DateTime.now(),
       filePath: map['filePath']?.toString() ?? '',
-      paciente: map['paciente']?.toString() ?? '',
+      paciente: extractPaciente(map['paciente']),
     );
   }
 }

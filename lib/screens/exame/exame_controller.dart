@@ -8,6 +8,7 @@ class ExameController extends GetxController {
   var exames = <Exame>[].obs;
   var mesSelecionado = DateTime(DateTime.now().year, DateTime.now().month).obs;
   RxList<Exame> examesFiltrados = <Exame>[].obs;
+  var isLoading = false.obs;
 
   // Filtros
   var filtroNome = ''.obs;
@@ -29,20 +30,28 @@ class ExameController extends GetxController {
     final cat = filtroCategoria.value.trim().toLowerCase();
 
     examesFiltrados.value = exames.where((e) {
-      final byMonth = e.data.year == mesSelecionado.value.year && e.data.month == mesSelecionado.value.month;
-      if (!byMonth) return false;
-
       final byName = nome.isEmpty || e.nome.toLowerCase().contains(nome);
       final byCat = cat.isEmpty || e.categoria.toLowerCase().contains(cat);
-      final byStart = start == null || !e.data.isBefore(DateTime(start.year, start.month, start.day));
-      final byEnd = end == null || !e.data.isAfter(DateTime(end.year, end.month, end.day, 23, 59, 59));
+      
+      final eDateOnly = DateTime(e.data.year, e.data.month, e.data.day);
+      
+      final byStart = start == null || !eDateOnly.isBefore(DateTime(start.year, start.month, start.day));
+      final byEnd = end == null || !eDateOnly.isAfter(DateTime(end.year, end.month, end.day));
+      
       return byName && byCat && byStart && byEnd;
     }).toList();
+    
+    examesFiltrados.sort((a, b) => b.data.compareTo(a.data));
   }
 
   Future<void> carregarExames(String pacienteId) async {
-    exames.value = await _service.getByPaciente(pacienteId);
-    _filtrar();
+    isLoading.value = true;
+    try {
+      exames.value = await _service.getByPaciente(pacienteId);
+      _filtrar();
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   Future<void> adicionarExame(Exame exame) async {

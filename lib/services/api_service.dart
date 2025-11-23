@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:async';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:get/get.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config/app_config.dart';
@@ -397,6 +398,38 @@ class ApiService {
       return response.statusCode == 200;
     } catch (e) {
       return false;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> buscarHistoricoAcessos() async {
+    try {
+      final headers = await _getAuthHeaders();
+      
+      if (!headers.containsKey('Authorization')) {
+        throw Exception('Token de autenticação não encontrado. Faça login novamente.');
+      }
+
+      final response = await _httpClient.get(
+        Uri.parse('$baseUrl/api/pacientes/historico-acessos'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final acessos = data['acessos'] as List<dynamic>? ?? [];
+        return acessos.map((acesso) => Map<String, dynamic>.from(acesso)).toList();
+      } else {
+        String errorMessage = 'Erro desconhecido';
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMessage = errorData['message'] ?? errorMessage;
+        } catch (_) {
+          errorMessage = 'Erro ao buscar histórico de acessos: ${response.statusCode}';
+        }
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      rethrow;
     }
   }
 
@@ -890,6 +923,130 @@ class ApiService {
       if (response.statusCode != 200 && response.statusCode != 201) {
       }
     } catch (e) {
+    }
+  }
+
+  Future<Map<String, dynamic>> uploadExame({
+    required String nome,
+    required String categoria,
+    required DateTime data,
+    required File arquivo,
+  }) async {
+    try {
+      final headers = await _getAuthHeaders();
+      if (!headers.containsKey('Authorization')) {
+        throw Exception('Token de autenticação não encontrado. Faça login novamente.');
+      }
+
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/api/anexoExame/upload'),
+      );
+
+      request.headers.addAll({
+        'Authorization': headers['Authorization']!,
+      });
+
+      if (baseUrl.contains('ngrok')) {
+        request.headers['ngrok-skip-browser-warning'] = 'true';
+        request.headers['User-Agent'] = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1';
+        request.headers['Referer'] = baseUrl;
+      }
+
+      request.fields['nome'] = nome;
+      request.fields['categoria'] = categoria;
+      request.fields['data'] = data.toIso8601String();
+
+      final fileExtension = arquivo.path.split('.').last.toLowerCase();
+      String contentType = 'application/octet-stream';
+      
+      if (fileExtension == 'pdf') {
+        contentType = 'application/pdf';
+      } else if (['png', 'jpg', 'jpeg'].contains(fileExtension)) {
+        contentType = 'image/$fileExtension';
+      } else if (fileExtension == 'heic') {
+        contentType = 'image/heic';
+      }
+
+      final multipartFile = await http.MultipartFile.fromPath(
+        'arquivo',
+        arquivo.path,
+        filename: arquivo.path.split('/').last,
+        contentType: MediaType.parse(contentType),
+      );
+
+      request.files.add(multipartFile);
+
+      final client = _httpClient;
+      final streamedResponse = await client.send(request).timeout(
+        const Duration(seconds: 60),
+      );
+
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        return {
+          'success': true,
+          'exame': data['exame'],
+          'message': data['message'] ?? 'Exame enviado com sucesso',
+        };
+      } else {
+        String errorMessage = 'Erro ao enviar exame';
+        try {
+          if (response.body.isNotEmpty) {
+            final errorData = jsonDecode(response.body);
+            errorMessage = errorData['message'] ?? errorData['error'] ?? errorMessage;
+          }
+        } catch (_) {
+          if (response.statusCode == 404) {
+            errorMessage = 'Rota não encontrada. Verifique se o servidor está rodando corretamente.';
+          } else if (response.statusCode == 401) {
+            errorMessage = 'Sessão expirada. Faça login novamente.';
+          } else if (response.statusCode == 403) {
+            errorMessage = 'Acesso negado. Verifique suas permissões.';
+          } else {
+            errorMessage = 'Erro ao enviar exame: ${response.statusCode}';
+          }
+        }
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> buscarExamesPaciente() async {
+    try {
+      final headers = await _getAuthHeaders();
+      
+      if (!headers.containsKey('Authorization')) {
+        throw Exception('Token de autenticação não encontrado. Faça login novamente.');
+      }
+
+      final response = await _httpClient.get(
+        Uri.parse('$baseUrl/api/anexoExame/paciente'),
+        headers: headers,
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data is List) {
+          return List<Map<String, dynamic>>.from(data);
+        }
+        return [];
+      } else {
+        String errorMessage = 'Erro desconhecido';
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMessage = errorData['message'] ?? errorMessage;
+        } catch (_) {
+          errorMessage = 'Erro ao buscar exames: ${response.statusCode}';
+        }
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      rethrow;
     }
   }
 }

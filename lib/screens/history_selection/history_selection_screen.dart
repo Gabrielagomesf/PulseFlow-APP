@@ -260,6 +260,20 @@ class _HistorySelectionScreenState extends State<HistorySelectionScreen> with Si
             Get.toNamed(Routes.SLEEP_HISTORY);
           },
         ),
+        const SizedBox(height: 16),
+        _buildHistoryCard(
+          icon: Icons.security_rounded,
+          title: 'Histórico de Acessos',
+          subtitle: 'Veja quem acessou seu prontuário',
+          gradientColors: [
+            const Color(0xFF4CAF50),
+            const Color(0xFF66BB6A),
+          ],
+          onPressed: () {
+            HapticFeedback.mediumImpact();
+            Get.toNamed(Routes.ACCESS_HISTORY);
+          },
+        ),
       ],
     );
   }

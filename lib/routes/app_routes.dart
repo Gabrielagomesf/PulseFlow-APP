@@ -37,5 +37,6 @@ abstract class Routes {
   static const HORMONAL = '/hormonal';
   static const HISTORY_SELECTION = '/history-selection';
   static const NOTIFICATIONS = '/notifications';
+  static const ACCESS_HISTORY = '/access-history';
 
 } 

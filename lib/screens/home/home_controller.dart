@@ -10,6 +10,28 @@ import '../../models/crise_gastrite.dart';
 import '../../models/evento_clinico.dart';
 import '../../models/menstruacao.dart';
 
+class AppointmentBooking {
+  final String id;
+  final String doctorId;
+  final String doctorName;
+  final String specialtyId;
+  final String specialtyName;
+  final DateTime startTime;
+  final Duration duration;
+  final String status;
+
+  AppointmentBooking({
+    required this.id,
+    required this.doctorId,
+    required this.doctorName,
+    required this.specialtyId,
+    required this.specialtyName,
+    required this.startTime,
+    this.duration = const Duration(minutes: 30),
+    this.status = 'agendada',
+  });
+}
+
 class HomeController extends GetxController {
   final AuthService _authService = Get.find<AuthService>();
   final DatabaseService _databaseService = Get.find<DatabaseService>();
@@ -38,6 +60,10 @@ class HomeController extends GetxController {
   // Contador de notificações
   final RxInt unreadNotificationsCount = 0.obs;
   
+  // Consultas agendadas
+  final RxList<AppointmentBooking> upcomingAppointments = <AppointmentBooking>[].obs;
+  final RxBool isLoadingAppointments = false.obs;
+  
   // Getters
   Patient? get currentPatient => _currentPatient.value;
   bool get isLoading => _isLoading.value;
@@ -56,8 +82,22 @@ class HomeController extends GetxController {
   void onInit() {
     super.onInit();
     _loadPatientData();
-    _loadAvailableData();
-    loadNotificationsCount();
+    _initializeData();
+  }
+  
+  Future<void> _initializeData() async {
+    _isLoading.value = true;
+    try {
+      await Future.wait([
+        _loadAvailableData(),
+        loadNotificationsCount(),
+        loadUpcomingAppointments(),
+      ]);
+    } catch (e) {
+      print('❌ [HomeController] Erro ao inicializar dados: $e');
+    } finally {
+      _isLoading.value = false;
+    }
   }
   
   Future<void> loadNotificationsCount() async {
@@ -70,6 +110,90 @@ class HomeController extends GetxController {
     }
   }
   
+  Future<void> loadUpcomingAppointments() async {
+    isLoadingAppointments.value = true;
+    try {
+      final apiService = ApiService();
+      final dataInicio = DateTime.now();
+      final dataFim = dataInicio.add(const Duration(days: 30));
+      
+      final agendamentos = await apiService.buscarAgendamentosPaciente(
+        dataInicio: dataInicio,
+        dataFim: dataFim,
+      );
+      
+      final appointmentsList = <AppointmentBooking>[];
+      
+      for (final agendamento in agendamentos) {
+        try {
+          final id = agendamento['_id']?.toString() ?? '';
+          final medicoId = agendamento['medicoId']?.toString() ?? 
+                          agendamento['medicoId']?['_id']?.toString() ?? '';
+          final medicoNome = agendamento['medicoId']?['nome']?.toString() ?? 
+                            'Médico não informado';
+          final areaAtuacao = agendamento['medicoId']?['areaAtuacao']?.toString() ?? 
+                             'Especialidade não informada';
+          
+          DateTime startTime;
+          int duracao;
+          
+          if (agendamento['data'] != null && agendamento['horaInicio'] != null) {
+            final dataStr = agendamento['data']?.toString() ?? '';
+            final horaInicio = agendamento['horaInicio']?.toString() ?? '00:00';
+            final parts = horaInicio.split(':');
+            final ano = int.parse(dataStr.split('-')[0]);
+            final mes = int.parse(dataStr.split('-')[1]);
+            final dia = int.parse(dataStr.split('-')[2].split('T')[0]);
+            final hora = int.parse(parts[0]);
+            final minuto = int.parse(parts[1]);
+            startTime = DateTime(ano, mes, dia, hora, minuto);
+            duracao = agendamento['duracao'] as int? ?? 30;
+          } else {
+            startTime = DateTime.now();
+            duracao = 30;
+          }
+          
+          final status = agendamento['status']?.toString() ?? 'agendada';
+          
+          // Só adicionar consultas futuras (incluindo hoje) com status agendada
+          final now = DateTime.now();
+          final appointmentDate = DateTime(startTime.year, startTime.month, startTime.day);
+          final today = DateTime(now.year, now.month, now.day);
+          final isFutureOrToday = appointmentDate.isAfter(today.subtract(const Duration(days: 1))) || appointmentDate.isAtSameMomentAs(today);
+          final isAgendada = status.toLowerCase() == 'agendada';
+          
+          if (isFutureOrToday && isAgendada) {
+            appointmentsList.add(AppointmentBooking(
+              id: id,
+              doctorId: medicoId,
+              doctorName: medicoNome,
+              specialtyId: areaAtuacao,
+              specialtyName: areaAtuacao,
+              startTime: startTime,
+              duration: Duration(minutes: duracao),
+              status: status,
+            ));
+          }
+        } catch (e) {
+          continue;
+        }
+      }
+      
+      // Ordenar por data
+      appointmentsList.sort((a, b) => a.startTime.compareTo(b.startTime));
+      upcomingAppointments.value = appointmentsList;
+      upcomingAppointments.refresh();
+      
+      // Debug: imprimir quantidade de consultas encontradas
+      print('📅 [HomeController] Consultas agendadas encontradas: ${appointmentsList.length}');
+    } catch (e) {
+      print('❌ [HomeController] Erro ao carregar consultas: $e');
+      upcomingAppointments.value = [];
+    } finally {
+      isLoadingAppointments.value = false;
+    }
+  }
+  
   // Carrega os dados do paciente logado
   void _loadPatientData() {
     _currentPatient.value = _authService.currentUser;
@@ -77,10 +201,14 @@ class HomeController extends GetxController {
   
   // Carrega dados disponíveis do paciente
   Future<void> _loadAvailableData() async {
-    if (currentPatient?.id == null) return;
+    if (currentPatient?.id == null) {
+      print('⚠️ [HomeController] Paciente não encontrado');
+      return;
+    }
     
     try {
       final patientId = currentPatient!.id!;
+      print('📊 [HomeController] Carregando dados do paciente: $patientId');
       
       // Carrega todos os dados do paciente
       final enxaquecas = await _databaseService.getEnxaquecasByPacienteId(patientId);
@@ -88,6 +216,8 @@ class HomeController extends GetxController {
       final crisesGastrite = await _databaseService.getCrisesGastriteByPacienteId(patientId);
       final eventosClinicos = await _databaseService.getEventosClinicosByPacienteId(patientId);
       final menstruacoes = await _databaseService.getMenstruacoesByPacienteId(patientId);
+      
+      print('📊 [HomeController] Dados carregados - Enxaqueca: ${enxaquecas.length}, Diabetes: ${diabetes.length}, Gastrite: ${crisesGastrite.length}, Eventos: ${eventosClinicos.length}, Menstruação: ${menstruacoes.length}');
       
       // Armazena os dados para estatísticas
       _enxaquecaData.value = enxaquecas;
@@ -106,7 +236,10 @@ class HomeController extends GetxController {
       // Inicializa favoritos com dados disponíveis
       _updateFavoriteItems();
       
-    } catch (e) {
+      print('✅ [HomeController] Dados carregados com sucesso');
+    } catch (e, stackTrace) {
+      print('❌ [HomeController] Erro ao carregar dados disponíveis: $e');
+      print('❌ [HomeController] Stack trace: $stackTrace');
     }
   }
 
@@ -119,6 +252,7 @@ class HomeController extends GetxController {
       _currentPatient.value = _authService.currentUser;
       await _loadAvailableData();
       await loadNotificationsCount();
+      await loadUpcomingAppointments();
     } catch (e) {
       Get.snackbar(
         'Erro',

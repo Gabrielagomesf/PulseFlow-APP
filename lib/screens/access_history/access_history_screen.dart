@@ -20,19 +20,26 @@ class AccessHistoryScreen extends StatelessWidget {
       child: Scaffold(
         backgroundColor: const Color(0xFF00324A),
         body: SafeArea(
+          bottom: false,
           child: Column(
             children: [
               _buildHeader(controller, isSmallScreen),
               Expanded(
-                child: Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(24),
-                      topRight: Radius.circular(24),
-                    ),
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    topRight: Radius.circular(24),
                   ),
-                  child: LayoutBuilder(
+                  child: Container(
+                    width: double.infinity,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(24),
+                        topRight: Radius.circular(24),
+                      ),
+                    ),
+                    child: LayoutBuilder(
                     builder: (context, constraints) {
                       final maxWidth = constraints.maxWidth > 800 ? 800.0 : constraints.maxWidth;
                       
@@ -69,6 +76,7 @@ class AccessHistoryScreen extends StatelessWidget {
                         );
                       });
                     },
+                  ),
                   ),
                 ),
               ),

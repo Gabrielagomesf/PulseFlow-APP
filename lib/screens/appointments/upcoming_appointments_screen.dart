@@ -133,7 +133,7 @@ class UpcomingAppointmentsScreen extends StatelessWidget {
         ],
       ),
       bottomNavigationBar: const PulseBottomNavigation(
-        activeItem: PulseNavItem.appointments,
+        activeItem: PulseNavItem.home,
       ),
     );
   }

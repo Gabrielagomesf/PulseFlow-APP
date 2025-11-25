@@ -63,6 +63,7 @@ class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistratio
           ),
         ),
         child: SafeArea(
+          bottom: false,
           child: FadeTransition(
             opacity: _fadeAnimation,
             child: _buildContent(isLandscape, size),
@@ -88,6 +89,7 @@ class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistratio
       );
     } else {
       return Column(
+        mainAxisSize: MainAxisSize.max,
         children: [
           Expanded(
             flex: 1,
@@ -118,14 +120,21 @@ class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistratio
     final titleFontSize = isSmallScreen ? size.width * 0.065 : size.width * 0.055;
     final subtitleFontSize = isSmallScreen ? size.width * 0.035 : size.width * 0.032;
     
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(30),
-          topRight: Radius.circular(30),
-        ),
+    return ClipRRect(
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(30),
+        topRight: Radius.circular(30),
       ),
+      child: Container(
+        width: double.infinity,
+        constraints: BoxConstraints.expand(),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(30),
+            topRight: Radius.circular(30),
+          ),
+        ),
       child: Column(
         children: [
           Container(
@@ -189,6 +198,7 @@ class _ProfessionalRegistrationScreenState extends State<ProfessionalRegistratio
             ),
           ),
         ],
+      ),
       ),
     );
   }

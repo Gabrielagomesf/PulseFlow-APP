@@ -51,7 +51,7 @@ class PulseBottomNavigation extends StatelessWidget {
     return Container(
       padding: EdgeInsets.only(
         top: 10,
-        bottom: resolvedBottomPadding,
+        bottom: resolvedBottomPadding.clamp(4.0, 12.0),
       ),
       decoration: const BoxDecoration(
         color: AppTheme.primaryBlue,
@@ -60,18 +60,21 @@ class PulseBottomNavigation extends StatelessWidget {
           topRight: Radius.circular(20),
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: PulseNavItem.values.map((item) {
-          return Expanded(
-            child: _PulseBottomNavItem(
-              icon: _iconFor(item),
-              label: _labelFor(item),
-              isActive: _isActive(item),
-              onTap: () => _handleTap(item),
-            ),
-          );
-        }).toList(),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: PulseNavItem.values.where((item) => item != PulseNavItem.appointments).map((item) {
+            return Expanded(
+              child: _PulseBottomNavItem(
+                icon: _iconFor(item),
+                label: _labelFor(item),
+                isActive: _isActive(item),
+                onTap: () => _handleTap(item),
+              ),
+            );
+          }).toList(),
+        ),
       ),
     );
   }
@@ -129,7 +132,7 @@ class _PulseBottomNavItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
         decoration: BoxDecoration(
           color: isActive ? Colors.white.withOpacity(0.2) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
@@ -141,15 +144,15 @@ class _PulseBottomNavItem extends StatelessWidget {
             Icon(
               icon,
               color: isActive ? Colors.white : Colors.white.withOpacity(0.6),
-              size: isActive ? 22 : 20,
+              size: isActive ? 25 : 23,
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 3),
             Flexible(
               child: Text(
                 label,
                 style: TextStyle(
                   color: isActive ? Colors.white : Colors.white.withOpacity(0.6),
-                  fontSize: 9,
+                  fontSize: 10,
                   fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
                 ),
                 textAlign: TextAlign.center,

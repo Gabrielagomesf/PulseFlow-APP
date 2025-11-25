@@ -206,7 +206,18 @@ class _StepsHistoryScreenState extends State<StepsHistoryScreen> {
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
                 onPressed: () => Get.back(),
               ),
-              const Spacer(),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    'Passos',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
               IconButton(
                 icon: const Icon(Icons.sync, color: Colors.white),
                 onPressed: () async {
@@ -247,56 +258,11 @@ class _StepsHistoryScreenState extends State<StepsHistoryScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildPulseFlowLogo(),
-            ],
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            'Passos',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildPulseFlowLogo() {
-    return SizedBox(
-      width: 140,
-      height: 45,
-      child: Image.asset(
-        'assets/images/PulseNegativo.png',
-        fit: BoxFit.contain,
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withOpacity(0.3)),
-            ),
-            child: const Center(
-              child: Text(
-                'PulseFlow',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
 
   Widget _buildContent() {
     // Calcula estatísticas

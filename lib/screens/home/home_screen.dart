@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
 import '../../routes/app_routes.dart';
 import '../../theme/app_theme.dart';
 import 'home_controller.dart';
@@ -49,12 +50,21 @@ class HomeScreen extends StatelessWidget {
                     color: const Color(0xFF00324A), // Nova cor azul
                     child: SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.only(
+                        top: 16,
+                        left: 16,
+                        right: 16,
+                        bottom: 16,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Card de Agendamento (sempre visível)
                           _buildScheduleConsultationCard(),
+                          const SizedBox(height: 24),
+                          
+                          // Seção de Consultas Agendadas
+                          _buildUpcomingAppointmentsSection(controller),
                           const SizedBox(height: 24),
                           
                           // Seção Favorito
@@ -84,10 +94,10 @@ class HomeScreen extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.only(
-        top: MediaQuery.of(Get.context!).padding.top + 16, // Adiciona padding da status bar
+        top: MediaQuery.of(Get.context!).padding.top + 12, // Adiciona padding da status bar
         left: 16,
         right: 16,
-        bottom: 16,
+        bottom: 24,
       ),
       decoration: const BoxDecoration(
         color: Color(0xFF00324A), // Nova cor azul
@@ -155,7 +165,7 @@ class HomeScreen extends StatelessWidget {
               )),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
           
           // Perfil do usuário simplificado
           Obx(() => Row(
@@ -1964,6 +1974,216 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildUpcomingAppointmentsSection(HomeController controller) {
+    return Obx(() {
+      if (controller.isLoadingAppointments.value) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.withOpacity(0.2)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                spreadRadius: 1,
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00324A)),
+            ),
+          ),
+        );
+      }
+      
+      final allAppointments = controller.upcomingAppointments;
+      final appointments = allAppointments.take(3).toList();
+      
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.event_note,
+                    color: Color(0xFF00324A),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Próximas Consultas',
+                    style: AppTheme.titleLarge.copyWith(
+                      color: const Color(0xFF1E293B),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              if (allAppointments.length > 3)
+                TextButton(
+                  onPressed: () => Get.toNamed(Routes.UPCOMING_APPOINTMENTS),
+                  child: Text(
+                    'Ver todas',
+                    style: TextStyle(
+                      color: const Color(0xFF00324A),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (appointments.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.withOpacity(0.2)),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.calendar_today_outlined,
+                    color: Colors.grey[400],
+                    size: 24,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Você não possui consultas agendadas',
+                      style: AppTheme.bodyMedium.copyWith(
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            ...appointments.map((appointment) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _buildAppointmentCard(appointment),
+            )),
+        ],
+      );
+    });
+  }
+  
+  Widget _buildAppointmentCard(AppointmentBooking appointment) {
+    final dateFormat = DateFormat('dd/MM/yyyy');
+    final timeFormat = DateFormat('HH:mm');
+    final isToday = appointment.startTime.day == DateTime.now().day &&
+                    appointment.startTime.month == DateTime.now().month &&
+                    appointment.startTime.year == DateTime.now().year;
+    
+    return GestureDetector(
+      onTap: () => Get.toNamed(Routes.UPCOMING_APPOINTMENTS),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isToday 
+                ? const Color(0xFF00324A).withOpacity(0.3)
+                : Colors.grey.withOpacity(0.2),
+            width: isToday ? 2 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isToday
+                    ? const Color(0xFF00324A).withOpacity(0.1)
+                    : Colors.grey.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.calendar_today,
+                color: isToday 
+                    ? const Color(0xFF00324A)
+                    : Colors.grey[600],
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    appointment.doctorName,
+                    style: AppTheme.titleMedium.copyWith(
+                      color: const Color(0xFF1E293B),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    appointment.specialtyName,
+                    style: AppTheme.bodySmall.copyWith(
+                      color: Colors.grey[600],
+                      fontSize: 13,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.access_time,
+                        size: 14,
+                        color: Colors.grey[600],
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        isToday 
+                            ? 'Hoje às ${timeFormat.format(appointment.startTime)}'
+                            : '${dateFormat.format(appointment.startTime)} às ${timeFormat.format(appointment.startTime)}',
+                        style: AppTheme.bodySmall.copyWith(
+                          color: Colors.grey[600],
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Colors.grey[400],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildShortcutsSection(HomeController controller) {
     return Obx(() {
       if (!controller.hasAnyData) {
@@ -2042,7 +2262,7 @@ class HomeScreen extends StatelessWidget {
         title: 'Enxaqueca',
         subtitle: 'Registros de dor',
         color: Colors.purple,
-        onTap: () => Get.toNamed('/enxaqueca'),
+        onTap: () => Get.toNamed(Routes.ENXAQUECA),
       ));
     }
     
@@ -2052,7 +2272,7 @@ class HomeScreen extends StatelessWidget {
         title: 'Diabetes',
         subtitle: 'Níveis de glicose',
         color: Colors.red,
-        onTap: () => Get.toNamed('/diabetes'),
+        onTap: () => Get.toNamed(Routes.DIABETES),
       ));
     }
     
@@ -2062,7 +2282,7 @@ class HomeScreen extends StatelessWidget {
         title: 'Gastrite',
         subtitle: 'Crises registradas',
         color: Colors.orange,
-        onTap: () => Get.toNamed('/crise-gastrite'),
+        onTap: () => Get.toNamed(Routes.CRISE_GASTRITE_HISTORY),
       ));
     }
     
@@ -2072,7 +2292,7 @@ class HomeScreen extends StatelessWidget {
         title: 'Eventos Clínicos',
         subtitle: 'Consultas e exames',
         color: Colors.blue,
-        onTap: () => Get.toNamed('/evento-clinico-form'),
+        onTap: () => Get.toNamed(Routes.EVENTO_CLINICO_HISTORY),
       ));
     }
     
@@ -2082,7 +2302,7 @@ class HomeScreen extends StatelessWidget {
         title: 'Menstruação',
         subtitle: 'Ciclo menstrual',
         color: Colors.pink,
-        onTap: () => Get.toNamed('/menstruacao'),
+        onTap: () => Get.toNamed(Routes.MENSTRUACAO_HISTORY),
       ));
     }
     
@@ -2092,7 +2312,7 @@ class HomeScreen extends StatelessWidget {
       title: 'Notas Médicas',
       subtitle: 'Anotações pessoais',
       color: Colors.green,
-      onTap: () => Get.toNamed('/medical-records'),
+      onTap: () => Get.toNamed(Routes.MEDICAL_RECORDS),
     ));
     
     return Column(

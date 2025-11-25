@@ -296,7 +296,7 @@ class HealthDataService {
                 '\$set': {
                   'valor': spot.y,
                   'fonte': 'HealthKit',
-                  'descricao': 'Tempo na cama',
+                  'descricao': 'Tempo dormido',
                   'updatedAt': DateTime.now(),
                 }
               },
@@ -317,7 +317,7 @@ class HealthDataService {
           'data': dateKey,
           'fonte': 'HealthKit',
           'unidade': 'horas',
-          'descricao': 'Tempo na cama',
+          'descricao': 'Tempo dormido',
           'createdAt': DateTime.now(),
           'updatedAt': DateTime.now(),
         };

@@ -45,6 +45,7 @@ class _TermsScreenState extends State<TermsScreen> with SingleTickerProviderStat
           ),
         ),
         child: SafeArea(
+          bottom: false,
           child: FadeTransition(
             opacity: _fadeAnimation,
             child: _buildContent(isLandscape, size),
@@ -70,6 +71,7 @@ class _TermsScreenState extends State<TermsScreen> with SingleTickerProviderStat
       );
     } else {
       return Column(
+        mainAxisSize: MainAxisSize.max,
         children: [
           Expanded(
             flex: 1,
@@ -143,14 +145,21 @@ class _TermsScreenState extends State<TermsScreen> with SingleTickerProviderStat
   }
 
   Widget _buildFormSection(Size size) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(30),
-          topRight: Radius.circular(30),
-        ),
+    return ClipRRect(
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(30),
+        topRight: Radius.circular(30),
       ),
+      child: Container(
+        width: double.infinity,
+        constraints: BoxConstraints.expand(),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(30),
+            topRight: Radius.circular(30),
+          ),
+        ),
       child: Column(
         children: [
           Container(
@@ -195,6 +204,7 @@ class _TermsScreenState extends State<TermsScreen> with SingleTickerProviderStat
             ),
           ),
         ],
+      ),
       ),
     );
   }

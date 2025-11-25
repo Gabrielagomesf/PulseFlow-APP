@@ -56,6 +56,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
               ),
             ),
             child: SafeArea(
+              bottom: false,
               child: FadeTransition(
                 opacity: _fadeAnimation,
                 child: _buildContent(isLandscape, size),
@@ -83,6 +84,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
       );
     } else {
       return Column(
+        mainAxisSize: MainAxisSize.max,
         children: [
           Expanded(
             flex: 1,
@@ -141,14 +143,21 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
   }
 
   Widget _buildFormSection(Size size) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(30),
-          topRight: Radius.circular(30),
-        ),
+    return ClipRRect(
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(30),
+        topRight: Radius.circular(30),
       ),
+      child: Container(
+        width: double.infinity,
+        constraints: BoxConstraints.expand(),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(30),
+            topRight: Radius.circular(30),
+          ),
+        ),
       child: Form(
         key: Get.find<ForgotPasswordController>().formKey,
         child: SingleChildScrollView(
@@ -174,6 +183,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
             ),
           ),
         ),
+      ),
       ),
     );
   }

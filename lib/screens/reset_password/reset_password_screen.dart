@@ -56,6 +56,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
               ),
             ),
             child: SafeArea(
+              bottom: false,
               child: FadeTransition(
                 opacity: _fadeAnimation,
                 child: _buildContent(isLandscape, size),
@@ -83,12 +84,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
       );
     } else {
       return Column(
-                children: [
+        mainAxisSize: MainAxisSize.max,
+        children: [
           Expanded(
             flex: 1,
             child: _buildLogoSection(size),
           ),
-                  Expanded(
+          Expanded(
             flex: 4,
             child: _buildFormSection(size),
           ),
@@ -159,14 +161,21 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
     final paddingVertical = isSmallHeight ? 16.0 : 24.0;
     final spacing = isSmallHeight ? 8.0 : 12.0;
     
-    return Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(30),
-          topRight: Radius.circular(30),
-        ),
+    return ClipRRect(
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(30),
+        topRight: Radius.circular(30),
       ),
+      child: Container(
+        width: double.infinity,
+        constraints: BoxConstraints.expand(),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(30),
+            topRight: Radius.circular(30),
+          ),
+        ),
       child: Form(
         key: Get.find<ResetPasswordController>().formKey,
         child: Padding(
@@ -198,10 +207,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
               Flexible(
                 flex: isSmallHeight ? 1 : 2,
                 child: SizedBox.shrink(),
-                          ),
-                        ],
-                      ),
+              ),
+            ],
+          ),
         ),
+      ),
       ),
     );
   }

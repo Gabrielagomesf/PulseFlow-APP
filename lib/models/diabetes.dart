@@ -24,13 +24,35 @@ class Diabetes {
   }
 
   factory Diabetes.fromMap(Map<String, dynamic> map) {
+    final pacienteId = map['pacienteId']?.toString() ?? 
+                       map['paciente']?.toString() ?? '';
+    
+    final glicemiaValue = map['glicemia'] ?? map['nivelGlicemia'];
+    final glicemia = (glicemiaValue is int)
+        ? glicemiaValue.toDouble()
+        : (glicemiaValue as num?)?.toDouble() ?? 0.0;
+    
+    DateTime data;
+    if (map['data'] is DateTime) {
+      data = map['data'] as DateTime;
+    } else if (map['data'] is Map) {
+      final dateValue = map['data']['\$date'] ?? map['data'];
+      if (dateValue is int) {
+        data = DateTime.fromMillisecondsSinceEpoch(dateValue);
+      } else {
+        data = DateTime.parse(dateValue.toString());
+      }
+    } else if (map['data'] is int) {
+      data = DateTime.fromMillisecondsSinceEpoch(map['data'] as int);
+    } else {
+      data = DateTime.parse(map['data'].toString());
+    }
+    
     return Diabetes(
       id: map['_id']?.toString(),
-      pacienteId: map['pacienteId']?.toString() ?? '',
-      data: DateTime.parse(map['data'] as String),
-      glicemia: (map['glicemia'] is int)
-          ? (map['glicemia'] as int).toDouble()
-          : (map['glicemia'] as num).toDouble(),
+      pacienteId: pacienteId,
+      data: data,
+      glicemia: glicemia,
       unidade: map['unidade']?.toString() ?? 'mg/dL',
     );
   }

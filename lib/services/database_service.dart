@@ -529,21 +529,40 @@ class DatabaseService {
       final collection = _db!.collection(DatabaseConfig.diabetesCollection);
 
       final results = <Map<String, dynamic>>[];
+      
       try {
         final objId = ObjectId.parse(pacienteId);
-        final list = await collection.find(where.eq('pacienteId', objId)).toList();
-        results.addAll(list.map((e) => Map<String, dynamic>.from(e)));
+        final list1 = await collection.find(where.eq('pacienteId', objId)).toList();
+        results.addAll(list1.map((e) => Map<String, dynamic>.from(e)));
+        
+        final list2 = await collection.find(where.eq('paciente', objId)).toList();
+        results.addAll(list2.map((e) => Map<String, dynamic>.from(e)));
       } catch (_) {}
 
-      final list2 = await collection.find(where.eq('pacienteId', pacienteId)).toList();
-      results.addAll(list2.map((e) => Map<String, dynamic>.from(e)));
+      final list3 = await collection.find(where.eq('pacienteId', pacienteId)).toList();
+      results.addAll(list3.map((e) => Map<String, dynamic>.from(e)));
+      
+      final list4 = await collection.find(where.eq('paciente', pacienteId)).toList();
+      results.addAll(list4.map((e) => Map<String, dynamic>.from(e)));
 
       final normalized = results.map((doc) {
         final data = Map<String, dynamic>.from(doc);
         data['_id'] = data['_id'].toString();
+        
         if (data['pacienteId'] != null) {
           data['pacienteId'] = data['pacienteId'].toString();
+        } else if (data['paciente'] != null) {
+          data['pacienteId'] = data['paciente'].toString();
         }
+        
+        if (data['nivelGlicemia'] != null && data['glicemia'] == null) {
+          data['glicemia'] = data['nivelGlicemia'];
+        }
+        
+        if (data['data'] is Map && data['data']['\$date'] != null) {
+          data['data'] = data['data']['\$date'];
+        }
+        
         return data;
       }).toList();
 
@@ -559,8 +578,18 @@ class DatabaseService {
 
       unique.sort((a, b) {
         try {
-          final da = DateTime.parse(a['data'].toString());
-          final db = DateTime.parse(b['data'].toString());
+          String aDataStr = a['data'].toString();
+          String bDataStr = b['data'].toString();
+          
+          if (a['data'] is Map && a['data']['\$date'] != null) {
+            aDataStr = a['data']['\$date'].toString();
+          }
+          if (b['data'] is Map && b['data']['\$date'] != null) {
+            bDataStr = b['data']['\$date'].toString();
+          }
+          
+          final da = DateTime.parse(aDataStr);
+          final db = DateTime.parse(bDataStr);
           return db.compareTo(da);
         } catch (_) {
           return 0;

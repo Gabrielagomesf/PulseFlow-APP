@@ -14,6 +14,7 @@ import '../../routes/app_routes.dart';
 import '../../services/auth_service.dart';
 import 'medical_records_controller.dart';
 import '../../widgets/pulse_bottom_navigation.dart';
+import '../home/home_controller.dart';
 
 class MedicalRecordsScreen extends StatefulWidget {
   const MedicalRecordsScreen({super.key});
@@ -474,10 +475,63 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
         onPressed: () => Get.back(),
       ),
       actions: [
-        IconButton(
-          icon: Stack(
-            children: [
-              Container(
+        Obx(() {
+          try {
+            final homeController = Get.find<HomeController>();
+            return IconButton(
+              icon: Stack(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.3),
+                      ),
+                    ),
+                    child: const Icon(Icons.notifications_outlined, color: Colors.white, size: 20),
+                  ),
+                  if (homeController.unreadNotificationsCount.value > 0)
+                    Positioned(
+                      right: 6,
+                      top: 6,
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 14,
+                          minHeight: 14,
+                        ),
+                        child: Text(
+                          homeController.unreadNotificationsCount.value > 9 
+                              ? '9+' 
+                              : homeController.unreadNotificationsCount.value.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              onPressed: () async {
+                await Get.toNamed(Routes.NOTIFICATIONS);
+                try {
+                  final homeController = Get.find<HomeController>();
+                  await homeController.loadNotificationsCount();
+                } catch (e) {}
+              },
+            );
+          } catch (e) {
+            return IconButton(
+              icon: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.2),
@@ -488,24 +542,12 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
                 ),
                 child: const Icon(Icons.notifications_outlined, color: Colors.white, size: 20),
               ),
-              Positioned(
-                right: 6,
-                top: 6,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          onPressed: () {
-            Get.toNamed(Routes.NOTIFICATIONS);
-          },
-        ),
+              onPressed: () {
+                Get.toNamed(Routes.NOTIFICATIONS);
+              },
+            );
+          }
+        }),
         IconButton(
           icon: Container(
             padding: const EdgeInsets.all(10),

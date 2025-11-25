@@ -927,19 +927,30 @@ class _PulseKeyScreenState extends State<PulseKeyScreen> {
           
           SizedBox(
             width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _isDesconectando ? null : _desconectarMedico,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(
-                  vertical: isSmallScreen ? 16 : 18,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 4,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.red.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
+              child: ElevatedButton(
+                onPressed: _isDesconectando ? null : _desconectarMedico,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(
+                    vertical: isSmallScreen ? 16 : 18,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  shadowColor: Colors.transparent,
+                ),
               child: _isDesconectando
                   ? SizedBox(
                       height: isSmallScreen ? 20 : 24,
@@ -966,6 +977,7 @@ class _PulseKeyScreenState extends State<PulseKeyScreen> {
                         ),
                       ],
                     ),
+              ),
             ),
           ),
         ],

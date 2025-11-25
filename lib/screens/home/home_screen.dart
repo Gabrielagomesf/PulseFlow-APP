@@ -1924,18 +1924,31 @@ class HomeScreen extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () => Get.toNamed(Routes.APPOINTMENTS_SPECIALTY),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: const Color(0xFF00324A),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF00324A).withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  icon: const Icon(Icons.medical_services_rounded),
-                  label: const Text(
-                    'Agendar consulta',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                  child: ElevatedButton.icon(
+                    onPressed: () => Get.toNamed(Routes.APPOINTMENTS_SPECIALTY),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF00324A),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      shadowColor: Colors.transparent,
+                    ),
+                    icon: const Icon(Icons.medical_services_rounded),
+                    label: const Text(
+                      'Agendar consulta',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ),
               ),

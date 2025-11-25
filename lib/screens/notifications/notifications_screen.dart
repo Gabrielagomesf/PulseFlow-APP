@@ -18,12 +18,14 @@ class NotificationsScreen extends StatelessWidget {
       child: Scaffold(
         backgroundColor: const Color(0xFF00324A),
         body: SafeArea(
+          bottom: false,
           child: Column(
             children: [
               _buildHeader(controller),
               _buildFilterTabs(controller),
               Expanded(
                 child: Container(
+                  width: double.infinity,
                   decoration: const BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.only(
@@ -31,49 +33,61 @@ class NotificationsScreen extends StatelessWidget {
                       topRight: Radius.circular(24),
                     ),
                   ),
-                  child: Obx(() {
-                    if (controller.isLoading.value) {
-                      return const Center(
-                        child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00324A)),
-                        ),
-                      );
-                    }
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(24),
+                      topRight: Radius.circular(24),
+                    ),
+                    child: Obx(() {
+                      if (controller.isLoading.value) {
+                        return const Center(
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00324A)),
+                          ),
+                        );
+                      }
 
-                    final filtered = controller.filteredNotifications;
+                      final filtered = controller.filteredNotifications;
 
-                    if (filtered.isEmpty) {
-                      return _buildEmptyState(controller);
-                    }
+                      if (filtered.isEmpty) {
+                        return _buildEmptyState(controller);
+                      }
 
-                    return Column(
-                      children: [
-                        if (controller.filter.value == 'all' && controller.unreadCount > 0)
-                          _buildMarkAllReadButton(controller),
-                        Expanded(
-                          child: RefreshIndicator(
-                            onRefresh: () async {
-                              await controller.loadNotifications();
-                              try {
-                                final homeController = Get.find<HomeController>();
-                                await homeController.loadNotificationsCount();
-                              } catch (e) {}
-                            },
-                            color: const Color(0xFF00324A),
-                            child: ListView.separated(
-                              padding: const EdgeInsets.all(16),
-                              itemCount: filtered.length,
-                              separatorBuilder: (context, index) => const SizedBox(height: 12),
-                              itemBuilder: (context, index) {
-                                final notification = filtered[index];
-                                return _buildNotificationCard(controller, notification);
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (controller.filter.value == 'all' && controller.unreadCount > 0)
+                            _buildMarkAllReadButton(controller),
+                          Expanded(
+                            child: RefreshIndicator(
+                              onRefresh: () async {
+                                await controller.loadNotifications();
+                                try {
+                                  final homeController = Get.find<HomeController>();
+                                  await homeController.loadNotificationsCount();
+                                } catch (e) {}
                               },
+                              color: const Color(0xFF00324A),
+                              child: ListView.separated(
+                                padding: const EdgeInsets.only(
+                                  left: 16,
+                                  right: 16,
+                                  top: 16,
+                                  bottom: 16,
+                                ),
+                                itemCount: filtered.length,
+                                separatorBuilder: (context, index) => const SizedBox(height: 12),
+                                itemBuilder: (context, index) {
+                                  final notification = filtered[index];
+                                  return _buildNotificationCard(controller, notification);
+                                },
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    );
-                  }),
+                        ],
+                      );
+                    }),
+                  ),
                 ),
               ),
             ],
@@ -162,26 +176,32 @@ class NotificationsScreen extends StatelessWidget {
           onTap: () => controller.setFilter(value),
           borderRadius: BorderRadius.circular(12),
           child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
             decoration: BoxDecoration(
               color: isSelected ? Colors.white : Colors.white.withOpacity(0.15),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
                   icon,
-                  size: 18,
+                  size: 16,
                   color: isSelected ? const Color(0xFF00324A) : Colors.white.withOpacity(0.9),
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: isSelected ? const Color(0xFF00324A) : Colors.white.withOpacity(0.9),
-                    fontSize: 13,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      color: isSelected ? const Color(0xFF00324A) : Colors.white.withOpacity(0.9),
+                      fontSize: 11,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
                   ),
                 ),
               ],

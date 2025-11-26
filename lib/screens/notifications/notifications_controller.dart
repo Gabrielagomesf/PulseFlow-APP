@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../services/api_service.dart';
 import '../../routes/app_routes.dart';
 import '../home/home_controller.dart';
+import '../../services/notifications/notification_storage.dart';
 
 class NotificationItem {
   final String id;
@@ -13,6 +14,7 @@ class NotificationItem {
   final bool isArchived;
   final String? type;
   final String? link;
+  final bool isLocal;
 
   NotificationItem({
     required this.id,
@@ -23,7 +25,31 @@ class NotificationItem {
     this.isArchived = false,
     this.type,
     this.link,
+    this.isLocal = false,
   });
+
+  NotificationItem copyWith({
+    String? title,
+    String? message,
+    DateTime? date,
+    bool? isRead,
+    bool? isArchived,
+    String? type,
+    String? link,
+    bool? isLocal,
+  }) {
+    return NotificationItem(
+      id: id,
+      title: title ?? this.title,
+      message: message ?? this.message,
+      date: date ?? this.date,
+      isRead: isRead ?? this.isRead,
+      isArchived: isArchived ?? this.isArchived,
+      type: type ?? this.type,
+      link: link ?? this.link,
+      isLocal: isLocal ?? this.isLocal,
+    );
+  }
 }
 
 class NotificationsController extends GetxController {
@@ -41,6 +67,13 @@ class NotificationsController extends GetxController {
     switch (filter.value) {
       case 'unread':
         return notifications.where((n) => !n.isRead && !n.isArchived).toList();
+      case 'appointments':
+        return notifications
+            .where((n) =>
+                !n.isArchived &&
+                (n.type?.toLowerCase() == 'appointment' ||
+                    n.type?.toLowerCase() == 'appointments'))
+            .toList();
       case 'archived':
         return notifications.where((n) => n.isArchived).toList();
       default:
@@ -50,102 +83,118 @@ class NotificationsController extends GetxController {
 
   Future<void> loadNotifications() async {
     isLoading.value = true;
-    
     try {
-      final apiService = ApiService();
-      final notificacoesData = await apiService.buscarNotificacoes();
-      
       final notificationsList = <NotificationItem>[];
-      
-      for (final notif in notificacoesData) {
-        try {
-          String id = '';
-          if (notif['_id'] != null) {
-            if (notif['_id'] is String) {
-              id = notif['_id'];
-            } else if (notif['_id'] is Map) {
-              id = notif['_id']['\$oid']?.toString() ?? 
-                   notif['_id']['oid']?.toString() ?? 
-                   notif['_id'].toString();
-            } else {
-              id = notif['_id'].toString();
-            }
+      final existingIds = <String>{};
+
+      try {
+        final apiService = ApiService();
+        final notificacoesData = await apiService.buscarNotificacoes();
+
+        for (final notif in notificacoesData) {
+          final item = _mapRemoteNotification(notif);
+          if (item != null) {
+            notificationsList.add(item);
+            existingIds.add(item.id);
           }
-          
-          if (id.isEmpty) {
-            continue;
-          }
-          
-          final title = notif['title']?.toString() ?? 'Notificação';
-          final description = notif['description']?.toString() ?? '';
-          final unread = notif['unread'] == true || 
-                        notif['unread'] == 'true' || 
-                        notif['unread'] == 1 ||
-                        notif['unread'] == '1';
-          final archived = notif['archived'] == true || 
-                          notif['archived'] == 'true' || 
-                          notif['archived'] == 1 ||
-                          notif['archived'] == '1';
-          final type = notif['type']?.toString() ?? 'updates';
-          final link = notif['link']?.toString();
-          
-          DateTime date;
-          if (notif['createdAt'] != null) {
-            if (notif['createdAt'] is String) {
-              try {
-                date = DateTime.parse(notif['createdAt']);
-              } catch (_) {
-                date = DateTime.now();
-              }
-            } else if (notif['createdAt'] is Map) {
-              if (notif['createdAt']?['\$date'] != null) {
-                try {
-                  final dateStr = notif['createdAt']['\$date'].toString();
-                  date = DateTime.parse(dateStr);
-                } catch (_) {
-                  date = DateTime.now();
-                }
-              } else if (notif['createdAt']?['date'] != null) {
-                try {
-                  final dateStr = notif['createdAt']['date'].toString();
-                  date = DateTime.parse(dateStr);
-                } catch (_) {
-                  date = DateTime.now();
-                }
-              } else {
-                date = DateTime.now();
-              }
-            } else {
-              date = DateTime.now();
-            }
-          } else {
-            date = DateTime.now();
-          }
-          
-          notificationsList.add(NotificationItem(
-            id: id,
-            title: title,
-            message: description,
-            date: date,
-            isRead: !unread,
-            isArchived: archived,
-            type: type,
-            link: link,
-          ));
-        } catch (e) {
-          continue;
         }
-      }
-      
+      } catch (_) {}
+
+      try {
+        final localData = await NotificationStorage.loadNotifications();
+        for (final local in localData) {
+          final localId = local['id']?.toString() ?? '';
+          if (localId.isEmpty || existingIds.contains(localId)) continue;
+
+          final localDate =
+              DateTime.tryParse(local['createdAt']?.toString() ?? '');
+
+          notificationsList.add(NotificationItem(
+            id: localId,
+            title: local['title']?.toString() ?? 'Notificação',
+            message: local['message']?.toString() ?? '',
+            date: localDate ?? DateTime.now(),
+            isRead: local['isRead'] == true,
+            isArchived: local['isArchived'] == true,
+            type: local['type']?.toString(),
+            link: local['link']?.toString(),
+            isLocal: true,
+          ));
+        }
+      } catch (_) {}
+
+      notificationsList.sort((a, b) => b.date.compareTo(a.date));
       notifications.value = notificationsList;
-      notifications.refresh();
-      update();
-    } catch (e) {
-      notifications.value = [];
       notifications.refresh();
       update();
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  NotificationItem? _mapRemoteNotification(Map<String, dynamic> notif) {
+    try {
+      String id = '';
+      if (notif['_id'] != null) {
+        if (notif['_id'] is String) {
+          id = notif['_id'];
+        } else if (notif['_id'] is Map) {
+          id = notif['_id']['\$oid']?.toString() ??
+              notif['_id']['oid']?.toString() ??
+              notif['_id'].toString();
+        } else {
+          id = notif['_id'].toString();
+        }
+      }
+
+      if (id.isEmpty) {
+        return null;
+      }
+
+      final title = notif['title']?.toString() ?? 'Notificação';
+      final description = notif['description']?.toString() ?? '';
+      final unread = notif['unread'] == true ||
+          notif['unread'] == 'true' ||
+          notif['unread'] == 1 ||
+          notif['unread'] == '1';
+      final archived = notif['archived'] == true ||
+          notif['archived'] == 'true' ||
+          notif['archived'] == 1 ||
+          notif['archived'] == '1';
+      final type = notif['type']?.toString() ?? 'updates';
+      final link = notif['link']?.toString();
+
+      DateTime date;
+      if (notif['createdAt'] != null) {
+        if (notif['createdAt'] is String) {
+          date = DateTime.tryParse(notif['createdAt']) ?? DateTime.now();
+        } else if (notif['createdAt'] is Map &&
+            notif['createdAt']['\$date'] != null) {
+          date = DateTime.tryParse(notif['createdAt']['\$date'].toString()) ??
+              DateTime.now();
+        } else if (notif['createdAt'] is Map &&
+            notif['createdAt']['date'] != null) {
+          date = DateTime.tryParse(notif['createdAt']['date'].toString()) ??
+              DateTime.now();
+        } else {
+          date = DateTime.now();
+        }
+      } else {
+        date = DateTime.now();
+      }
+
+      return NotificationItem(
+        id: id,
+        title: title,
+        message: description,
+        date: date,
+        isRead: !unread,
+        isArchived: archived,
+        type: type,
+        link: link,
+      );
+    } catch (_) {
+      return null;
     }
   }
 
@@ -154,27 +203,28 @@ class NotificationsController extends GetxController {
   }
 
   Future<void> markAsRead(String notificationId) async {
-    try {
-      final apiService = ApiService();
-      await apiService.marcarNotificacaoComoLida(notificationId);
-      
-      final index = notifications.indexWhere((n) => n.id == notificationId);
-      if (index != -1) {
-        notifications[index] = NotificationItem(
-          id: notifications[index].id,
-          title: notifications[index].title,
-          message: notifications[index].message,
-          date: notifications[index].date,
-          isRead: true,
-          isArchived: notifications[index].isArchived,
-          type: notifications[index].type,
-          link: notifications[index].link,
-        );
-        notifications.refresh();
-        _updateHomeNotificationsCount();
-      }
-    } catch (e) {
+    final index = notifications.indexWhere((n) => n.id == notificationId);
+    if (index == -1) {
+      return;
     }
+
+    final current = notifications[index];
+
+    try {
+      if (!current.isLocal) {
+        final apiService = ApiService();
+        await apiService.marcarNotificacaoComoLida(notificationId);
+      }
+
+      notifications[index] = current.copyWith(isRead: true);
+      notifications.refresh();
+
+      if (current.isLocal) {
+        await NotificationStorage.markAsRead(notificationId, true);
+      }
+
+      _updateHomeNotificationsCount();
+    } catch (_) {}
   }
   
   void _updateHomeNotificationsCount() {
@@ -189,83 +239,84 @@ class NotificationsController extends GetxController {
     try {
       final apiService = ApiService();
       await apiService.marcarTodasNotificacoesComoLidas();
-      
-      for (int i = 0; i < notifications.length; i++) {
-        if (!notifications[i].isRead) {
-          notifications[i] = NotificationItem(
-            id: notifications[i].id,
-            title: notifications[i].title,
-            message: notifications[i].message,
-            date: notifications[i].date,
-            isRead: true,
-            isArchived: notifications[i].isArchived,
-            type: notifications[i].type,
-            link: notifications[i].link,
-          );
-        }
+    } catch (_) {}
+
+    final localIds = <String>[];
+
+    for (int i = 0; i < notifications.length; i++) {
+      if (!notifications[i].isRead) {
+        notifications[i] = notifications[i].copyWith(isRead: true);
       }
-      notifications.refresh();
-      _updateHomeNotificationsCount();
-    } catch (e) {
+      if (notifications[i].isLocal) {
+        localIds.add(notifications[i].id);
+      }
     }
+
+    for (final localId in localIds) {
+      await NotificationStorage.markAsRead(localId, true);
+    }
+
+    notifications.refresh();
+    _updateHomeNotificationsCount();
   }
 
   Future<void> deleteNotification(String notificationId) async {
+    final index = notifications.indexWhere((n) => n.id == notificationId);
+    if (index == -1) {
+      return;
+    }
+
+    final current = notifications[index];
+
     try {
       final apiService = ApiService();
-      await apiService.excluirNotificacao(notificationId);
-      
-      notifications.removeWhere((n) => n.id == notificationId);
+      if (!current.isLocal) {
+        await apiService.excluirNotificacao(notificationId);
+      }
+
+      notifications.removeAt(index);
       notifications.refresh();
+
+      if (current.isLocal) {
+        await NotificationStorage.delete(notificationId);
+      }
+
       _updateHomeNotificationsCount();
-    } catch (e) {
-    }
+    } catch (_) {}
   }
 
   Future<void> archiveNotification(String notificationId) async {
     try {
-      final apiService = ApiService();
-      await apiService.arquivarNotificacao(notificationId);
-      
       final index = notifications.indexWhere((n) => n.id == notificationId);
       if (index != -1) {
-        notifications[index] = NotificationItem(
-          id: notifications[index].id,
-          title: notifications[index].title,
-          message: notifications[index].message,
-          date: notifications[index].date,
-          isRead: notifications[index].isRead,
-          isArchived: true,
-          type: notifications[index].type,
-          link: notifications[index].link,
-        );
+        final item = notifications[index];
+        if (!item.isLocal) {
+          await ApiService().arquivarNotificacao(notificationId);
+        } else {
+          await NotificationStorage.markAsArchived(notificationId, true);
+        }
+
+        notifications[index] = item.copyWith(isArchived: true);
         notifications.refresh();
       }
-    } catch (e) {
-    }
+    } catch (_) {}
   }
 
   Future<void> unarchiveNotification(String notificationId) async {
     try {
-      final apiService = ApiService();
-      await apiService.desarquivarNotificacao(notificationId);
-      
       final index = notifications.indexWhere((n) => n.id == notificationId);
       if (index != -1) {
-        notifications[index] = NotificationItem(
-          id: notifications[index].id,
-          title: notifications[index].title,
-          message: notifications[index].message,
-          date: notifications[index].date,
-          isRead: notifications[index].isRead,
-          isArchived: false,
-          type: notifications[index].type,
-          link: notifications[index].link,
-        );
+        final item = notifications[index];
+        if (!item.isLocal) {
+          await ApiService().desarquivarNotificacao(notificationId);
+        } else {
+          await NotificationStorage.markAsArchived(notificationId, false);
+        }
+
+        notifications[index] = item.copyWith(isArchived: false);
         notifications.refresh();
       }
-    } catch (e) {
-    }
+    } catch (_) {}
   }
 
   void setFilter(String newFilter) {
@@ -280,6 +331,7 @@ class NotificationsController extends GetxController {
       }
       notifications.clear();
       notifications.refresh();
+      await NotificationStorage.clear();
     } catch (e) {
     }
   }

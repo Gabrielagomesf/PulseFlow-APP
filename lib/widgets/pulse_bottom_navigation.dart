@@ -8,15 +8,17 @@ enum PulseNavItem { home, history, menu, appointments, pulseKey, profile }
 class PulseBottomNavigation extends StatelessWidget {
   const PulseBottomNavigation({
     super.key,
-    required this.activeItem,
+    this.activeItem,
+    this.showOutline = true,
   });
 
-  final PulseNavItem activeItem;
+  final PulseNavItem? activeItem;
+  final bool showOutline;
 
   bool _isActive(PulseNavItem item) => activeItem == item;
 
   void _handleTap(PulseNavItem item) {
-    if (item == activeItem) {
+    if (activeItem != null && item == activeItem) {
       return;
     }
 
@@ -53,12 +55,14 @@ class PulseBottomNavigation extends StatelessWidget {
         top: 10,
         bottom: resolvedBottomPadding.clamp(4.0, 12.0),
       ),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppTheme.primaryBlue,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
+        borderRadius: showOutline
+            ? const BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+              )
+            : null,
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),

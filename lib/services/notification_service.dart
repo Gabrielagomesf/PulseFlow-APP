@@ -8,6 +8,7 @@ import 'notifications/notification_channels.dart';
 import 'notifications/notification_builders.dart';
 import 'notifications/firebase_handlers.dart';
 import 'notifications/access_request_checker.dart';
+import 'notifications/notification_storage.dart';
 
 /// Serviço principal de notificações
 class NotificationService extends GetxService {
@@ -84,6 +85,12 @@ class NotificationService extends GetxService {
         sound: true,
       );
 
+      await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+
       _fcmToken = await _firebaseMessaging!.getToken();
 
       if (_fcmToken != null) {
@@ -127,6 +134,7 @@ class NotificationService extends GetxService {
   Future<void> showDoctorAccessRequestNotification({
     required String doctorName,
     required String specialty,
+    String? requestId,
   }) async {
     final notificationDetails = NotificationBuilders.createDoctorAccessNotification(
       doctorName: doctorName,
@@ -139,6 +147,14 @@ class NotificationService extends GetxService {
       'Dr(a). $doctorName ${specialty.isNotEmpty ? "($specialty)" : ""} solicitou acesso ao seu prontuário',
       notificationDetails,
       payload: 'doctor_access_request|$doctorName|$specialty',
+    );
+
+    await NotificationStorage.addNotification(
+      id: requestId ?? 'doctor_access_${DateTime.now().millisecondsSinceEpoch}',
+      title: 'Solicitação de acesso',
+      message: 'Dr(a). $doctorName ${specialty.isNotEmpty ? "($specialty)" : ""} solicitou acesso ao seu prontuário',
+      type: 'pulse_key',
+      link: 'pulse_key',
     );
   }
 
@@ -246,6 +262,7 @@ class NotificationService extends GetxService {
     await showDoctorAccessRequestNotification(
       doctorName: 'Dr. João Silva',
       specialty: 'Cardiologia',
+      requestId: 'test_${DateTime.now().millisecondsSinceEpoch}',
     );
   }
 

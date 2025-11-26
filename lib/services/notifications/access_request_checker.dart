@@ -50,6 +50,7 @@ class AccessRequestChecker {
           await _showAccessRequestNotification(
             doctorName: doctorName,
             specialty: specialty,
+            requestId: requestId,
           );
 
           _shownRequests.add(requestId);
@@ -65,12 +66,14 @@ class AccessRequestChecker {
   Future<void> _showAccessRequestNotification({
     required String doctorName,
     required String specialty,
+    required String requestId,
   }) async {
     try {
       final notificationService = Get.find<NotificationService>();
       await notificationService.showDoctorAccessRequestNotification(
         doctorName: doctorName,
         specialty: specialty,
+        requestId: requestId,
       );
     } catch (e) {
       // Erro ao exibir notificação

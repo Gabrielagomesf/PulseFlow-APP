@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../theme/app_theme.dart';
 import '../../services/api_service.dart';
 import '../../screens/home/home_controller.dart';
+import '../../widgets/pulse_bottom_navigation.dart';
 import 'notifications_controller.dart';
 
 class NotificationsScreen extends StatelessWidget {
@@ -13,109 +14,125 @@ class NotificationsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.put(NotificationsController());
 
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: AppTheme.blueSystemOverlayStyle,
-      child: Scaffold(
-        backgroundColor: const Color(0xFF00324A),
-        body: SafeArea(
-          bottom: false,
-          child: Column(
-            children: [
-              _buildHeader(controller),
-              _buildFilterTabs(controller),
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(24),
-                      topRight: Radius.circular(24),
-                    ),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(24),
-                      topRight: Radius.circular(24),
-                    ),
-                    child: Obx(() {
-                      if (controller.isLoading.value) {
-                        return const Center(
-                          child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00324A)),
-                          ),
-                        );
-                      }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 360;
+        final horizontalPadding = isCompact ? 12.0 : 20.0;
 
-                      final filtered = controller.filteredNotifications;
-
-                      if (filtered.isEmpty) {
-                        return _buildEmptyState(controller);
-                      }
-
-                      return Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (controller.filter.value == 'all' && controller.unreadCount > 0)
-                            _buildMarkAllReadButton(controller),
-                          Expanded(
-                            child: RefreshIndicator(
-                              onRefresh: () async {
-                                await controller.loadNotifications();
-                                try {
-                                  final homeController = Get.find<HomeController>();
-                                  await homeController.loadNotificationsCount();
-                                } catch (e) {}
-                              },
-                              color: const Color(0xFF00324A),
-                              child: ListView.separated(
-                                padding: const EdgeInsets.only(
-                                  left: 16,
-                                  right: 16,
-                                  top: 16,
-                                  bottom: 16,
-                                ),
-                                itemCount: filtered.length,
-                                separatorBuilder: (context, index) => const SizedBox(height: 12),
-                                itemBuilder: (context, index) {
-                                  final notification = filtered[index];
-                                  return _buildNotificationCard(controller, notification);
-                                },
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    }),
-                  ),
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: AppTheme.blueSystemOverlayStyle,
+          child: Scaffold(
+        backgroundColor: Colors.transparent,
+        bottomNavigationBar: const PulseBottomNavigation(showOutline: false),
+            body: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF011627), Color(0xFF023A63)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                 ),
               ),
-            ],
+              child: SafeArea(
+                bottom: false,
+            child: Column(
+                  children: [
+                _buildHeader(controller),
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(28),
+                        topRight: Radius.circular(28),
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        _buildFilterBar(controller, horizontalPadding),
+                        const SizedBox(height: 8),
+                        Expanded(
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(28),
+                              topRight: Radius.circular(28),
+                            ),
+                            child: Obx(() {
+                                  if (controller.isLoading.value) {
+                                    return const Center(
+                                      child: CircularProgressIndicator(
+                                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00324A)),
+                                      ),
+                                    );
+                                  }
+
+                                  final filtered = controller.filteredNotifications;
+
+                                  if (filtered.isEmpty) {
+                                    return _buildEmptyState(controller);
+                                  }
+
+                                  return Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (controller.filter.value == 'all' && controller.unreadCount > 0)
+                                        _buildMarkAllReadButton(controller),
+                                      Expanded(
+                                        child: RefreshIndicator(
+                                          onRefresh: () async {
+                                            await controller.loadNotifications();
+                                            try {
+                                              final homeController = Get.find<HomeController>();
+                                              await homeController.loadNotificationsCount();
+                                            } catch (e) {}
+                                          },
+                                          color: const Color(0xFF00324A),
+                                          child: ListView.separated(
+                                            physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: horizontalPadding,
+                                              vertical: isCompact ? 14 : 20,
+                                            ),
+                                            itemCount: filtered.length,
+                                            separatorBuilder: (context, index) => const SizedBox(height: 14),
+                                            itemBuilder: (context, index) {
+                                              final notification = filtered[index];
+                                              return _buildNotificationCard(controller, notification);
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                }),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
   Widget _buildHeader(NotificationsController controller) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-      decoration: const BoxDecoration(
-        color: Color(0xFF00324A),
-      ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
       child: Row(
         children: [
           Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
+              color: Colors.white.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(14),
             ),
             child: IconButton(
-              icon: const Icon(
-                Icons.arrow_back_ios_new,
-                color: Colors.white,
-                size: 20,
-              ),
+              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
               onPressed: () => Get.back(),
             ),
           ),
@@ -128,84 +145,251 @@ class NotificationsScreen extends StatelessWidget {
                   'Notificações',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 26,
+                    fontWeight: FontWeight.w700,
                     letterSpacing: -0.5,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Obx(() => Text(
-                  controller.unreadCount > 0
-                      ? '${controller.unreadCount} não lida${controller.unreadCount > 1 ? 's' : ''}'
-                      : 'Todas lidas',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                )),
+                      controller.unreadCount > 0
+                          ? '${controller.unreadCount} notificações pendentes'
+                          : 'Tudo em dia',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    )),
               ],
             ),
+          ),
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(Icons.notifications_active_outlined, color: Colors.white),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildFilterTabs(NotificationsController controller) {
+  Widget _buildFilterBar(NotificationsController controller, double horizontalPadding) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      color: const Color(0xFF00324A),
+      width: double.infinity,
+      margin: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 12),
+      padding: EdgeInsets.symmetric(horizontal: horizontalPadding - 6, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
       child: Row(
         children: [
-          _buildFilterTab(controller, 'all', 'Todas', Icons.notifications_outlined),
+          Icon(
+            _getSelectedFilterIcon(controller.filter.value),
+            size: 18,
+            color: const Color(0xFF0F172A),
+          ),
           const SizedBox(width: 8),
-          _buildFilterTab(controller, 'unread', 'Não lidas', Icons.mark_email_unread_outlined),
-          const SizedBox(width: 8),
-          _buildFilterTab(controller, 'archived', 'Arquivadas', Icons.archive_outlined),
+          Expanded(
+            child: Text(
+              _getSelectedFilterLabel(controller.filter.value),
+              style: const TextStyle(
+                color: Color(0xFF0F172A),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          TextButton.icon(
+            onPressed: () => _openFilterSheet(controller),
+            icon: const Icon(Icons.tune, size: 16),
+            label: const Text('Alterar'),
+          )
         ],
       ),
     );
   }
 
-  Widget _buildFilterTab(NotificationsController controller, String value, String label, IconData icon) {
-    return Obx(() {
-      final isSelected = controller.filter.value == value;
-      return Expanded(
-        child: InkWell(
-          onTap: () => controller.setFilter(value),
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
-            decoration: BoxDecoration(
-              color: isSelected ? Colors.white : Colors.white.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
+  IconData _getSelectedFilterIcon(String value) {
+    switch (value) {
+      case 'unread':
+        return Icons.mark_email_unread_outlined;
+      case 'appointments':
+        return Icons.event_available_outlined;
+      case 'archived':
+        return Icons.archive_outlined;
+      default:
+        return Icons.ballot_outlined;
+    }
+  }
+
+  String _getSelectedFilterLabel(String value) {
+    switch (value) {
+      case 'unread':
+        return 'Exibindo apenas não lidas';
+      case 'appointments':
+        return 'Filtrando agendamentos';
+      case 'archived':
+        return 'Arquivadas';
+      default:
+        return 'Todas as notificações';
+    }
+  }
+
+  void _openFilterSheet(NotificationsController controller) {
+    final filters = [
+      _FilterOption(
+        value: 'all',
+        label: 'Todas',
+        description: 'Exibe todas as notificações disponíveis',
+        icon: Icons.ballot_outlined,
+      ),
+      _FilterOption(
+        value: 'unread',
+        label: 'Não lidas',
+        description: 'Somente as notificações pendentes de leitura',
+        icon: Icons.mark_email_unread_outlined,
+      ),
+      _FilterOption(
+        value: 'appointments',
+        label: 'Agendamentos',
+        description: 'Alertas de consultas, exames e pulse key',
+        icon: Icons.event_available_outlined,
+      ),
+      _FilterOption(
+        value: 'archived',
+        label: 'Arquivadas',
+        description: 'Itens que você arquivou anteriormente',
+        icon: Icons.archive_outlined,
+      ),
+    ];
+
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Icon(
-                  icon,
-                  size: 16,
-                  color: isSelected ? const Color(0xFF00324A) : Colors.white.withOpacity(0.9),
+                const Text(
+                  'Filtros',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(width: 4),
-                Flexible(
-                  child: Text(
-                    label,
-                    style: TextStyle(
-                      color: isSelected ? const Color(0xFF00324A) : Colors.white.withOpacity(0.9),
-                      fontSize: 11,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                  ),
+                const Spacer(),
+                IconButton(
+                  onPressed: () => Get.back(),
+                  icon: const Icon(Icons.close),
                 ),
               ],
             ),
+            const SizedBox(height: 12),
+            Column(
+              children: filters.map((filter) {
+                final isSelected = controller.filter.value == filter.value;
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  elevation: isSelected ? 6 : 1,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  child: ListTile(
+                    onTap: () {
+                      controller.setFilter(filter.value);
+                      Get.back();
+                    },
+                    leading: CircleAvatar(
+                      backgroundColor: isSelected ? const Color(0xFF00324A) : const Color(0xFFF1F5F9),
+                      child: Icon(
+                        filter.icon,
+                        color: isSelected ? Colors.white : const Color(0xFF475569),
+                      ),
+                    ),
+                    title: Text(
+                      filter.label,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: isSelected ? const Color(0xFF00324A) : const Color(0xFF0F172A),
+                      ),
+                    ),
+                    subtitle: Text(filter.description),
+                    trailing: isSelected
+                        ? const Icon(Icons.check_circle, color: Color(0xFF00324A))
+                        : const Icon(Icons.radio_button_unchecked, color: Color(0xFFCBD5F5)),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(NotificationsController controller, _FilterChipData data) {
+    return Obx(() {
+      final isSelected = controller.filter.value == data.value;
+      return GestureDetector(
+        onTap: () => controller.setFilter(data.value),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: isSelected
+                ? const LinearGradient(
+                    colors: [Colors.white, Color(0xFFE2E8F0)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : LinearGradient(
+                    colors: [
+                      Colors.white.withOpacity(0.16),
+                      Colors.white.withOpacity(0.08),
+                    ],
+                  ),
+            border: Border.all(
+              color: isSelected ? const Color(0xFF00324A) : Colors.white.withOpacity(0.0),
+            ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF00324A).withOpacity(0.08),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                data.icon,
+                size: 18,
+                color: isSelected ? const Color(0xFF00324A) : const Color(0xFF475569),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                data.label,
+                style: TextStyle(
+                  color: isSelected ? const Color(0xFF00324A) : const Color(0xFF475569),
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.2,
+                ),
+              ),
+            ],
           ),
         ),
       );
@@ -295,24 +479,29 @@ class NotificationsScreen extends StatelessWidget {
       child: InkWell(
         onTap: () => controller.handleNotificationTap(notification),
         borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(16),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: isUnread
-                ? const Color(0xFF00324A).withOpacity(0.06)
-                : Colors.white,
-            borderRadius: BorderRadius.circular(16),
+            gradient: isUnread
+                ? const LinearGradient(
+                    colors: [Color(0xFFF0F5FF), Colors.white],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : const LinearGradient(
+                    colors: [Colors.white, Colors.white],
+                  ),
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: isUnread
-                  ? const Color(0xFF00324A).withOpacity(0.15)
-                  : Colors.grey.withOpacity(0.1),
-              width: isUnread ? 1.5 : 1,
+              color: isUnread ? const Color(0xFF2563EB).withOpacity(0.3) : Colors.grey.withOpacity(0.15),
+              width: 1.2,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.03),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
@@ -320,16 +509,16 @@ class NotificationsScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 52,
-                height: 52,
+                width: 56,
+                height: 56,
                 decoration: BoxDecoration(
                   color: _getNotificationColor(notification.type).withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Icon(
                   _getNotificationIcon(notification.type),
                   color: _getNotificationColor(notification.type),
-                  size: 26,
+                  size: 28,
                 ),
               ),
               const SizedBox(width: 14),
@@ -343,32 +532,70 @@ class NotificationsScreen extends StatelessWidget {
                           child: Text(
                             notification.title,
                             style: AppTheme.titleSmall.copyWith(
-                              color: const Color(0xFF1E293B),
-                              fontWeight: isUnread ? FontWeight.bold : FontWeight.w600,
-                              fontSize: 15,
+                              color: const Color(0xFF0F172A),
+                              fontWeight: isUnread ? FontWeight.w700 : FontWeight.w600,
+                              fontSize: 16,
+                              letterSpacing: -0.2,
                             ),
                           ),
                         ),
-                        if (isUnread)
-                          Container(
-                            width: 10,
-                            height: 10,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF00324A),
-                              shape: BoxShape.circle,
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _getNotificationColor(notification.type).withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            _getTypeLabel(notification.type),
+                            style: TextStyle(
+                              color: _getNotificationColor(notification.type),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.2,
                             ),
                           ),
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 6),
+                    if ((notification.type ?? '').toLowerCase() == 'appointment')
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF97316).withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.warning_amber_rounded, size: 14, color: Color(0xFFF97316)),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Aviso de consulta',
+                                    style: TextStyle(
+                                      color: Color(0xFFF97316),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    const SizedBox(height: 8),
                     Text(
                       notification.message,
                       style: AppTheme.bodyMedium.copyWith(
                         color: Colors.grey[700],
-                        fontSize: 13,
-                        height: 1.4,
+                        fontSize: 14,
+                        height: 1.5,
                       ),
-                      maxLines: 2,
+                      maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 8),
@@ -505,6 +732,19 @@ class NotificationsScreen extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: 200,
+              child: ElevatedButton(
+                onPressed: () => controller.loadNotifications(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF00324A),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: const Text('Atualizar agora'),
+              ),
+            ),
           ],
         ),
       ),
@@ -618,4 +858,48 @@ class NotificationsScreen extends StatelessWidget {
       ),
     );
   }
+
+  String _getTypeLabel(String? type) {
+    switch ((type ?? '').toLowerCase()) {
+      case 'appointment':
+        return 'Consulta';
+      case 'reminder':
+        return 'Lembrete';
+      case 'exam':
+        return 'Exame';
+      case 'prescription':
+        return 'Prescrição';
+      case 'pulse_key':
+        return 'Pulse Key';
+      case 'profile_update':
+        return 'Perfil';
+      case 'updates':
+      default:
+        return 'Atualização';
+    }
+  }
+
 }
+
+class _FilterChipData {
+  final String value;
+  final String label;
+  final IconData icon;
+
+  const _FilterChipData(this.value, this.label, this.icon);
+}
+
+class _FilterOption {
+  final String value;
+  final String label;
+  final String description;
+  final IconData icon;
+
+  const _FilterOption({
+    required this.value,
+    required this.label,
+    required this.description,
+    required this.icon,
+  });
+}
+

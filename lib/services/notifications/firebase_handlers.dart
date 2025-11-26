@@ -3,6 +3,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'notification_channels.dart';
 import 'notification_builders.dart';
+import 'notification_storage.dart';
 
 /// Handlers para mensagens Firebase
 class FirebaseHandlers {
@@ -43,6 +44,19 @@ class FirebaseHandlers {
       NotificationBuilders.createGeneralNotification(),
       payload: data.toString(),
     );
+
+    final notificationId =
+        data['notificationId']?.toString() ?? 'fcm_${DateTime.now().millisecondsSinceEpoch}';
+    final type = data['type']?.toString() ?? 'updates';
+    final link = data['link']?.toString();
+
+    await NotificationStorage.addNotification(
+      id: notificationId,
+      title: title,
+      message: body,
+      type: type,
+      link: link,
+    );
   }
 }
 
@@ -71,6 +85,19 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     message.notification?.body ?? 'Nova mensagem',
     NotificationBuilders.createBackgroundMessageNotification(),
     payload: message.data.toString(),
+  );
+
+  final notificationId =
+      message.data['notificationId']?.toString() ?? 'fcm_${DateTime.now().millisecondsSinceEpoch}';
+  final type = message.data['type']?.toString() ?? 'updates';
+  final link = message.data['link']?.toString();
+
+  await NotificationStorage.addNotification(
+    id: notificationId,
+    title: message.notification?.title ?? 'PulseFlow',
+    message: message.notification?.body ?? 'Nova mensagem',
+    type: type,
+    link: link,
   );
 }
 

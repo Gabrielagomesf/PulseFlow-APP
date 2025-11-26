@@ -8,6 +8,8 @@ import '../../services/database_service.dart';
 import '../../services/health_data_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/pulse_bottom_navigation.dart';
+import '../../widgets/pulse_side_menu.dart';
+import '../../widgets/pulse_drawer_button.dart';
 
 class HeartRateHistoryScreen extends StatefulWidget {
   const HeartRateHistoryScreen({super.key});
@@ -153,6 +155,7 @@ class _HeartRateHistoryScreenState extends State<HeartRateHistoryScreen> {
       value: AppTheme.blueSystemOverlayStyle,
       child: Scaffold(
         backgroundColor: const Color(0xFF00324A),
+        drawer: const PulseSideMenu(activeItem: PulseNavItem.history),
         body: Column(
           children: [
             _buildHeader(),
@@ -204,10 +207,7 @@ class _HeartRateHistoryScreenState extends State<HeartRateHistoryScreen> {
         children: [
           Row(
             children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () => Get.back(),
-              ),
+              const PulseDrawerButton(iconSize: 22),
               Expanded(
                 child: Center(
                   child: Text(

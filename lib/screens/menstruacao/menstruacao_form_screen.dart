@@ -5,6 +5,9 @@ import '../../models/menstruacao.dart';
 import '../../services/auth_service.dart';
 import '../../services/database_service.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/pulse_bottom_navigation.dart';
+import '../../widgets/pulse_side_menu.dart';
+import '../../widgets/pulse_drawer_button.dart';
 
 class MenstruacaoFormScreen extends StatefulWidget {
   final Menstruacao? menstruacao;
@@ -308,6 +311,7 @@ class _MenstruacaoFormScreenState extends State<MenstruacaoFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.primaryBlue, // Azul escuro como outras telas
+      drawer: const PulseSideMenu(activeItem: PulseNavItem.menu),
       body: Column(
         children: [
           // Header azul como outras telas
@@ -349,14 +353,7 @@ class _MenstruacaoFormScreenState extends State<MenstruacaoFormScreen> {
       ),
       child: Row(
         children: [
-          // Botão de voltar
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(
-              Icons.arrow_back,
-              color: Colors.white,
-            ),
-          ),
+          const PulseDrawerButton(iconSize: 22),
           const SizedBox(width: 16),
           
           // Título

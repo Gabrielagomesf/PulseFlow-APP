@@ -5,6 +5,8 @@ import '../../theme/app_theme.dart';
 import '../../services/api_service.dart';
 import '../../screens/home/home_controller.dart';
 import '../../widgets/pulse_bottom_navigation.dart';
+import '../../widgets/pulse_drawer_button.dart';
+import '../../widgets/pulse_side_menu.dart';
 import 'notifications_controller.dart';
 
 class NotificationsScreen extends StatelessWidget {
@@ -23,6 +25,7 @@ class NotificationsScreen extends StatelessWidget {
           value: AppTheme.blueSystemOverlayStyle,
           child: Scaffold(
         backgroundColor: Colors.transparent,
+        drawer: const PulseSideMenu(),
         bottomNavigationBar: const PulseBottomNavigation(showOutline: false),
             body: Container(
               decoration: const BoxDecoration(
@@ -126,16 +129,7 @@ class NotificationsScreen extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
       child: Row(
         children: [
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
-              onPressed: () => Get.back(),
-            ),
-          ),
+          const PulseDrawerButton(iconSize: 20),
           const SizedBox(width: 16),
           Expanded(
             child: Column(

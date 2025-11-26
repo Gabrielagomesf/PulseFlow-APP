@@ -14,6 +14,8 @@ import '../../routes/app_routes.dart';
 import '../../services/auth_service.dart';
 import 'medical_records_controller.dart';
 import '../../widgets/pulse_bottom_navigation.dart';
+import '../../widgets/pulse_side_menu.dart';
+import '../../widgets/pulse_drawer_button.dart';
 import '../home/home_controller.dart';
 
 class MedicalRecordsScreen extends StatefulWidget {
@@ -63,6 +65,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
       value: AppTheme.blueSystemOverlayStyle,
       child: Scaffold(
       backgroundColor: const Color(0xFF00324A),
+      drawer: const PulseSideMenu(activeItem: PulseNavItem.history),
       body: Column(
         children: [
           // Header moderno com gradiente
@@ -150,13 +153,8 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> with Ticker
           // Linha com botão voltar e título
           Row(
             children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
-                onPressed: () => Get.back(),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-              const SizedBox(width: 12),
+              const PulseDrawerButton(),
+              const SizedBox(width: 8),
               const Expanded(
                 child: Text(
                   'Histórico Clínico',

@@ -16,6 +16,8 @@ import 'services/enxaqueca_service.dart';
 import 'services/diabetes_service.dart';
 import 'services/notification_service.dart';
 import 'services/notifications/firebase_handlers.dart';
+import 'screens/institutional/settings_controller.dart';
+import 'services/app_translations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,6 +56,7 @@ void main() async {
   Get.put(LoginController());
   Get.put(EnxaquecaService());
   Get.put(DiabetesService());
+  Get.put(SettingsController());
   
          try {
            Get.put(NotificationService());
@@ -82,9 +85,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
-      title: 'PulseFlow',
-      theme: ThemeData(
+    return Obx(() {
+      final settings = Get.find<SettingsController>();
+      final themeData = ThemeData(
         primaryColor: AppTheme.primaryBlue,
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppTheme.primaryBlue,
@@ -133,19 +136,40 @@ class MyApp extends StatelessWidget {
             vertical: 16,
           ),
         ),
-      ),
-      debugShowCheckedModeBanner: false,
-      initialRoute: AppPages.INITIAL,
-      getPages: AppPages.routes,
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('pt', 'BR'),
-      ],
-      locale: const Locale('pt', 'BR'),
-    );
+      );
+
+      return GetMaterialApp(
+        title: 'PulseFlow',
+        theme: themeData,
+        darkTheme: themeData.copyWith(
+          scaffoldBackgroundColor: const Color(0xFF0F172A),
+          colorScheme: themeData.colorScheme.copyWith(
+            brightness: Brightness.dark,
+            primary: Colors.white,
+          ),
+        ),
+        themeMode: settings.darkTheme.value ? ThemeMode.dark : ThemeMode.light,
+        debugShowCheckedModeBanner: false,
+        initialRoute: AppPages.INITIAL,
+        getPages: AppPages.routes,
+        translations: AppTranslations(),
+        fallbackLocale: const Locale('pt', 'BR'),
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('pt', 'BR'),
+          Locale('en', 'US'),
+        ],
+        locale: Locale(
+          settings.language.value.split('_').first,
+          settings.language.value.split('_').length > 1
+              ? settings.language.value.split('_')[1]
+              : '',
+        ),
+      );
+    });
   }
-} 
+}

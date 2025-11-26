@@ -8,6 +8,8 @@ import '../../services/database_service.dart';
 import '../../theme/app_theme.dart';
 import '../../routes/app_routes.dart';
 import '../../widgets/pulse_bottom_navigation.dart';
+import '../../widgets/pulse_side_menu.dart';
+import '../../widgets/pulse_drawer_button.dart';
 
 class CriseGastriteHistoryScreen extends StatefulWidget {
   const CriseGastriteHistoryScreen({Key? key}) : super(key: key);
@@ -124,6 +126,7 @@ class _CriseGastriteHistoryScreenState extends State<CriseGastriteHistoryScreen>
       value: AppTheme.blueSystemOverlayStyle,
       child: Scaffold(
       backgroundColor: const Color(0xFF00324A),
+      drawer: const PulseSideMenu(activeItem: PulseNavItem.history),
       body: Column(
         children: [
           // Header moderno com gradiente
@@ -213,13 +216,8 @@ class _CriseGastriteHistoryScreenState extends State<CriseGastriteHistoryScreen>
           // Linha com botão voltar e título
           Row(
             children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
-                onPressed: () => Get.back(),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-              const SizedBox(width: 12),
+              const PulseDrawerButton(),
+              const SizedBox(width: 8),
               const Expanded(
                 child: Text(
                   'Histórico Crise Gastrite',
@@ -905,19 +903,9 @@ class _CriseGastriteHistoryScreenState extends State<CriseGastriteHistoryScreen>
           ),
         ),
       ),
-      leading: IconButton(
-        icon: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.3),
-            ),
-          ),
-          child: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white, size: 20),
-        ),
-        onPressed: () => Get.back(),
+      leading: const Padding(
+        padding: EdgeInsets.only(left: 8),
+        child: PulseDrawerButton(iconSize: 20),
       ),
       actions: [
         IconButton(

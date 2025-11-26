@@ -9,6 +9,7 @@ import '../../models/diabetes.dart';
 import '../../models/crise_gastrite.dart';
 import '../../models/evento_clinico.dart';
 import '../../models/menstruacao.dart';
+import '../../utils/greeting_utils.dart';
 
 class AppointmentBooking {
   final String id;
@@ -99,7 +100,7 @@ class HomeController extends GetxController {
       _isLoading.value = false;
     }
   }
-  
+
   Future<void> loadNotificationsCount() async {
     try {
       final apiService = ApiService();
@@ -268,14 +269,7 @@ class HomeController extends GetxController {
   
   // Obtém saudação baseada no horário
   String getGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) {
-      return 'Bom Dia,';
-    } else if (hour < 18) {
-      return 'Boa Tarde,';
-    } else {
-      return 'Boa Noite,';
-    }
+    return buildGreetingMessage();
   }
   
   // Obtém o nome do paciente

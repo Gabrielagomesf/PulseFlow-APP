@@ -28,6 +28,7 @@ class ProfileController extends GetxController {
   final _heartRate = 0.0.obs;
   final _sleepQuality = 0.0.obs;
   final _dailySteps = 0.obs;
+  final _isEditing = false.obs;
 
   // Dados do paciente
   final _patient = Rxn<Patient>();
@@ -53,6 +54,8 @@ class ProfileController extends GetxController {
   int get dailySteps => _dailySteps.value;
   Patient? get patient => _patient.value;
   String? get profilePhoto => _profilePhoto.value;
+  bool get isEditing => _isEditing.value;
+  String get birthDateDisplay => _formatDate(_patient.value?.birthDate);
 
   @override
   void onInit() {
@@ -151,16 +154,7 @@ class ProfileController extends GetxController {
       if (currentUser != null) {
         _patient.value = currentUser;
         _profilePhoto.value = currentUser.profilePhoto;
-        
-        // Preenche os controladores
-        nameController.text = currentUser.name;
-        emailController.text = currentUser.email;
-        phoneController.text = currentUser.phone ?? '';
-        birthDateController.text = _formatDate(currentUser.birthDate);
-        cpfController.text = currentUser.cpf ?? '';
-        rgController.text = currentUser.rg ?? '';
-        emergencyContactController.text = currentUser.emergencyContact ?? '';
-        emergencyPhoneController.text = currentUser.emergencyPhone ?? '';
+        _populateControllers(currentUser);
       }
     } catch (e) {
       Get.snackbar(
@@ -172,6 +166,32 @@ class ProfileController extends GetxController {
     } finally {
       _isLoading.value = false;
     }
+  }
+
+  void enterEditingMode() {
+    _isEditing.value = true;
+  }
+
+  void cancelEditing() {
+    _restoreFormFields();
+    _isEditing.value = false;
+  }
+
+  void _restoreFormFields() {
+    final current = _patient.value;
+    if (current == null) return;
+    _populateControllers(current);
+  }
+
+  void _populateControllers(Patient data) {
+    nameController.text = data.name;
+    emailController.text = data.email;
+    phoneController.text = data.phone ?? '';
+    birthDateController.text = _formatDate(data.birthDate);
+    cpfController.text = data.cpf ?? '';
+    rgController.text = data.rg ?? '';
+    emergencyContactController.text = data.emergencyContact ?? '';
+    emergencyPhoneController.text = data.emergencyPhone ?? '';
   }
 
   // Formata data para exibição
@@ -386,6 +406,9 @@ class ProfileController extends GetxController {
     // Atualiza o estado local PRIMEIRO para refletir as mudanças imediatamente
     _patient.value = updatedPatient;
     _authService.currentUser = updatedPatient;
+    _profilePhoto.value = updatedPatient.profilePhoto;
+    _populateControllers(updatedPatient);
+    _isEditing.value = false;
 
     // Atualiza no banco de dados em background (sem bloquear a UI)
     _updateDatabaseInBackground(currentPatient.id!, updatedPatient);

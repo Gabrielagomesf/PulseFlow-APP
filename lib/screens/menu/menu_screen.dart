@@ -9,6 +9,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/common/bp_menu_icon.dart';
 import '../../widgets/common/hormonal_icon.dart';
 import '../../widgets/pulse_bottom_navigation.dart';
+import '../../widgets/pulse_side_menu.dart';
 import '../home/home_controller.dart';
 
 class MenuScreen extends StatelessWidget {
@@ -22,6 +23,7 @@ class MenuScreen extends StatelessWidget {
       value: AppTheme.blueSystemOverlayStyle,
       child: Scaffold(
         backgroundColor: const Color(0xFF00324A),
+        drawer: const PulseSideMenu(activeItem: PulseNavItem.menu),
         body: Column(
           children: [
             _buildHeader(),
@@ -76,64 +78,8 @@ class MenuScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const SizedBox(width: 48),
-              _buildPulseFlowLogo(),
-              Obx(() {
-                try {
-                  final homeController = Get.find<HomeController>();
-                  return IconButton(
-                    icon: Stack(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.notifications_outlined,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                        ),
-                        if (homeController.unreadNotificationsCount.value > 0)
-                          Positioned(
-                            right: 0,
-                            top: 0,
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(
-                                color: Colors.red,
-                                shape: BoxShape.circle,
-                              ),
-                              constraints: const BoxConstraints(
-                                minWidth: 16,
-                                minHeight: 16,
-                              ),
-                              child: Text(
-                                homeController.unreadNotificationsCount.value > 9 
-                                    ? '9+' 
-                                    : homeController.unreadNotificationsCount.value.toString(),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    onPressed: () async {
-                      await Get.toNamed(Routes.NOTIFICATIONS);
-                      try {
-                        final homeController = Get.find<HomeController>();
-                        await homeController.loadNotificationsCount();
-                      } catch (e) {}
-                    },
-                  );
-                } catch (e) {
+              Builder(
+                builder: (context) {
                   return IconButton(
                     icon: Container(
                       padding: const EdgeInsets.all(8),
@@ -142,17 +88,17 @@ class MenuScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
-                        Icons.notifications_outlined,
+                        Icons.menu,
                         color: Colors.white,
                         size: 24,
                       ),
                     ),
-                    onPressed: () {
-                      Get.toNamed(Routes.NOTIFICATIONS);
-                    },
+                    onPressed: () => Scaffold.of(context).openDrawer(),
                   );
-                }
-              }),
+                },
+              ),
+              _buildPulseFlowLogo(),
+              _buildNotificationIcon(),
             ],
           ),
           const SizedBox(height: 20),
@@ -166,6 +112,71 @@ class MenuScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildNotificationIcon() {
+    if (!Get.isRegistered<HomeController>()) {
+      return IconButton(
+        icon: _notificationBadge(null),
+        onPressed: () => Get.toNamed(Routes.NOTIFICATIONS),
+      );
+    }
+
+    final homeController = Get.find<HomeController>();
+    return Obx(() {
+      final count = homeController.unreadNotificationsCount.value;
+      return IconButton(
+        icon: _notificationBadge(count),
+        onPressed: () async {
+          await Get.toNamed(Routes.NOTIFICATIONS);
+          await homeController.loadNotificationsCount();
+        },
+      );
+    });
+  }
+
+  Widget _notificationBadge(int? count) {
+    return Stack(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Icon(
+            Icons.notifications_outlined,
+            color: Colors.white,
+            size: 24,
+          ),
+        ),
+        if (count != null && count > 0)
+          Positioned(
+            right: 0,
+            top: 0,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: const BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+              ),
+              constraints: const BoxConstraints(
+                minWidth: 16,
+                minHeight: 16,
+              ),
+              child: Text(
+                count > 9 ? '9+' : count.toString(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+      ],
     );
   }
 

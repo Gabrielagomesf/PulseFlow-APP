@@ -8,6 +8,8 @@ import '../../services/database_service.dart';
 import '../../services/health_data_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/pulse_bottom_navigation.dart';
+import '../../widgets/pulse_side_menu.dart';
+import '../../widgets/pulse_drawer_button.dart';
 
 class SleepHistoryScreen extends StatefulWidget {
   const SleepHistoryScreen({super.key});
@@ -151,6 +153,7 @@ class _SleepHistoryScreenState extends State<SleepHistoryScreen> {
       value: AppTheme.blueSystemOverlayStyle,
       child: Scaffold(
         backgroundColor: const Color(0xFF00324A),
+        drawer: const PulseSideMenu(activeItem: PulseNavItem.history),
         body: Column(
           children: [
             _buildHeader(),
@@ -202,10 +205,7 @@ class _SleepHistoryScreenState extends State<SleepHistoryScreen> {
         children: [
           Row(
             children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () => Get.back(),
-              ),
+              const PulseDrawerButton(iconSize: 22),
               Expanded(
                 child: Center(
                   child: Text(

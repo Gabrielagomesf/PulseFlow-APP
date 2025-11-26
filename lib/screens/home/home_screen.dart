@@ -8,6 +8,7 @@ import '../../routes/app_routes.dart';
 import '../../theme/app_theme.dart';
 import 'home_controller.dart';
 import '../../widgets/pulse_bottom_navigation.dart';
+import '../../widgets/pulse_side_menu.dart';
 import 'package:flutter/services.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -21,6 +22,7 @@ class HomeScreen extends StatelessWidget {
       value: AppTheme.blueSystemOverlayStyle,
       child: Scaffold(
         backgroundColor: const Color(0xFF00324A), // Cor de fundo azul para ocupar toda a tela
+        drawer: const PulseSideMenu(activeItem: PulseNavItem.home),
         body: Column(
           children: [
             // Header com perfil - sem SafeArea para ocupar toda a área superior
@@ -112,7 +114,25 @@ class HomeScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const SizedBox(width: 48),
+              Builder(
+                builder: (context) {
+                  return IconButton(
+                    icon: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.menu,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    onPressed: () => Scaffold.of(context).openDrawer(),
+                  );
+                },
+              ),
               _buildPulseFlowLogo(),
               Obx(() => IconButton(
                 icon: Stack(

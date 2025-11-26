@@ -13,6 +13,8 @@ import 'exame_controller.dart';
 import '../../routes/app_routes.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/pulse_bottom_navigation.dart';
+import '../../widgets/pulse_side_menu.dart';
+import '../../widgets/pulse_drawer_button.dart';
 
 class ExameUploadScreen extends StatefulWidget {
   const ExameUploadScreen({super.key});
@@ -260,6 +262,7 @@ class _ExameUploadScreenState extends State<ExameUploadScreen> {
       value: AppTheme.blueSystemOverlayStyle,
       child: Scaffold(
         backgroundColor: const Color(0xFF00324A),
+        drawer: const PulseSideMenu(activeItem: PulseNavItem.menu),
         resizeToAvoidBottomInset: true,
         body: SafeArea(
           bottom: false,
@@ -358,20 +361,7 @@ class _ExameUploadScreenState extends State<ExameUploadScreen> {
       ),
       child: Row(
         children: [
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: IconButton(
-              onPressed: () => Get.back(),
-              icon: const Icon(
-                Icons.arrow_back_ios_new,
-                color: Colors.white,
-                size: 20,
-              ),
-            ),
-          ),
+          const PulseDrawerButton(iconSize: 20),
           const SizedBox(width: 16),
           Expanded(
             child: Column(

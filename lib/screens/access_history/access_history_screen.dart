@@ -4,6 +4,9 @@ import 'package:get/get.dart';
 import '../../theme/app_theme.dart';
 import 'access_history_controller.dart';
 import '../../models/access_history.dart';
+import '../../widgets/pulse_bottom_navigation.dart';
+import '../../widgets/pulse_side_menu.dart';
+import '../../widgets/pulse_drawer_button.dart';
 
 class AccessHistoryScreen extends StatelessWidget {
   const AccessHistoryScreen({super.key});
@@ -19,6 +22,7 @@ class AccessHistoryScreen extends StatelessWidget {
       value: AppTheme.blueSystemOverlayStyle,
       child: Scaffold(
         backgroundColor: const Color(0xFF00324A),
+        drawer: const PulseSideMenu(activeItem: PulseNavItem.profile),
         body: SafeArea(
           bottom: false,
           child: Column(
@@ -98,20 +102,7 @@ class AccessHistoryScreen extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: IconButton(
-              icon: const Icon(
-                Icons.arrow_back_ios_new,
-                color: Colors.white,
-                size: 20,
-              ),
-              onPressed: () => Get.back(),
-            ),
-          ),
+          const PulseDrawerButton(iconSize: 20),
           const SizedBox(width: 16),
           Expanded(
             child: Column(

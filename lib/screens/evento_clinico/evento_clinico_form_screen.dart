@@ -5,6 +5,8 @@ import '../../models/evento_clinico.dart';
 import '../../services/database_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/pulse_bottom_navigation.dart';
+import '../../widgets/pulse_side_menu.dart';
+import '../../widgets/pulse_drawer_button.dart';
 
 class EventoClinicoFormScreen extends StatefulWidget {
   final String? pacienteId;
@@ -141,6 +143,7 @@ class _EventoClinicoFormScreenState extends State<EventoClinicoFormScreen> {
       value: AppTheme.blueSystemOverlayStyle,
       child: Scaffold(
       backgroundColor: const Color(0xFF00324A),
+      drawer: const PulseSideMenu(activeItem: PulseNavItem.history),
       resizeToAvoidBottomInset: true,
       body: SafeArea(
         bottom: false,
@@ -253,15 +256,8 @@ class _EventoClinicoFormScreenState extends State<EventoClinicoFormScreen> {
       ),
       child: Row(
         children: [
-          // Botão de voltar
-          IconButton(
-            onPressed: () => Get.back(),
-            icon: const Icon(
-              Icons.arrow_back,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(width: 16),
+          const PulseDrawerButton(iconSize: 22),
+          const SizedBox(width: 12),
           
           // Título
           Expanded(

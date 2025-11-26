@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -6,9 +7,11 @@ import '../../theme/app_theme.dart';
 import '../../routes/app_routes.dart';
 import 'profile_controller.dart';
 import '../../widgets/pulse_bottom_navigation.dart';
+import '../../widgets/pulse_side_menu.dart';
 import '../../services/auth_service.dart';
 import '../../routes/app_routes.dart';
 import '../home/home_controller.dart';
+import '../../utils/greeting_utils.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -21,6 +24,7 @@ class ProfileScreen extends StatelessWidget {
       value: AppTheme.blueSystemOverlayStyle,
       child: Scaffold(
         backgroundColor: const Color(0xFF00324A), // Cor de fundo azul para ocupar toda a tela
+        drawer: const PulseSideMenu(activeItem: PulseNavItem.profile),
         body: Column(
           children: [
             // Header com perfil - sem SafeArea para ocupar toda a área superior
@@ -51,10 +55,6 @@ class ProfileScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Título da página
-                        _buildPageTitle(),
-                        const SizedBox(height: 20),
-                        
                         // Seção da foto do perfil
                         _buildProfilePhotoSection(controller),
                         const SizedBox(height: 20),
@@ -109,82 +109,8 @@ class ProfileScreen extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Botão de voltar
-          IconButton(
-              icon: const Icon(
-                Icons.arrow_back_ios_new,
-                color: Colors.white,
-                size: 20,
-              ),
-              onPressed: () => Get.back(),
-          ),
-          
-          const SizedBox(width: 16),
-          
-          // Logo centralizado
-          Expanded(
-            child: Center(
-              child: _buildPulseFlowLogo(),
-            ),
-          ),
-          
-          // Ícone de notificação
-          Obx(() {
-            try {
-              final homeController = Get.find<HomeController>();
-              return IconButton(
-                icon: Stack(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.notifications_outlined,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    ),
-                    if (homeController.unreadNotificationsCount.value > 0)
-                      Positioned(
-                        right: 0,
-                        top: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            color: Colors.red,
-                            shape: BoxShape.circle,
-                          ),
-                          constraints: const BoxConstraints(
-                            minWidth: 16,
-                            minHeight: 16,
-                          ),
-                          child: Text(
-                            homeController.unreadNotificationsCount.value > 9 
-                                ? '9+' 
-                                : homeController.unreadNotificationsCount.value.toString(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                onPressed: () async {
-                  await Get.toNamed(Routes.NOTIFICATIONS);
-                  try {
-                    final homeController = Get.find<HomeController>();
-                    await homeController.loadNotificationsCount();
-                  } catch (e) {}
-                },
-              );
-            } catch (e) {
+          Builder(
+            builder: (context) {
               return IconButton(
                 icon: Container(
                   padding: const EdgeInsets.all(8),
@@ -193,17 +119,22 @@ class ProfileScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Icon(
-                    Icons.notifications_outlined,
+                    Icons.menu,
                     color: Colors.white,
-                    size: 24,
+                    size: 20,
                   ),
                 ),
-                onPressed: () {
-                  Get.toNamed(Routes.NOTIFICATIONS);
-                },
+                onPressed: () => Scaffold.of(context).openDrawer(),
               );
-            }
-          }),
+            },
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Center(
+              child: _buildPulseFlowLogo(),
+            ),
+          ),
+          _buildNotificationIcon(),
         ],
       ),
     );
@@ -239,315 +170,274 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPageTitle() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFF00324A).withOpacity(0.05),
-            const Color(0xFF00324A).withOpacity(0.02),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+  Widget _buildNotificationIcon() {
+    if (!Get.isRegistered<HomeController>()) {
+      return IconButton(
+        icon: _notificationBadge(null),
+        onPressed: () => Get.toNamed(Routes.NOTIFICATIONS),
+      );
+    }
+
+    final homeController = Get.find<HomeController>();
+    return Obx(() {
+      final count = homeController.unreadNotificationsCount.value;
+      return IconButton(
+        icon: _notificationBadge(count),
+        onPressed: () async {
+          await Get.toNamed(Routes.NOTIFICATIONS);
+          await homeController.loadNotificationsCount();
+        },
+      );
+    });
+  }
+
+  Widget _notificationBadge(int? count) {
+    return Stack(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Icon(
+            Icons.notifications_outlined,
+            color: Colors.white,
+            size: 24,
+          ),
         ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFF00324A).withOpacity(0.1),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFF00324A),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.person,
-              color: Colors.white,
-              size: 24,
+        if (count != null && count > 0)
+          Positioned(
+            right: 0,
+            top: 0,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: const BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+              ),
+              constraints: const BoxConstraints(
+                minWidth: 16,
+                minHeight: 16,
+              ),
+              child: Text(
+                count > 9 ? '9+' : count.toString(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Configurações do Perfil',
-                  style: AppTheme.headlineSmall.copyWith(
-                    color: const Color(0xFF00324A),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Gerencie suas informações pessoais e dados de saúde',
-                  style: AppTheme.bodyMedium.copyWith(
-                    color: const Color(0xFF64748B),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+      ],
     );
   }
 
   Widget _buildProfilePhotoSection(ProfileController controller) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.08),
-            spreadRadius: 1,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Título da seção
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF00324A).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+    return Obx(() {
+      final isEditing = controller.isEditing;
+      final patient = controller.patient;
+      final fullName = _displayValue(patient?.name);
+      final createdAt = _formatDateDisplay(patient?.createdAt);
+      final greeting = _resolveGreeting();
+      final displayName = _combineNames(
+        _extractFirstName(patient?.name),
+        _extractLastName(patient?.name),
+        fullName,
+      );
+
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.withOpacity(0.2)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.08),
+              spreadRadius: 1,
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  'Sua Identidade',
+                  style: AppTheme.titleMedium.copyWith(
+                    color: const Color(0xFF00324A),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                child: const Icon(
-                  Icons.camera_alt,
-                  color: Color(0xFF00324A),
-                  size: 20,
+                const Spacer(),
+                TextButton(
+                  onPressed: isEditing ? controller.cancelEditing : controller.enterEditingMode,
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    foregroundColor: const Color(0xFF00324A),
+                  ),
+                  child: Text(isEditing ? 'Cancelar' : 'Editar'),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Foto do Perfil',
-                style: AppTheme.titleMedium.copyWith(
-                  color: const Color(0xFF00324A),
-                  fontWeight: FontWeight.bold,
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                GestureDetector(
+                  onTap: isEditing ? () => _showPhotoOptions(controller) : null,
+                  child: _buildAvatar(
+                    controller: controller,
+                    initials: _initialsFromName(fullName),
+                  ),
                 ),
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 20),
-          
-          // Foto do perfil
-          GestureDetector(
-            onTap: () => _showPhotoOptions(controller),
-            child: Obx(() => Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: const Color(0xFF00324A).withOpacity(0.05),
-                border: Border.all(
-                  color: const Color(0xFF00324A).withOpacity(0.3),
-                  width: 2,
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        greeting,
+                        style: AppTheme.bodyLarge.copyWith(
+                          color: const Color(0xFF0F172A),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        displayName,
+                        style: AppTheme.headlineSmall.copyWith(
+                          color: const Color(0xFF0F172A),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              child: controller.profilePhoto != null
-                  ? ClipOval(
-                      child: controller.profilePhoto!.startsWith('http')
-                          ? Image.network(
-                              controller.profilePhoto!,
-                              width: 80,
-                              height: 80,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return const Icon(
-                                  Icons.person,
-                                  color: Color(0xFF00324A),
-                                  size: 40,
-                                );
-                              },
-                            )
-                          : Image.file(
-                              File(controller.profilePhoto!),
-                              width: 80,
-                              height: 80,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return const Icon(
-                                  Icons.person,
-                                  color: Color(0xFF00324A),
-                                  size: 40,
-                                );
-                              },
-                            ),
-                    )
-                  : const Icon(
-                      Icons.person,
-                      color: Color(0xFF00324A),
-                      size: 40,
-                    ),
-            )),
-          ),
-          
-          const SizedBox(height: 12),
-          
-          // Botão para alterar foto
-          GestureDetector(
-            onTap: () => _showPhotoOptions(controller),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              decoration: BoxDecoration(
-                color: const Color(0xFF00324A),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Text(
-                'Alterar Foto',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
+              ],
+            ),
+            const SizedBox(height: 16),
+            Divider(color: Colors.grey.withOpacity(0.25)),
+            const SizedBox(height: 12),
+            Center(
+              child: Text(
+                'membro desde : $createdAt',
+                style: AppTheme.bodySmall.copyWith(
+                  color: const Color(0xFF475569),
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildPersonalDataSection(ProfileController controller) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.08),
-            spreadRadius: 1,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Título da seção
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF059669).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+    return Obx(() {
+      final isEditing = controller.isEditing;
+
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.withOpacity(0.2)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.08),
+              spreadRadius: 1,
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF059669).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.person_outline,
+                    color: Color(0xFF059669),
+                    size: 20,
+                  ),
                 ),
-                child: const Icon(
-                  Icons.person_outline,
-                  color: Color(0xFF059669),
-                  size: 20,
+                const SizedBox(width: 12),
+                Text(
+                  'Dados Pessoais',
+                  style: AppTheme.titleMedium.copyWith(
+                    color: const Color(0xFF00324A),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Dados Pessoais',
-                style: AppTheme.titleMedium.copyWith(
-                  color: const Color(0xFF00324A),
-                  fontWeight: FontWeight.bold,
+              ],
+            ),
+            const SizedBox(height: 20),
+            _buildFieldTile(
+              label: 'Nome Completo',
+              controller: controller.nameController,
+              isEditing: isEditing,
+              isRequired: true,
+            ),
+            const SizedBox(height: 16),
+            _buildFieldTile(
+              label: 'Email',
+              controller: controller.emailController,
+              keyboardType: TextInputType.emailAddress,
+              isEditing: isEditing,
+              isRequired: true,
+            ),
+            const SizedBox(height: 16),
+            _buildFieldRow(
+              children: [
+                _buildFieldTile(
+                  label: 'Telefone',
+                  controller: controller.phoneController,
+                  keyboardType: TextInputType.phone,
+                  isEditing: isEditing,
                 ),
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 20),
-          
-          // Grid de campos
-          Column(
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildTextField(
-                      controller: controller.nameController,
-                      label: 'Nome Completo',
-                      icon: Icons.person,
-                      isRequired: true,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildTextField(
-                      controller: controller.emailController,
-                      label: 'Email',
-                      icon: Icons.email,
-                      keyboardType: TextInputType.emailAddress,
-                      isRequired: true,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: _buildTextField(
-                      controller: controller.phoneController,
-                      label: 'Telefone',
-                      icon: Icons.phone,
-                      keyboardType: TextInputType.phone,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    flex: 2,
-                    child: _buildTextField(
-                      controller: controller.birthDateController,
-                      label: 'Data de Nascimento',
-                      icon: Icons.calendar_today,
-                      readOnly: true,
-                      onTap: () => _selectDate(controller),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildTextField(
-                      controller: controller.cpfController,
-                      label: 'CPF',
-                      icon: Icons.badge,
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildTextField(
-                      controller: controller.rgController,
-                      label: 'RG',
-                      icon: Icons.credit_card,
-                      keyboardType: TextInputType.text,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+                _buildFieldTile(
+                  label: 'Data de Nascimento',
+                  controller: controller.birthDateController,
+                  isEditing: isEditing,
+                  readOnly: true,
+                  onTap: () => _selectDate(controller),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildFieldRow(
+              children: [
+                _buildFieldTile(
+                  label: 'CPF',
+                  controller: controller.cpfController,
+                  keyboardType: TextInputType.number,
+                  isEditing: false,
+                ),
+                _buildFieldTile(
+                  label: 'RG',
+                  controller: controller.rgController,
+                  isEditing: isEditing,
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildHealthDataSection(ProfileController controller) {
@@ -806,124 +696,336 @@ class ProfileScreen extends StatelessWidget {
   }
 
 
-  Widget _buildTextField({
-    required TextEditingController controller,
+  Widget _buildFieldRow({required List<Widget> children}) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth >= 640;
+        final spacing = 16.0;
+        final itemWidth = isWide ? (constraints.maxWidth - spacing) / 2 : constraints.maxWidth;
+
+        return Wrap(
+          spacing: spacing,
+          runSpacing: 16,
+          children: children
+              .map(
+                (child) => SizedBox(
+                  width: itemWidth,
+                  child: child,
+                ),
+              )
+              .toList(),
+        );
+      },
+    );
+  }
+
+  Widget _buildFieldTile({
     required String label,
-    required IconData icon,
+    required TextEditingController controller,
+    required bool isEditing,
     TextInputType? keyboardType,
     bool readOnly = false,
     bool isRequired = false,
     VoidCallback? onTap,
   }) {
-    return TextField(
-      controller: controller,
-      keyboardType: keyboardType,
-      readOnly: readOnly,
-      onTap: onTap,
-      decoration: InputDecoration(
-        labelText: label + (isRequired ? ' *' : ''),
-        prefixIcon: Icon(icon, color: const Color(0xFF00324A)),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(
-            color: Colors.grey.withOpacity(0.3),
+    final trimmedValue = controller.text.trim();
+    final displayValue = trimmedValue.isEmpty ? 'Não informado' : trimmedValue;
+
+    if (isEditing) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            controller: controller,
+            keyboardType: keyboardType,
+            readOnly: readOnly,
+            onTap: onTap,
+            decoration: InputDecoration(
+              labelText: isRequired ? '$label *' : label,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: Colors.grey.withOpacity(0.4),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: Color(0xFF00324A),
+                  width: 2,
+                ),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            ),
+            style: AppTheme.bodyMedium.copyWith(
+              color: const Color(0xFF0F172A),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: AppTheme.bodySmall.copyWith(
+            color: const Color(0xFF94A3B8),
+            fontWeight: FontWeight.w500,
           ),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(
-            color: Colors.grey.withOpacity(0.3),
+        const SizedBox(height: 6),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Colors.grey.withOpacity(0.3),
+            ),
+          ),
+          child: Text(
+            displayValue,
+            style: AppTheme.bodyMedium.copyWith(
+              color: const Color(0xFF0F172A),
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(
-            color: Color(0xFF00324A),
-            width: 2,
-          ),
-        ),
-        filled: true,
-        fillColor: Colors.grey[50],
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      ),
+      ],
     );
   }
 
-  Widget _buildSaveButton(ProfileController controller) {
-    return Obx(() => Container(
-      width: double.infinity,
-      height: 56,
+  String _displayValue(String? value) {
+    if (value == null) return 'Não informado';
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? 'Não informado' : trimmed;
+  }
+
+  String _extractFirstName(String? value) {
+    if (value == null || value.trim().isEmpty) return 'Nome não informado';
+    final parts = value.trim().split(' ');
+    return parts.first;
+  }
+
+  String _extractLastName(String? value) {
+    if (value == null || value.trim().isEmpty) return 'Último nome não informado';
+    final parts = value.trim().split(' ');
+    return parts.length > 1 ? parts.last : 'Último nome não informado';
+  }
+
+  String _formatDateDisplay(DateTime? date) {
+    if (date == null) return 'Não informado';
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final year = date.year.toString();
+    return '$day/$month/$year';
+  }
+
+  String _combineNames(String firstName, String lastName, String fullName) {
+    if (fullName != 'Não informado') {
+      return fullName;
+    }
+    if (firstName.contains('não informado') && lastName.contains('não informado')) {
+      return 'Nome não informado';
+    }
+    final buffer = StringBuffer();
+    if (!firstName.contains('não informado')) {
+      buffer.write(firstName);
+    }
+    if (!lastName.contains('não informado')) {
+      if (buffer.isNotEmpty) buffer.write(' ');
+      buffer.write(lastName);
+    }
+    return buffer.isEmpty ? 'Nome não informado' : buffer.toString();
+  }
+
+  Widget _buildAvatar({
+    required ProfileController controller,
+    required String initials,
+  }) {
+    final borderColor = const Color(0xFF00324A).withOpacity(0.3);
+
+    Widget buildInitials() {
+      return Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              const Color(0xFF00324A).withOpacity(0.15),
+              const Color(0xFF00324A).withOpacity(0.05),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            initials,
+            style: AppTheme.headlineSmall.copyWith(
+              color: const Color(0xFF00324A),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      );
+    }
+
+    Widget buildImage(ImageProvider provider) {
+      return ClipOval(
+        child: Image(
+          image: provider,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return buildInitials();
+          },
+        ),
+      );
+    }
+
+    Widget content;
+    final photo = controller.profilePhoto;
+
+    if (photo == null) {
+      content = buildInitials();
+    } else if (photo.startsWith('http')) {
+      content = buildImage(NetworkImage(photo));
+    } else if (photo.startsWith('data:image')) {
+      try {
+        final bytes = base64Decode(photo.split(',').last);
+        content = ClipOval(
+          child: Image.memory(
+            bytes,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return buildInitials();
+            },
+          ),
+        );
+      } catch (_) {
+        content = buildInitials();
+      }
+    } else {
+      final file = File(photo);
+      content = buildImage(FileImage(file));
+    }
+
+    return Container(
+      width: 90,
+      height: 90,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFF00324A),
-            const Color(0xFF00324A).withOpacity(0.8),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF00324A).withOpacity(0.3),
-            spreadRadius: 1,
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        shape: BoxShape.circle,
+        border: Border.all(color: borderColor, width: 2),
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: controller.isSaving ? null : controller.savePatientData,
+      child: content,
+    );
+  }
+
+  String _initialsFromName(String name) {
+    if (name.trim().isEmpty || name == 'Não informado') return 'PF';
+    final parts = name.trim().split(' ');
+    if (parts.length == 1) {
+      return parts.first.substring(0, 1).toUpperCase();
+    }
+    final first = parts.first.substring(0, 1).toUpperCase();
+    final last = parts.last.substring(0, 1).toUpperCase();
+    return '$first$last';
+  }
+
+  String _resolveGreeting() {
+    try {
+      final homeController = Get.find<HomeController>();
+      final greeting = homeController.getGreeting();
+      if (greeting.isNotEmpty) return greeting;
+    } catch (_) {}
+    return buildGreetingMessage();
+  }
+
+  Widget _buildSaveButton(ProfileController controller) {
+    return Obx(() {
+      if (!controller.isEditing) {
+        return const SizedBox.shrink();
+      }
+
+      return Container(
+        width: double.infinity,
+        height: 56,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              const Color(0xFF00324A),
+              const Color(0xFF00324A).withOpacity(0.8),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           borderRadius: BorderRadius.circular(16),
-          child: Center(
-            child: controller.isSaving
-                ? const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF00324A).withOpacity(0.3),
+              spreadRadius: 1,
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: controller.isSaving ? null : controller.savePatientData,
+            borderRadius: BorderRadius.circular(16),
+            child: Center(
+              child: controller.isSaving
+                  ? const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
                         ),
-                      ),
-                      SizedBox(width: 12),
-                      Text(
-                        'Salvando...',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                        SizedBox(width: 12),
+                        Text(
+                          'Salvando...',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    )
+                  : const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.save,
                           color: Colors.white,
+                          size: 20,
                         ),
-                      ),
-                    ],
-                  )
-                : const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.save,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                      SizedBox(width: 8),
-                      Text(
-                        'Salvar Alterações',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                        SizedBox(width: 8),
+                        Text(
+                          'Salvar Alterações',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+            ),
           ),
         ),
-      ),
-    ));
+      );
+    });
   }
 
   Widget _buildPrivacySection() {

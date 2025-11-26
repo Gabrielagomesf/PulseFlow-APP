@@ -6,6 +6,8 @@ import '../../routes/app_routes.dart';
 import '../../theme/app_theme.dart';
 import 'appointment_scheduler_controller.dart';
 import '../../widgets/pulse_bottom_navigation.dart';
+import '../../widgets/pulse_side_menu.dart';
+import '../../widgets/pulse_drawer_button.dart';
 
 class AppointmentSpecialtyScreen extends StatefulWidget {
   const AppointmentSpecialtyScreen({super.key});
@@ -33,6 +35,7 @@ class _AppointmentSpecialtyScreenState extends State<AppointmentSpecialtyScreen>
       value: AppTheme.blueSystemOverlayStyle,
       child: Scaffold(
       backgroundColor: const Color(0xFF00324A),
+      drawer: const PulseSideMenu(activeItem: PulseNavItem.appointments),
       body: Column(
         children: [
           _Header(),
@@ -146,9 +149,10 @@ class _Header extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
-          SizedBox(height: 8),
-          Text(
+        children: [
+          const PulseDrawerButton(iconSize: 22),
+          const SizedBox(height: 12),
+          const Text(
             'Marcar consulta',
             style: TextStyle(
               color: Colors.white,
@@ -156,8 +160,8 @@ class _Header extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-          SizedBox(height: 6),
-          Text(
+          const SizedBox(height: 6),
+          const Text(
             'Comece escolhendo a especialidade desejada.',
             style: TextStyle(color: Colors.white70, fontSize: 14),
           ),

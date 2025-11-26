@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import '../../theme/app_theme.dart';
 import '../../routes/app_routes.dart';
 import '../../widgets/pulse_bottom_navigation.dart';
+import '../../widgets/pulse_side_menu.dart';
+import '../../widgets/pulse_drawer_button.dart';
 import 'upcoming_appointments_controller.dart';
 
 class UpcomingAppointmentsScreen extends StatelessWidget {
@@ -16,6 +18,7 @@ class UpcomingAppointmentsScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFF00324A),
+      drawer: const PulseSideMenu(activeItem: PulseNavItem.appointments),
       body: Column(
         children: [
           _buildHeader(context),
@@ -158,7 +161,10 @@ class UpcomingAppointmentsScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const PulseDrawerButton(iconSize: 22),
+              const SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: const [

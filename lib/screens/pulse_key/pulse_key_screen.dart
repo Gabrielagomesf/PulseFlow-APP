@@ -6,6 +6,8 @@ import 'package:get/get.dart';
 import '../../theme/app_theme.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
+import '../../widgets/pulse_bottom_navigation.dart' show PulseNavItem;
+import '../../widgets/pulse_side_menu.dart';
 
 class PulseKeyScreen extends StatefulWidget {
   const PulseKeyScreen({super.key});
@@ -321,6 +323,7 @@ class _PulseKeyScreenState extends State<PulseKeyScreen> {
     
     return Scaffold(
       backgroundColor: const Color(0xFF00324A),
+      drawer: const PulseSideMenu(activeItem: PulseNavItem.pulseKey),
       body: SafeArea(
         child: Column(
           children: [
@@ -374,26 +377,38 @@ class _PulseKeyScreenState extends State<PulseKeyScreen> {
       padding: const EdgeInsets.all(20),
       child: Row(
         children: [
-          // Botão voltar
-          IconButton(
-            icon: const Icon(
-              Icons.arrow_back_ios_new,
-              color: Colors.white,
-              size: 20,
-            ),
-            onPressed: () => Get.back(),
+          Builder(
+            builder: (context) {
+              return IconButton(
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.menu,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              );
+            },
           ),
-          
-          const SizedBox(width: 16),
-          
-          // Título
-          Text(
-            'Pulse Key',
-            style: AppTheme.headlineSmall.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
+          const SizedBox(width: 8),
+          Expanded(
+            child: Center(
+              child: Text(
+                'Pulse Key',
+                style: AppTheme.headlineSmall.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ),
+          const SizedBox(width: 48),
         ],
       ),
     );

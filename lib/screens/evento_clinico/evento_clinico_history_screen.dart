@@ -14,6 +14,8 @@ import 'package:flutter/services.dart';
 import 'package:open_filex/open_filex.dart';
 import '../../routes/app_routes.dart';
 import '../../widgets/pulse_bottom_navigation.dart';
+import '../../widgets/pulse_side_menu.dart';
+import '../../widgets/pulse_drawer_button.dart';
 import '../../theme/app_theme.dart';
 
 class EventoClinicoHistoryScreen extends StatefulWidget {
@@ -149,6 +151,7 @@ class _EventoClinicoHistoryScreenState extends State<EventoClinicoHistoryScreen>
       value: AppTheme.blueSystemOverlayStyle,
       child: Scaffold(
       backgroundColor: const Color(0xFF00324A),
+      drawer: const PulseSideMenu(activeItem: PulseNavItem.history),
       body: Column(
         children: [
           // Header moderno com gradiente
@@ -217,12 +220,7 @@ class _EventoClinicoHistoryScreenState extends State<EventoClinicoHistoryScreen>
           // Linha com botão voltar e título
           Row(
             children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
-                onPressed: () => Get.back(),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
+              const PulseDrawerButton(),
               const SizedBox(width: 12),
               const Expanded(
                 child: Text(

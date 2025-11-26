@@ -5,6 +5,9 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'diabetes_controller.dart';
 import '../../models/diabetes.dart';
+import '../../widgets/pulse_bottom_navigation.dart';
+import '../../widgets/pulse_side_menu.dart';
+import '../../widgets/pulse_drawer_button.dart';
 
 String formatarData(DateTime d) {
   final dd = d.day.toString().padLeft(2, '0');
@@ -86,20 +89,12 @@ class DiabetesScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFF00324A),
+      drawer: const PulseSideMenu(activeItem: PulseNavItem.menu),
       appBar: AppBar(
         backgroundColor: const Color(0xFF00324A),
         elevation: 0,
         title: const Text('Registro de Diabetes', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            if (mostrarGrafico.value) {
-              mostrarGrafico.value = false;
-            } else {
-              Navigator.of(context).maybePop();
-            }
-          },
-        ),
+        leading: const PulseDrawerButton(iconSize: 22),
         centerTitle: true,
       ),
       body: Container(

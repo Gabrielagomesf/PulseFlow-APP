@@ -9,6 +9,8 @@ import '../../theme/app_theme.dart';
 import '../../routes/app_routes.dart';
 import '../../widgets/menstruacao_calendar.dart';
 import '../../widgets/pulse_bottom_navigation.dart';
+import '../../widgets/pulse_side_menu.dart';
+import '../../widgets/pulse_drawer_button.dart';
 
 class MenstruacaoHistoryScreen extends StatefulWidget {
   const MenstruacaoHistoryScreen({Key? key}) : super(key: key);
@@ -91,6 +93,7 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
       value: AppTheme.blueSystemOverlayStyle,
       child: Scaffold(
       backgroundColor: const Color(0xFFF1F1F1),
+      drawer: const PulseSideMenu(activeItem: PulseNavItem.history),
       appBar: AppBar(
         backgroundColor: const Color(0xFF00324A),
         systemOverlayStyle: AppTheme.blueSystemOverlayStyle,
@@ -99,10 +102,7 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
           'Histórico de Ciclos',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Get.back(),
-        ),
+        leading: const PulseDrawerButton(iconSize: 22),
         centerTitle: true,
         actions: [
           IconButton(

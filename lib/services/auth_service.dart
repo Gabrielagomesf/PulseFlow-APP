@@ -489,6 +489,20 @@ class AuthService extends GetxController {
     }
   }
 
+  Future<void> deleteCurrentAccount() async {
+    try {
+      final user = _currentUser.value;
+      if (user == null || user.id == null || user.id!.isEmpty) {
+        throw 'Usuário não autenticado';
+      }
+      final objectId = ObjectId.parse(user.id!);
+      await _databaseService.deletePatient(objectId);
+      await logout();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   // Logout
   Future<void> logout() async {
     try {

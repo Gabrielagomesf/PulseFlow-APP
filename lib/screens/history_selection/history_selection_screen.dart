@@ -4,6 +4,8 @@ import 'package:get/get.dart';
 import '../../routes/app_routes.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/pulse_bottom_navigation.dart';
+import '../../widgets/pulse_side_menu.dart';
+import '../../widgets/pulse_drawer_button.dart';
 import '../home/home_controller.dart';
 
 class HistorySelectionScreen extends StatefulWidget {
@@ -42,6 +44,7 @@ class _HistorySelectionScreenState extends State<HistorySelectionScreen> with Si
       value: AppTheme.blueSystemOverlayStyle,
       child: Scaffold(
         backgroundColor: const Color(0xFF00324A),
+        drawer: const PulseSideMenu(activeItem: PulseNavItem.history),
         body: Column(
           children: [
             // Header
@@ -102,83 +105,9 @@ class _HistorySelectionScreenState extends State<HistorySelectionScreen> with Si
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const SizedBox(width: 48),
+              const PulseDrawerButton(),
               _buildPulseFlowLogo(),
-              Obx(() {
-                try {
-                  final homeController = Get.find<HomeController>();
-                  return IconButton(
-                    icon: Stack(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.notifications_outlined,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                        ),
-                        if (homeController.unreadNotificationsCount.value > 0)
-                          Positioned(
-                            right: 0,
-                            top: 0,
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(
-                                color: Colors.red,
-                                shape: BoxShape.circle,
-                              ),
-                              constraints: const BoxConstraints(
-                                minWidth: 16,
-                                minHeight: 16,
-                              ),
-                              child: Text(
-                                homeController.unreadNotificationsCount.value > 9 
-                                    ? '9+' 
-                                    : homeController.unreadNotificationsCount.value.toString(),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    onPressed: () async {
-                      try {
-                        final homeController = Get.find<HomeController>();
-                        await Get.toNamed(Routes.NOTIFICATIONS);
-                        await homeController.loadNotificationsCount();
-                      } catch (e) {
-                        await Get.toNamed(Routes.NOTIFICATIONS);
-                      }
-                    },
-                  );
-                } catch (e) {
-                  return IconButton(
-                    icon: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.notifications_outlined,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    ),
-                    onPressed: () => Get.toNamed(Routes.NOTIFICATIONS),
-                  );
-                }
-              }),
+              _buildNotificationIcon(),
             ],
           ),
           const SizedBox(height: 20),
@@ -222,6 +151,71 @@ class _HistorySelectionScreenState extends State<HistorySelectionScreen> with Si
           );
         },
       ),
+    );
+  }
+
+  Widget _buildNotificationIcon() {
+    if (!Get.isRegistered<HomeController>()) {
+      return IconButton(
+        icon: _notificationBadge(null),
+        onPressed: () => Get.toNamed(Routes.NOTIFICATIONS),
+      );
+    }
+
+    final homeController = Get.find<HomeController>();
+    return Obx(() {
+      final count = homeController.unreadNotificationsCount.value;
+      return IconButton(
+        icon: _notificationBadge(count),
+        onPressed: () async {
+          await Get.toNamed(Routes.NOTIFICATIONS);
+          await homeController.loadNotificationsCount();
+        },
+      );
+    });
+  }
+
+  Widget _notificationBadge(int? count) {
+    return Stack(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Icon(
+            Icons.notifications_outlined,
+            color: Colors.white,
+            size: 24,
+          ),
+        ),
+        if (count != null && count > 0)
+          Positioned(
+            right: 0,
+            top: 0,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: const BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+              ),
+              constraints: const BoxConstraints(
+                minWidth: 16,
+                minHeight: 16,
+              ),
+              child: Text(
+                count > 9 ? '9+' : count.toString(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+      ],
     );
   }
 

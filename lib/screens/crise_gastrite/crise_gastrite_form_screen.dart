@@ -6,6 +6,8 @@ import '../../theme/app_theme.dart';
 import '../../services/auth_service.dart';
 import '../../services/database_service.dart';
 import '../../widgets/pulse_bottom_navigation.dart';
+import '../../widgets/pulse_side_menu.dart';
+import '../../widgets/pulse_drawer_button.dart';
 
 class CriseGastriteFormScreen extends StatefulWidget {
   final CriseGastrite? criseGastrite;
@@ -223,6 +225,7 @@ class _CriseGastriteFormScreenState extends State<CriseGastriteFormScreen> {
       value: AppTheme.blueSystemOverlayStyle,
       child: Scaffold(
       backgroundColor: const Color(0xFF00324A),
+      drawer: const PulseSideMenu(activeItem: PulseNavItem.history),
       body: Column(
         children: [
           // Header azul como outras telas
@@ -391,15 +394,8 @@ class _CriseGastriteFormScreenState extends State<CriseGastriteFormScreen> {
       ),
       child: Row(
         children: [
-          // Botão de voltar
-          IconButton(
-            onPressed: () => Get.back(),
-            icon: const Icon(
-              Icons.arrow_back,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(width: 16),
+          const PulseDrawerButton(iconSize: 22),
+          const SizedBox(width: 12),
           
           // Título
           Expanded(

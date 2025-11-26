@@ -12,7 +12,6 @@ abstract class Routes {
   static const UPCOMING_APPOINTMENTS = '/upcoming-appointments';
   static const MEDICAL_RECORDS = '/medical-records';
   static const PRESCRIPTIONS = '/prescriptions';
-  static const SETTINGS = '/settings';
 
   static const VERIFY_2FA = '/verify-2fa';
   static const MENU = '/menu';
@@ -38,5 +37,11 @@ abstract class Routes {
   static const HISTORY_SELECTION = '/history-selection';
   static const NOTIFICATIONS = '/notifications';
   static const ACCESS_HISTORY = '/access-history';
-
+  static const ABOUT = '/about';
+  static const FAQ = '/faq';
+  static const SECURITY = '/security';
+  static const CONTACT = '/contact';
+  static const PRIVACY = '/privacy';
+  static const APP_VERSION = '/app-version';
+  static const SETTINGS = '/settings';
 } 

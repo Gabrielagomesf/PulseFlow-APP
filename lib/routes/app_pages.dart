@@ -39,6 +39,13 @@ import '../screens/appointments/appointment_scheduler_screen.dart';
 import '../screens/appointments/upcoming_appointments_screen.dart';
 import '../screens/notifications/notifications_screen.dart';
 import '../screens/access_history/access_history_screen.dart';
+import '../screens/institutional/about_screen.dart';
+import '../screens/institutional/faq_screen.dart';
+import '../screens/institutional/security_screen.dart';
+import '../screens/institutional/contact_screen.dart';
+import '../screens/institutional/privacy_screen.dart';
+import '../screens/institutional/app_version_screen.dart';
+import '../screens/institutional/settings_screen.dart';
 import '../services/auth_service.dart';
 
 import  'app_routes.dart';
@@ -336,6 +343,62 @@ class AppPages {
     GetPage(
       name: Routes.ACCESS_HISTORY,
       page: () => const AccessHistoryScreen(),
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 400),
+      curve: Curves.fastOutSlowIn,
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: Routes.ABOUT,
+      page: () => const AboutScreen(),
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 400),
+      curve: Curves.fastOutSlowIn,
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: Routes.FAQ,
+      page: () => const FaqScreen(),
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 400),
+      curve: Curves.fastOutSlowIn,
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: Routes.SECURITY,
+      page: () => const SecurityScreen(),
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 400),
+      curve: Curves.fastOutSlowIn,
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: Routes.CONTACT,
+      page: () => const ContactScreen(),
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 400),
+      curve: Curves.fastOutSlowIn,
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: Routes.PRIVACY,
+      page: () => const PrivacyScreen(),
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 400),
+      curve: Curves.fastOutSlowIn,
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: Routes.APP_VERSION,
+      page: () => const AppVersionScreen(),
+      transition: Transition.rightToLeft,
+      transitionDuration: const Duration(milliseconds: 400),
+      curve: Curves.fastOutSlowIn,
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: Routes.SETTINGS,
+      page: () => SettingsScreen(),
       transition: Transition.rightToLeft,
       transitionDuration: const Duration(milliseconds: 400),
       curve: Curves.fastOutSlowIn,

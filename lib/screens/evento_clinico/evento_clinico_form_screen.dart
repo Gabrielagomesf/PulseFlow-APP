@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../models/evento_clinico.dart';
+import '../../services/auth_service.dart';
 import '../../services/database_service.dart';
 import '../../services/auth_service.dart';
 import '../../theme/app_theme.dart';
@@ -771,7 +772,17 @@ class _EventoClinicoFormScreenState extends State<EventoClinicoFormScreen> {
       return;
     }
 
-    // Data já está preenchida com o dia atual, não precisa validar
+    final pacienteId = widget.pacienteId ?? AuthService.instance.currentUser?.id;
+    if (pacienteId == null || pacienteId.isEmpty) {
+      Get.snackbar(
+        'Erro',
+        'Paciente não identificado. Faça login novamente.',
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade800,
+        snackPosition: SnackPosition.TOP,
+      );
+      return;
+    }
 
     try {
       // Obter o ID do paciente atual autenticado
@@ -792,7 +803,7 @@ class _EventoClinicoFormScreenState extends State<EventoClinicoFormScreen> {
       final eventoClinico = EventoClinico(
         paciente: pacienteId,
         titulo: _tituloController.text.trim(),
-        especialidade: '', // Campo removido do formulário
+        especialidade: '',
         tipoEvento: _selectedTipo!,
         intensidadeDor: _intensidadeDor.toString(), // Usar o valor direto do slider
         dataHora: _selectedDate,

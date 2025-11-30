@@ -1536,7 +1536,6 @@ class _EventoClinicoHistoryScreenState extends State<EventoClinicoHistoryScreen>
                     children: [
                       _buildDetailRow('Especialidade', evento.especialidade),
                       _buildDetailRow('Data do Atendimento', _formatDate(evento.dataHora)),
-                      _buildDetailRow('Médico Responsável', 'Dr. ${evento.especialidade.split(' ').first}'),
                       _buildDetailRow('Tipo da Consulta', evento.tipoEvento),
                     ],
                   ),

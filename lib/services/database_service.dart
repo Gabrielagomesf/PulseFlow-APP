@@ -268,32 +268,37 @@ class DatabaseService {
 
       final data = evento.toMap();
       data.remove('_id');
+      
+      // Converter paciente para ObjectId se possível
+      ObjectId? pacienteObjectId;
       try {
-        data['paciente'] = ObjectId.parse(evento.paciente);
+        pacienteObjectId = ObjectId.parse(evento.paciente);
+        data['paciente'] = pacienteObjectId;
       } catch (_) {
         data['paciente'] = evento.paciente;
       }
+      
       data['createdAt'] = DateTime.now().toIso8601String();
       data['updatedAt'] = DateTime.now().toIso8601String();
 
-      final result = await collection.insert(data);
-      Map<String, dynamic>? created;
-      if (result['_id'] != null) {
-        created = await collection.findOne(where.id(result['_id']));
-      }
-      created ??= await collection.findOne(where
-          .eq('paciente', data['paciente'])
-          .eq('titulo', data['titulo'])
-          .eq('dataHora', data['dataHora']));
-
-      if (created == null) throw 'Erro ao criar evento clínico';
-      final normalized = Map<String, dynamic>.from(created);
-      normalized['_id'] = normalized['_id'].toString();
+      // Inserir o documento (o MongoDB adiciona o _id automaticamente ao objeto data)
+      await collection.insert(data);
+      
+      // Após inserção, o documento data já contém o _id
+      // Normalizar o documento para retornar
+      final normalized = Map<String, dynamic>.from(data);
+      normalized['_id'] = data['_id']?.toString() ?? '';
       if (normalized['paciente'] != null) {
-        normalized['paciente'] = normalized['paciente'].toString();
+        if (normalized['paciente'] is ObjectId) {
+          normalized['paciente'] = normalized['paciente'].toString();
+        } else {
+          normalized['paciente'] = normalized['paciente'].toString();
+        }
       }
+      
       return EventoClinico.fromMap(normalized);
     } catch (e) {
+      print('❌ [DatabaseService] Erro ao criar evento clínico: $e');
       rethrow;
     }
   }

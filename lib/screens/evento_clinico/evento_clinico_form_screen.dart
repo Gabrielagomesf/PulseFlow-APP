@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../models/evento_clinico.dart';
 import '../../services/database_service.dart';
+import '../../services/auth_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/pulse_bottom_navigation.dart';
 import '../../widgets/pulse_side_menu.dart';
@@ -773,8 +774,23 @@ class _EventoClinicoFormScreenState extends State<EventoClinicoFormScreen> {
     // Data já está preenchida com o dia atual, não precisa validar
 
     try {
+      // Obter o ID do paciente atual autenticado
+      final currentUser = AuthService.instance.currentUser;
+      if (currentUser?.id == null) {
+        Get.snackbar(
+          'Erro',
+          'Usuário não autenticado. Por favor, faça login novamente.',
+          backgroundColor: Colors.red.shade100,
+          colorText: Colors.red.shade800,
+          snackPosition: SnackPosition.TOP,
+        );
+        return;
+      }
+
+      final pacienteId = widget.pacienteId ?? currentUser!.id!;
+
       final eventoClinico = EventoClinico(
-        paciente: widget.pacienteId ?? '68a3b77a5b36b8a11580651f', // ID do paciente correto
+        paciente: pacienteId,
         titulo: _tituloController.text.trim(),
         especialidade: '', // Campo removido do formulário
         tipoEvento: _selectedTipo!,
@@ -792,13 +808,26 @@ class _EventoClinicoFormScreenState extends State<EventoClinicoFormScreen> {
       
       // Limpar campos automaticamente
       _clearForm();
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('❌ [EventoClinicoForm] Erro ao salvar evento clínico: $e');
+      print('❌ [EventoClinicoForm] Stack trace: $stackTrace');
+      
+      String errorMessage = 'Erro ao salvar evento clínico';
+      if (e.toString().contains('conexão') || e.toString().contains('connection')) {
+        errorMessage = 'Erro de conexão com o banco de dados. Verifique sua conexão com a internet.';
+      } else if (e.toString().contains('autenticado') || e.toString().contains('authentication')) {
+        errorMessage = 'Sessão expirada. Por favor, faça login novamente.';
+      } else {
+        errorMessage = 'Erro ao salvar evento clínico: ${e.toString()}';
+      }
+      
       Get.snackbar(
         'Erro',
-        'Erro ao salvar evento clínico: $e',
+        errorMessage,
         backgroundColor: Colors.red.shade100,
         colorText: Colors.red.shade800,
         snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 4),
       );
     }
   }

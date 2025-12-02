@@ -1607,13 +1607,38 @@ class DatabaseService {
       await _ensureConnection();
       final collection = _db!.collection('menstruacaos');
       
-      final list = await collection.find(
-        where.eq('pacienteId', ObjectId.parse(pacienteId))
-      ).toList();
+      final results = <Map<String, dynamic>>[];
+      
+      // Tentativa 1: pacienteId como ObjectId
+      try {
+        final objId = ObjectId.parse(pacienteId);
+        final list = await collection.find(where.eq('pacienteId', objId)).toList();
+        results.addAll(list.map((e) => Map<String, dynamic>.from(e)));
+      } catch (_) {
+      }
+      
+      // Tentativa 2: pacienteId como String
+      final list2 = await collection.find(where.eq('pacienteId', pacienteId)).toList();
+      results.addAll(list2.map((e) => Map<String, dynamic>.from(e)));
+      
+      // Normalizar e remover duplicados
+      final seen = <String>{};
+      final unique = <Map<String, dynamic>>[];
+      for (final doc in results) {
+        final idStr = doc['_id']?.toString() ?? '';
+        if (idStr.isNotEmpty && !seen.contains(idStr)) {
+          seen.add(idStr);
+          unique.add(doc);
+        }
+      }
       
       final menstruacoes = <Menstruacao>[];
-      for (final doc in list) {
-        menstruacoes.add(Menstruacao.fromJson(doc));
+      for (final doc in unique) {
+        try {
+          menstruacoes.add(Menstruacao.fromJson(doc));
+        } catch (e) {
+          // Ignorar documentos que não podem ser parseados
+        }
       }
       
       // Ordenar por data de início decrescente

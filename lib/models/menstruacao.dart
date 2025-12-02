@@ -13,9 +13,9 @@ class DiaMenstruacao {
 
   factory DiaMenstruacao.fromJson(Map<String, dynamic> json) {
     return DiaMenstruacao(
-      fluxo: json['fluxo'] as String,
-      teveColica: json['teveColica'] as bool,
-      humor: json['humor'] as String,
+      fluxo: json['fluxo']?.toString() ?? '',
+      teveColica: json['teveColica'] as bool? ?? false,
+      humor: json['humor']?.toString() ?? '',
     );
   }
 
@@ -48,23 +48,54 @@ class Menstruacao {
   });
 
   factory Menstruacao.fromJson(Map<String, dynamic> json) {
+    String? extractId(dynamic idValue) {
+      if (idValue == null) return null;
+      if (idValue is String) return idValue;
+      if (idValue is ObjectId) return idValue.toHexString();
+      if (idValue is Map && idValue['\$oid'] != null) {
+        return idValue['\$oid'].toString();
+      }
+      return idValue.toString();
+    }
+
+    DateTime parseDateTime(dynamic dateValue) {
+      if (dateValue == null) throw 'Data inválida';
+      if (dateValue is DateTime) return dateValue;
+      if (dateValue is String) {
+        final parsed = DateTime.tryParse(dateValue);
+        if (parsed != null) return parsed;
+      }
+      if (dateValue is Map && dateValue['\$date'] != null) {
+        final dateData = dateValue['\$date'];
+        if (dateData is String) {
+          final parsed = DateTime.tryParse(dateData);
+          if (parsed != null) return parsed;
+        } else if (dateData is int) {
+          return DateTime.fromMillisecondsSinceEpoch(dateData, isUtc: true);
+        }
+      }
+      throw 'Data inválida: $dateValue';
+    }
+
     Map<String, DiaMenstruacao>? diasPorData;
     if (json['diasPorData'] != null) {
       diasPorData = <String, DiaMenstruacao>{};
       final diasData = json['diasPorData'] as Map<String, dynamic>;
       diasData.forEach((data, dados) {
-        diasPorData![data] = DiaMenstruacao.fromJson(dados as Map<String, dynamic>);
+        if (dados is Map<String, dynamic>) {
+          diasPorData![data] = DiaMenstruacao.fromJson(dados);
+        }
       });
     }
 
     return Menstruacao(
-      id: json['_id'] is ObjectId ? json['_id'].toHexString() : json['_id'] as String?,
-      pacienteId: json['pacienteId'] is ObjectId ? json['pacienteId'].toHexString() : json['pacienteId'] as String?,
-      dataInicio: DateTime.parse(json['dataInicio']),
-      dataFim: DateTime.parse(json['dataFim']),
+      id: extractId(json['_id']),
+      pacienteId: extractId(json['pacienteId']),
+      dataInicio: parseDateTime(json['dataInicio']),
+      dataFim: parseDateTime(json['dataFim']),
       diasPorData: diasPorData,
-      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
-      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+      createdAt: json['createdAt'] != null ? parseDateTime(json['createdAt']) : null,
+      updatedAt: json['updatedAt'] != null ? parseDateTime(json['updatedAt']) : null,
     );
   }
 

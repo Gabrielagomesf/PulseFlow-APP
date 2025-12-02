@@ -8,6 +8,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/pulse_bottom_navigation.dart';
 import '../../widgets/pulse_side_menu.dart';
 import '../../widgets/pulse_drawer_button.dart';
+import '../../routes/app_routes.dart';
 
 class MenstruacaoFormScreen extends StatefulWidget {
   final Menstruacao? menstruacao;
@@ -66,7 +67,7 @@ class _MenstruacaoFormScreenState extends State<MenstruacaoFormScreen> {
           _dataInicio = _selectedStartDate!;
           _dataFim = _selectedEndDate!;
         });
-      _initializeDiasPorData();
+        _initializeDiasPorData();
         
         // Pequeno delay para mostrar o feedback visual antes de mudar de tela
         Future.delayed(const Duration(milliseconds: 500), () {
@@ -86,17 +87,23 @@ class _MenstruacaoFormScreenState extends State<MenstruacaoFormScreen> {
     }
   }
 
+  DateTime _normalizeDate(DateTime date) {
+    return DateTime(date.year, date.month, date.day);
+  }
+
   void _initializeDiasPorData() {
     _diasPorData.clear();
-    final duracao = _dataFim.difference(_dataInicio).inDays + 1;
+    final inicioNormalizado = _normalizeDate(_dataInicio);
+    final fimNormalizado = _normalizeDate(_dataFim);
+    final duracao = fimNormalizado.difference(inicioNormalizado).inDays + 1;
     
     for (int i = 0; i < duracao; i++) {
-      final data = _dataInicio.add(Duration(days: i));
+      final data = inicioNormalizado.add(Duration(days: i));
       final dataStr = DateFormat('yyyy-MM-dd').format(data);
       _diasPorData[dataStr] = DiaMenstruacao(
-        fluxo: '', // Campo vazio para o usuário definir
-        teveColica: false, // Mantém false como padrão (não teve cólica)
-        humor: '', // Campo vazio para o usuário definir
+        fluxo: '',
+        teveColica: false,
+        humor: '',
       );
     }
   }
@@ -380,17 +387,22 @@ class _MenstruacaoFormScreenState extends State<MenstruacaoFormScreen> {
             ),
           ),
           
-          // Ícone decorativo
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Icon(
-              Icons.calendar_month_rounded,
-              color: Colors.white,
-              size: 24,
+          // Botão discreto para ver histórico
+          GestureDetector(
+            onTap: () {
+              Get.toNamed(Routes.MENSTRUACAO_HISTORY);
+            },
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.history_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
             ),
           ),
         ],

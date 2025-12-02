@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import '../models/menstruacao.dart';
 import '../theme/app_theme.dart';
 
@@ -21,6 +22,30 @@ class MenstruacaoCalendar extends StatefulWidget {
 class _MenstruacaoCalendarState extends State<MenstruacaoCalendar> {
   CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime _focusedDay = DateTime.now();
+  bool _isDateFormattingInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeDateFormatting();
+  }
+
+  Future<void> _initializeDateFormatting() async {
+    try {
+      await initializeDateFormatting('pt_BR', null);
+      if (mounted) {
+        setState(() {
+          _isDateFormattingInitialized = true;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isDateFormattingInitialized = true;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -93,6 +118,7 @@ class _MenstruacaoCalendarState extends State<MenstruacaoCalendar> {
             calendarFormat: _calendarFormat,
             eventLoader: _getEventsForDay,
             startingDayOfWeek: StartingDayOfWeek.monday,
+            locale: 'pt_BR',
             calendarStyle: CalendarStyle(
               outsideDaysVisible: false,
               weekendTextStyle: AppTheme.bodyMedium.copyWith(
@@ -351,17 +377,28 @@ class _MenstruacaoCalendarState extends State<MenstruacaoCalendar> {
     );
   }
 
+  DateTime _normalizeDate(DateTime date) {
+    return DateTime(date.year, date.month, date.day);
+  }
+
+  bool _isDateInRange(DateTime day, DateTime inicio, DateTime fim) {
+    final normalizedDay = _normalizeDate(day);
+    final normalizedInicio = _normalizeDate(inicio);
+    final normalizedFim = _normalizeDate(fim);
+    return normalizedDay.isAtSameMomentAs(normalizedInicio) ||
+           normalizedDay.isAtSameMomentAs(normalizedFim) ||
+           (normalizedDay.isAfter(normalizedInicio) && normalizedDay.isBefore(normalizedFim));
+  }
+
   List<Menstruacao> _getEventsForDay(DateTime day) {
     return widget.menstruacoes.where((menstruacao) {
-      return day.isAfter(menstruacao.dataInicio.subtract(const Duration(days: 1))) &&
-             day.isBefore(menstruacao.dataFim.add(const Duration(days: 1)));
+      return _isDateInRange(day, menstruacao.dataInicio, menstruacao.dataFim);
     }).toList();
   }
 
   bool _isMenstruacaoDay(DateTime day) {
     return widget.menstruacoes.any((menstruacao) {
-      return day.isAfter(menstruacao.dataInicio.subtract(const Duration(days: 1))) &&
-             day.isBefore(menstruacao.dataFim.add(const Duration(days: 1)));
+      return _isDateInRange(day, menstruacao.dataInicio, menstruacao.dataFim);
     });
   }
 
@@ -369,8 +406,7 @@ class _MenstruacaoCalendarState extends State<MenstruacaoCalendar> {
     try {
       return widget.menstruacoes.firstWhere(
         (menstruacao) {
-          return day.isAfter(menstruacao.dataInicio.subtract(const Duration(days: 1))) &&
-                 day.isBefore(menstruacao.dataFim.add(const Duration(days: 1)));
+          return _isDateInRange(day, menstruacao.dataInicio, menstruacao.dataFim);
         },
       );
     } catch (e) {

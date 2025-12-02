@@ -838,11 +838,23 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
     );
   }
 
+  DateTime _normalizeDate(DateTime date) {
+    return DateTime(date.year, date.month, date.day);
+  }
+
+  bool _isDateInRange(DateTime day, DateTime inicio, DateTime fim) {
+    final normalizedDay = _normalizeDate(day);
+    final normalizedInicio = _normalizeDate(inicio);
+    final normalizedFim = _normalizeDate(fim);
+    return normalizedDay.isAtSameMomentAs(normalizedInicio) ||
+           normalizedDay.isAtSameMomentAs(normalizedFim) ||
+           (normalizedDay.isAfter(normalizedInicio) && normalizedDay.isBefore(normalizedFim));
+  }
+
   void _showDayDetails(DateTime day) {
     try {
       final menstruacao = _menstruacoes.firstWhere(
-        (m) => day.isAfter(m.dataInicio.subtract(const Duration(days: 1))) &&
-               day.isBefore(m.dataFim.add(const Duration(days: 1))),
+        (m) => _isDateInRange(day, m.dataInicio, m.dataFim),
       );
 
       // Sempre mostrar detalhes do dia específico
@@ -1718,10 +1730,14 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
   }
 
   String _getDayPositionInCycle(DateTime day, Menstruacao menstruacao) {
-    final dayDifference = day.difference(menstruacao.dataInicio).inDays + 1;
+    final normalizedDay = _normalizeDate(day);
+    final normalizedInicio = _normalizeDate(menstruacao.dataInicio);
+    final normalizedFim = _normalizeDate(menstruacao.dataFim);
+    
+    final dayDifference = normalizedDay.difference(normalizedInicio).inDays + 1;
     if (dayDifference == 1) {
       return '1º dia (Início)';
-    } else if (day == menstruacao.dataFim) {
+    } else if (normalizedDay.isAtSameMomentAs(normalizedFim)) {
       return '$dayDifferenceº dia (Fim)';
     } else {
       return '$dayDifferenceº dia';
@@ -1729,34 +1745,46 @@ class _MenstruacaoHistoryScreenState extends State<MenstruacaoHistoryScreen>
   }
 
   String _getRemainingDays(DateTime day, Menstruacao menstruacao) {
-    if (day.isBefore(menstruacao.dataInicio)) {
-      final daysUntilStart = menstruacao.dataInicio.difference(day).inDays;
+    final normalizedDay = _normalizeDate(day);
+    final normalizedInicio = _normalizeDate(menstruacao.dataInicio);
+    final normalizedFim = _normalizeDate(menstruacao.dataFim);
+    
+    if (normalizedDay.isBefore(normalizedInicio)) {
+      final daysUntilStart = normalizedInicio.difference(normalizedDay).inDays;
       return 'Faltam $daysUntilStart dias para iniciar';
-    } else if (day.isAfter(menstruacao.dataFim)) {
+    } else if (normalizedDay.isAfter(normalizedFim)) {
       return 'Ciclo finalizado';
     } else {
-      final remainingDays = menstruacao.dataFim.difference(day).inDays;
+      final remainingDays = normalizedFim.difference(normalizedDay).inDays;
       return remainingDays > 0 ? '$remainingDays dias restantes' : 'Último dia';
     }
   }
 
   int _getCycleProgress(DateTime day, Menstruacao menstruacao) {
-    if (day.isBefore(menstruacao.dataInicio)) {
+    final normalizedDay = _normalizeDate(day);
+    final normalizedInicio = _normalizeDate(menstruacao.dataInicio);
+    final normalizedFim = _normalizeDate(menstruacao.dataFim);
+    
+    if (normalizedDay.isBefore(normalizedInicio)) {
       return 0;
-    } else if (day.isAfter(menstruacao.dataFim)) {
+    } else if (normalizedDay.isAfter(normalizedFim)) {
       return 100;
     } else {
       final totalDays = menstruacao.duracaoEmDias;
-      final currentDay = day.difference(menstruacao.dataInicio).inDays + 1;
+      final currentDay = normalizedDay.difference(normalizedInicio).inDays + 1;
       return ((currentDay / totalDays) * 100).round();
     }
   }
 
 
   DiaMenstruacao _createDefaultDayData(DateTime day, Menstruacao menstruacao) {
-    final dayPosition = day.difference(menstruacao.dataInicio).inDays + 1;
-    final isFirstDay = day == menstruacao.dataInicio;
-    final isLastDay = day == menstruacao.dataFim;
+    final normalizedDay = _normalizeDate(day);
+    final normalizedInicio = _normalizeDate(menstruacao.dataInicio);
+    final normalizedFim = _normalizeDate(menstruacao.dataFim);
+    
+    final dayPosition = normalizedDay.difference(normalizedInicio).inDays + 1;
+    final isFirstDay = normalizedDay.isAtSameMomentAs(normalizedInicio);
+    final isLastDay = normalizedDay.isAtSameMomentAs(normalizedFim);
     
     // Determinar fluxo baseado na posição no ciclo
     String fluxo;
